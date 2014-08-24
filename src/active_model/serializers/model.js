@@ -1,4 +1,6 @@
 import ModelSerializer from '../../serializers/model';
+import {singularize} from '../../utils/inflector';
+
 
 export default class ActiveModelSerializer extends ModelSerializer {
 
@@ -8,7 +10,7 @@ export default class ActiveModelSerializer extends ModelSerializer {
       if(type === 'belongs-to') {
         return key + '_id';
       } else if(type === 'has-many') {
-        return Ember.String.singularize(key) + '_ids';
+        return singularize(key) + '_ids';
       }
     }
     return key;

@@ -75,7 +75,6 @@ var devDist = (function() {
   return concat(mergeTrees(trees), {
     inputFiles: [
       'iife-start',
-      'ember-inflector.js',
       'bundle.js', // jsondiffpatch dist
       'loader.js',
       'traceur-runtime.js',

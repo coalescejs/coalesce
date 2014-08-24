@@ -1,5 +1,5 @@
 /*global jQuery*/
-var get = Ember.get, set  = Ember.set, forEach = Ember.ArrayPolyfills.forEach, pluralize = Ember.String.pluralize;
+var get = Ember.get, set  = Ember.set, forEach = Ember.ArrayPolyfills.forEach;
 
 import Adapter from '../adapter';
 import EmbeddedManager from './embedded_manager';
@@ -11,6 +11,8 @@ import RestErrorsSerializer from './serializers/errors';
 import SerializerFactory from '../factories/serializer';
 
 import materializeRelationships from '../utils/materialize_relationships';
+
+import {decamelize, pluralize, camelize} from '../utils/inflector';
 
 /**
   The REST adapter allows your store to communicate with an HTTP server by
@@ -729,8 +731,8 @@ export default class RestAdapter extends Adapter {
     ```js
     Coalesce.RESTAdapter.reopen({
       pathForType(type) {
-        var decamelized = Ember.String.decamelize(type);
-        return Ember.String.pluralize(decamelized);
+        var decamelized = decamelize(type);
+        return pluralize(decamelized);
       };
     });
     ```
@@ -740,7 +742,7 @@ export default class RestAdapter extends Adapter {
     @returns {String} path
   **/
   pathForType(type) {
-    var camelized = Ember.String.camelize(type);
+    var camelized = camelize(type);
     return pluralize(camelized);
   }
 

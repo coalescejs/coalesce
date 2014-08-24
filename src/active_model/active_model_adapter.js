@@ -1,11 +1,7 @@
-/*global jQuery*/
-
 import RestAdapter from '../rest/rest_adapter';
 import ActiveModelSerializer from './serializers/model';
 
-var decamelize = Ember.String.decamelize,
-    underscore = Ember.String.underscore,
-    pluralize = Ember.String.pluralize;
+import {decamelize, underscore, pluralize} from '../utils/inflector';
 
 /**
   The ActiveModelAdapter is a subclass of the RestAdapter designed to integrate

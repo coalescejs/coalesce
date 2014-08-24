@@ -1,8 +1,8 @@
-var get = Ember.get, set = Ember.set, isEmpty = Ember.isEmpty;
-
 import RestErrors from '../rest_errors';
 import Serializer from '../../serializers/base';
 import Error from '../../error';
+import {camelize} from '../../utils/inflector';
+import isEmpty from '../../utils/is_empty';
 
 export default class ErrorsSerializer extends Serializer {
 
@@ -30,7 +30,7 @@ export default class ErrorsSerializer extends Serializer {
   }
   
   transformPropertyKey(name) {
-    return Ember.String.camelize(name);
+    return camelize(name);
   }
 
   serialize(id) {
@@ -40,5 +40,5 @@ export default class ErrorsSerializer extends Serializer {
 }
 
 function isEmptyObject(obj) {
-  return Ember.keys(obj).length === 0;
+  return Object.keys(obj).length === 0;
 }

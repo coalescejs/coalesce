@@ -1,8 +1,6 @@
 
 import Coalesce from './namespace';
 
-import './ember';
-
 import Adapter from './adapter';
 import IdManager from './id_manager';
 
@@ -18,9 +16,6 @@ import Model from './model/model';
 import './model/diff';
 import Errors from './model/errors';
 import ModelPromise from './model/promise';
-
-import EmberModel from './ember/model';
-import {attr, hasMany, belongsTo} from './ember/model';
 
 import RestErrorsSerializer from './rest/serializers/errors';
 import PayloadSerializer from './rest/serializers/payload';
@@ -51,8 +46,6 @@ import Session from './session/session';
 
 import isEqual from './utils/is_equal';
 
-import DebugAdapter from './ember/debug/debug_adapter';
-
 Coalesce.Adapter = Adapter;
 Coalesce.IdManager = IdManager;
 Coalesce.setupContainer = setupContainer;
@@ -64,10 +57,6 @@ Coalesce.MergeStrategy = MergeStrategy;
 Coalesce.PerField = PerField;
 
 Coalesce.Model = Model;
-Coalesce.EmberModel = EmberModel;
-Coalesce.attr = attr;
-Coalesce.belongsTo = belongsTo;
-Coalesce.hasMany = hasMany;
 Coalesce.Errors = Errors;
 
 Coalesce.ModelPromise = ModelPromise;
@@ -100,7 +89,5 @@ Coalesce.InverseManager = InverseManager;
 Coalesce.Session = Session;
 
 Coalesce.isEqual = isEqual;
-
-Coalesce.DebugAdapter = DebugAdapter;
 
 export default Coalesce;

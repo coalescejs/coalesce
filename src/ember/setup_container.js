@@ -13,7 +13,6 @@ import RevisionSerializer from '../serializers/revision';
 import StringSerializer from '../serializers/string';
 
 import PerField from '../merge/per_field';
-import DebugAdapter from '../ember/debug/debug_adapter';
 
 import RestAdapter from '../rest/rest_adapter';
 
@@ -22,9 +21,6 @@ export default function setupContainer(container, application) {
   setupInjections(container, application);
   setupSerializers(container, application);
   setupMergeStrategies(container, application);
-  if(Ember.DataAdapter) {
-    setupDataAdapter(container, application);
-  }
 };
 
 function setupSession(container, application) {
@@ -63,8 +59,4 @@ function setupSerializers(container, application) {
 function setupMergeStrategies(container, application) {
   container.register('merge-strategy:per-field', PerField);
   container.register('merge-strategy:default', PerField);
-};
-
-function setupDataAdapter(container, application) {
-  container.register('data-adapter:main', DebugAdapter);
 };

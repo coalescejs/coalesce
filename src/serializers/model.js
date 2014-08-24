@@ -1,6 +1,7 @@
 var get = Ember.get, set = Ember.set;
 
 import Serializer from './base';
+import {singularize, camelize, underscore, dasherize} from '../utils/inflector';
 
 /**
   @namespace serializers
@@ -49,7 +50,7 @@ export default class ModelSerializer extends Serializer {
         name = currentName;
       }
     }
-    name = name || Ember.String.camelize(key);
+    name = name || camelize(key);
     this._nameCache[key] = name;
     return name;
   }
@@ -72,7 +73,7 @@ export default class ModelSerializer extends Serializer {
   }
 
   keyForType(name, type, opts) {
-    return Ember.String.underscore(name);
+    return underscore(name);
   }
 
   /**
@@ -121,7 +122,7 @@ export default class ModelSerializer extends Serializer {
       var config = this.configFor(name),
           opts = {typeKey: relationship.typeKey, embedded: config.embedded},
           // we dasherize the kind for lookups for consistency
-          kindKey = Ember.String.dasherize(relationship.kind);
+          kindKey = dasherize(relationship.kind);
       this.addProperty(serialized, model, name, kindKey, opts);
     }, this);
   }
@@ -174,7 +175,7 @@ export default class ModelSerializer extends Serializer {
       var config = this.configFor(name),
           opts = {typeKey: relationship.typeKey, embedded: config.embedded},
           // we dasherize the kind for lookups for consistency
-          kindKey = Ember.String.dasherize(relationship.kind);
+          kindKey = dasherize(relationship.kind);
       this.extractProperty(model, hash, name, kindKey, opts);
     }, this);
   }

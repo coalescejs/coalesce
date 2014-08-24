@@ -2,12 +2,13 @@ var get = Ember.get, set = Ember.set;
 
 import materializeRelationships from '../../utils/materialize_relationships';
 import Serializer from '../../serializers/base';
-import Payload from '../payload'
+import Payload from '../payload';
+import {singularize} from '../../utils/inflector';
 
 export default class PayloadSerializer extends Serializer {
 
   singularize(name) {
-    return Ember.String.singularize(name);
+    return singularize(name);
   }
 
   typeKeyFor(name) {

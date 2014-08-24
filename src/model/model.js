@@ -1,10 +1,3 @@
-var get = Ember.get, set = Ember.set, Copyable = Ember.Copyable, computed = Ember.computed,
-    cacheFor = Ember.cacheFor,
-    cacheGet = cacheFor.get,
-    metaFor = Ember.meta,
-    camelize = Ember.String.camelize,
-    pluralize = Ember.String.pluralize;
-
 import BaseClass from '../utils/base_class';
 import ModelSet from '../collections/model_set';
 import copy from '../utils/copy';
@@ -14,6 +7,7 @@ import Attribute from './attribute';
 import BelongsTo from './belongs_to';
 import HasMany from './has_many';
 import Error from '../error';
+import {camelize, pluralize, underscore} from '../utils/inflector';
 
 export default class Model extends BaseClass {
 
@@ -193,9 +187,10 @@ export default class Model extends BaseClass {
     }, this);
   }
 
+  // XXX: move to ember
   willWatchProperty(key) {
     // EmberTODO
-    if(get(this, 'isManaged') && this.shouldTriggerLoad(key)) {
+    if(this.isManaged && this.shouldTriggerLoad(key)) {
       Ember.run.scheduleOnce('actions', this, this.load);
     }
   }
@@ -608,7 +603,7 @@ Model.reopenClass({
   // typeKey: computed(function() {
   //   var camelized = this.toString().split(/[:.]/)[1];
   //   if(camelized) {
-  //     return Ember.String.underscore(camelized);
+  //     return underscore(camelized);
   //   } else {
   //     throw new Error("Could not infer typeKey for " + this.toString());
   //   }
