@@ -9,7 +9,6 @@ var concat = require('broccoli-concat');
 var uglify = require('broccoli-uglify-js');
 var removeFile = require('broccoli-file-remover');
 var defeatureify = require('broccoli-defeatureify');
-var emberScript = require('broccoli-ember-script');
 var coffee = require('broccoli-coffee');
 var replace = require('broccoli-replace');
 var yuidocCompiler = require('broccoli-yuidoc');
@@ -50,10 +49,6 @@ var es6TestModules = (function() {
     destDir: 'coalesce-test'
   });
 
-  tree = emberScript(tree, {
-    bare: true
-  });
-  
   tree = coffee(tree, {
     bare: true
   });
@@ -73,7 +68,7 @@ var devDist = (function() {
 
   var iifeStart = writeFile('iife-start', '(function() {');
   var iifeStop  = writeFile('iife-stop', '})();');
-  var bootstrap = writeFile('bootstrap', 'this.Ep = requireModule("coalesce")["default"];\n');
+  var bootstrap = writeFile('bootstrap', 'this.Coalesce = requireModule("coalesce")["default"];\n');
 
   var trees = findBowerTrees().concat(['vendor', iifeStart, iifeStop, bootstrap, es6Modules]);
 
@@ -129,9 +124,10 @@ var bowerJSON = writeFile('bower.json', JSON.stringify({
   license: "MIT",
   main: 'coalesce.js',
   keywords: [
-    "ember.js",
+    "coalesce",
     "orm",
     "persistence",
+    "data",
     "sync"
   ]
 }, null, 2));
