@@ -416,3 +416,39 @@ describe "rest", ->
       session.flush().then ->
         expect(campaign.name).to.eq('new name')
         expect(adapter.h).to.eql(['PUT:/campaigns/1'])
+        
+  describe 'belongsTo without inverse', ->
+    
+    beforeEach ->
+      `class Contact extends Model {}`
+      Contact.defineSchema
+        typeKey: 'contact'
+        attributes:
+          name: {type: 'string'}
+        relationships:
+          account: {kind: 'belongsTo', type: 'account'}
+      @App.Contact = @Contact = Contact
+
+      `class Account extends Model {}`
+      Account.defineSchema
+        typeKey: 'account'
+        attributes:
+          name: {type: 'string'}
+      @App.Account = @Account = Account
+
+      @container.register 'model:contact', @Contact
+      @container.register 'model:account', @Account
+      
+      session = session.newSession()
+      
+    it 'creates hierarchy', ->
+      adapter.r['POST:/contacts'] = -> contact: {id: 1, client_id: contact.clientId, name: "test contact", account: 2}
+      adapter.r['POST:/accounts'] = -> account: {id: 2, client_id: contact.account.clientId, name: "test account"}
+      
+      contact = session.create 'contact', name: 'test contact'
+      contact.account = session.create 'account', name: 'test account'
+      
+      session.flush().then ->
+        expect(adapter.h).to.eql(['POST:/accounts', 'POST:/contacts'])
+        expect(contact.account.id).to.eq("2")
+      

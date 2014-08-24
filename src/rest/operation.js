@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 /**
   @private
   An operation that is part of a flush
@@ -119,18 +117,18 @@ export default class Operation {
       // in the case of new records we need to assign the id
       // of the model so dependent operations can use it
       if(!model.id) {
-        model.id = get(serverModel, 'id');
+        model.id = serverModel.id;
       }
       if(!serverModel) {
         // if no data returned, assume that the server data
         // is the same as the model
         serverModel = model;
       } else {
-        if(get(serverModel, 'meta') && Ember.keys(serverModel).length == 1 ){
+        if(serverModel.meta && Object.keys(serverModel).length == 1 ){
           model.meta = serverModel.meta;
           serverModel = model;
         }
-        if(!get(serverModel, 'clientRev')) {
+        if(!serverModel.clientRev) {
           // ensure the clientRev is set on the returned model
           // 0 is the default value
           serverModel.clientRev = model.clientRev;
