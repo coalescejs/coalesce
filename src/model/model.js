@@ -7,7 +7,7 @@ import Attribute from './attribute';
 import BelongsTo from './belongs_to';
 import HasMany from './has_many';
 import Error from '../error';
-import {camelize, pluralize, underscore} from '../utils/inflector';
+import {camelize, pluralize, underscore, classify} from '../utils/inflector';
 
 export default class Model extends BaseClass {
 
@@ -109,8 +109,12 @@ export default class Model extends BaseClass {
   }
 
   toString() {
-    var sessionString = this.session ? this.session.toString() : "detached";
-    return "<" + this.typeKey + "[" + this.id + ", " + this.clientId + "](" + sessionString + ")>";
+    var sessionString = this.session ? this.session.toString() : "(detached)";
+    return this.constructor.toString() + "<" + this.id + ", " + this.clientId + ", " + sessionString + ">";
+  }
+  
+  static toString() {
+    return classify(this.typeKey);
   }
 
   toJSON() {
@@ -512,7 +516,7 @@ export default class Model extends BaseClass {
 
     if (possibleRelationships.length === 0) { return null; }
 
-    console.assert(possibleRelationships.length === 1, "You defined the '" + name + "' relationship on " + this + "but multiple possible inverse relationships of type " + this + " were found on " + inverseType + ".");
+    console.assert(possibleRelationships.length === 1, "You defined the '" + name + "' relationship on " + this + " but multiple possible inverse relationships of type " + this + " were found on " + inverseType + ".");
 
     function findPossibleInverses(type, inverseType, possibleRelationships) {
       possibleRelationships = possibleRelationships || [];
@@ -529,7 +533,9 @@ export default class Model extends BaseClass {
       
       var superclass = Object.getPrototypeOf(type);
       if (superclass && superclass.typeKey) {
-        findPossibleInverses(superclass, inverseType, possibleRelationships);
+        // XXX: container extends models and this logic creates duplicates
+        // XXX: add test for subclassing and extending the schema
+        // findPossibleInverses(superclass, inverseType, possibleRelationships);
       }
       return possibleRelationships;
     }

@@ -27,7 +27,7 @@
     <script>
         this.Coalesce = requireModule('coalesce')['default'];
         requireModule('coalesce-test/_setup');
-        Ember.keys(requirejs.entries).forEach(function(entry) {
+        Object.keys(requirejs.entries).forEach(function(entry) {
           if ((/coalesce\-test/).test(entry)) {
             require(entry, null, null, true);
           }

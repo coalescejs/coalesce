@@ -1,10 +1,11 @@
 
 import Coalesce from './namespace';
 
+import {setupContainer} from './container';
+import Container from './container';
+
 import Adapter from './adapter';
 import IdManager from './id_manager';
-
-import {setupContainer} from './ember';
 
 import ModelArray from './collections/model_array';
 import ModelSet from './collections/model_set';
@@ -46,9 +47,11 @@ import Session from './session/session';
 
 import isEqual from './utils/is_equal';
 
+Coalesce.Container = Container;
+Coalesce.setupContainer = setupContainer;
+
 Coalesce.Adapter = Adapter;
 Coalesce.IdManager = IdManager;
-Coalesce.setupContainer = setupContainer;
 
 Coalesce.ModelArray = ModelArray;
 Coalesce.ModelSet = ModelSet;

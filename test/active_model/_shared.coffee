@@ -1,3 +1,4 @@
+`import Container from 'coalesce/container'`
 `import ActiveModelAdapter from 'coalesce/active_model/active_model_adapter'`
 
 setup = ->
@@ -23,8 +24,7 @@ setup = ->
       Ember.run.later callback, 0
 
   @App = Ember.Namespace.create()
-  @container = new Ember.Container()
-  Coalesce.setupContainer(@container)
+  @container = new Container()
 
   # TestAdapter already is a subclass
   @RestAdapter = TestActiveModelAdapter.extend()

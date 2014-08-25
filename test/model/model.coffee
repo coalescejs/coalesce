@@ -1,5 +1,6 @@
 `import ModelSet from 'coalesce/collections/model_set'`
 `import Model from 'coalesce/model/model'`
+`import Container from 'coalesce/container'`
 
 describe 'Model', ->
 
@@ -15,8 +16,7 @@ describe 'Model', ->
     User.typeKey = 'user'
     @User = User
     
-    @container = new Ember.Container()
-    Coalesce.setupContainer(@container)
+    @container = new Container()
     @container.register 'model:user', User
     session = @container.lookup('session:main')
 
