@@ -65,7 +65,7 @@ describe "relationships", ->
 
     it 'belongsTo updates inverse on delete when initially added unloaded', ->
       post = @session.merge @session.build 'post', id: 1, comments: [@Comment.create(id: 2)]
-      unloadedComment = post.comments.get('firstObject')
+      unloadedComment = post.comments[0]
       comment = @session.merge @session.build 'comment', id: 2, post: @Post.create(id: 1)
       unloadedComment.post = post
       expect(post.comments.toArray()).to.eql([unloadedComment])
@@ -121,45 +121,13 @@ describe "relationships", ->
       comment = @session.merge(@Comment.create(id: '2', post: null))
 
       post.comments.addObject @Comment.create(id: '2')
-      expect(post.comments.get('firstObject')).to.eq(comment)
+      expect(post.comments[0]).to.eq(comment)
 
 
     it 'hasMany content can be set directly', ->
       post = @session.create 'post', comments: [@Comment.create(id: '2')]
-      expect(post.comments.get('length')).to.eq(1)
-      expect(post.comments.get('firstObject').id).to.eq('2')
-
-
-    it 'supports watching belongsTo properties that have a detached cached value', ->
-      deferred = Ember.RSVP.defer()
-      @session.loadModel = (model) ->
-        Ember.unwatchPath comment, 'post.title'
-        deferred.resolve()
-      comment = @session.adopt @session.build 'comment', id: 2, post: @Post.create(id: 1)
-
-      Ember.run ->
-        Ember.watchPath comment, 'post.title'
-      deferred.promise
-
-    it 'supports watching multiple levels of unloaded belongsTo', ->
-      deferred = Ember.RSVP.defer()
-      Post = @Post
-      User = @User
-      @session.loadModel = (model) ->
-        if model instanceof Post
-          model = model.copy()
-          model.title = 'post'
-          model.user = User.create id: "2"
-          @merge(model)
-          Ember.RSVP.resolve(model)
-        else
-          deferred.resolve()
-      comment = @session.adopt @session.build 'comment', id: 2, post: @Post.create(id: 1)
-
-      Ember.run ->
-        Ember.watchPath comment, 'post.user.name'
-      deferred.promise.then ->
-        Ember.unwatchPath comment, 'post.user.name'
+      expect(post.comments.length).to.eq(1)
+      expect(post.comments[0].id).to.eq('2')
 
 
   context 'one->one', ->

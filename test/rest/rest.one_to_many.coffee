@@ -27,8 +27,8 @@ describe "rest", ->
         expect(adapter.h).to.eql(['GET:/posts/1'])
         expect(post.id).to.eq("1")
         expect(post.title).to.eq('mvcc ftw')
-        expect(post.comments.get('length')).to.eq(1)
-        comment = post.comments.get('firstObject')
+        expect(post.comments.length).to.eq(1)
+        comment = post.comments[0]
         expect(comment.body).to.be.undefined
 
         comment.load().then ->
@@ -50,7 +50,7 @@ describe "rest", ->
       comment.body = 'seems good'
       comment.post = post
 
-      expect(post.comments.get('firstObject')).to.eq(comment)
+      expect(post.comments[0]).to.eq(comment)
 
       session.flush().then ->
         expect(post.id).to.not.be.null
@@ -60,7 +60,7 @@ describe "rest", ->
         expect(comment.body).to.eq('seems good')
         expect(comment.post).to.eq(post)
         expect(comment.post.id).to.eq("1")
-        expect(post.comments.get('firstObject')).to.eq(comment)
+        expect(post.comments[0]).to.eq(comment)
         expect(adapter.h).to.eql(['POST:/posts', 'POST:/comments'])
         
     
@@ -73,7 +73,7 @@ describe "rest", ->
       post.title = 'topological sort'
 
       session.flush().then ->
-        comment = post.comments.get('firstObject')
+        comment = post.comments[0]
         expect(post.id).to.not.be.null
         expect(post.isNew).to.be.false
         expect(post.title).to.eq('topological sort')
@@ -141,7 +141,7 @@ describe "rest", ->
       sibling = null
 
       session.load(@Post, 1).then (post) ->
-        comment = post.comments.get('firstObject')
+        comment = post.comments[0]
         sibling = session.create('comment', body: 'sibling')
         sibling.post = post
         comment.body = 'original sibling'
@@ -173,12 +173,12 @@ describe "rest", ->
       session.merge post
 
       session.load('post', 1).then (post) ->
-        comment = post.comments.get('firstObject')
+        comment = post.comments[0]
         session.deleteModel(comment)
-        expect(post.comments.get('length')).to.eq(0)
+        expect(post.comments.length).to.eq(0)
         session.flush().then ->
           expect(adapter.h).to.eql(['DELETE:/comments/2'])
-          expect(post.comments.get('length')).to.eq(0)
+          expect(post.comments.length).to.eq(0)
 
 
     it 'deletes child and updates parent', ->
@@ -190,12 +190,12 @@ describe "rest", ->
       session.merge post
 
       session.load('post', 1).then (post) ->
-        comment = post.comments.get('firstObject')
+        comment = post.comments[0]
         session.deleteModel(comment)
-        expect(post.comments.get('length')).to.eq(0)
+        expect(post.comments.length).to.eq(0)
         post.title = 'childless'
         session.flush().then ->
-          expect(post.comments.get('length')).to.eq(0)
+          expect(post.comments.length).to.eq(0)
           expect(post.title).to.eq('childless')
           expect(adapter.h).to.eql(['DELETE:/comments/2', 'PUT:/posts/1'])
 
@@ -209,9 +209,9 @@ describe "rest", ->
       session.merge post
 
       session.load('post', 1).then (post) ->
-        comment = post.comments.get('firstObject')
+        comment = post.comments[0]
         session.deleteModel(comment)
-        expect(post.comments.get('length')).to.eq(0)
+        expect(post.comments.length).to.eq(0)
         session.deleteModel(post)
         session.flush().then ->
           expect(adapter.h).to.eql(['DELETE:/comments/2', 'DELETE:/posts/1'])
@@ -237,8 +237,8 @@ describe "rest", ->
           expect(adapter.h).to.eql(['GET:/posts/1'])
           expect(post.id).to.eq("1")
           expect(post.title).to.eq('mvcc ftw')
-          expect(post.comments.get('length')).to.eq(1)
-          comment = post.comments.get('firstObject')
+          expect(post.comments.length).to.eq(1)
+          comment = post.comments[0]
           expect(comment.body).to.eq 'first'
           expect(comment.post.isEqual(post)).to.be.true
 
@@ -249,10 +249,10 @@ describe "rest", ->
 
         session.load(@Post, 1).then (post) ->
           expect(adapter.h).to.eql(['GET:/posts/1'])
-          comment = post.comments.get('firstObject')
+          comment = post.comments[0]
           comment.body = 'first again'
           session.flush().then ->
-            expect(post.comments.get('firstObject')).to.eq(comment)
+            expect(post.comments[0]).to.eq(comment)
             expect(comment.body).to.eq('first again')
             expect(adapter.h).to.eql(['GET:/posts/1', 'PUT:/posts/1'])
 
@@ -264,13 +264,13 @@ describe "rest", ->
         comment = null
         session.load(@Post, 1).then (post) ->
           expect(adapter.h).to.eql(['GET:/posts/1'])
-          expect(post.comments.get('length')).to.eq(0)
+          expect(post.comments.length).to.eq(0)
           comment = session.create('comment', body: 'reborn')
           comment.post = post
           session.flush().then ->
             expect(adapter.h).to.eql(['GET:/posts/1', 'PUT:/posts/1'])
             expect(comment.body).to.eq('reborn')
-            expect(post.comments.get('firstObject')).to.eq(comment)
+            expect(post.comments[0]).to.eq(comment)
 
 
       it 'adds child with sibling', ->
@@ -283,19 +283,19 @@ describe "rest", ->
         comment = null
         session.load(@Post, 1).then (post) ->
           expect(adapter.h).to.eql(['GET:/posts/1'])
-          expect(post.comments.get('length')).to.eq(1)
+          expect(post.comments.length).to.eq(1)
           comment = session.create('comment', body: 'second-born')
           comment.post = post
           session.flush().then ->
             expect(adapter.h).to.eql(['GET:/posts/1', 'PUT:/posts/1'])
             expect(comment.body).to.eq('second-born')
-            expect(post.comments.get('firstObject').body).to.eq('first-born')
-            expect(post.comments.get('lastObject')).to.eq(comment)
+            expect(post.comments[0].body).to.eq('first-born')
+            expect(post.comments.lastObject).to.eq(comment)
 
 
       it 'deletes child', ->
         adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-          expect(hash.data.post.comments.get('length')).to.eq(0)
+          expect(hash.data.post.comments.length).to.eq(0)
           return posts: {id: 1, title: 'mvcc ftw', comments: []}
 
         post = @Post.create(id: "1", title: 'parent', comments: []);
@@ -303,17 +303,17 @@ describe "rest", ->
         session.merge post
 
         session.load('post', 1).then (post) ->
-          comment = post.comments.get('firstObject')
+          comment = post.comments[0]
           session.deleteModel(comment)
-          expect(post.comments.get('length')).to.eq(0)
+          expect(post.comments.length).to.eq(0)
           session.flush().then ->
             expect(adapter.h).to.eql(['PUT:/posts/1'])
-            expect(post.comments.get('length')).to.eq(0)
+            expect(post.comments.length).to.eq(0)
 
 
       it 'deletes child with sibling', ->
         adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-          expect(hash.data.post.comments.get('length')).to.eq(1)
+          expect(hash.data.post.comments.length).to.eq(1)
           return posts: {id: 1, title: 'mvcc ftw', comments: [{id: 3, client_id: sibling.clientId, post: 1, body: 'child2'}]}
 
         post = @Post.create(id: "1", title: 'parent', comments: []);
@@ -323,18 +323,18 @@ describe "rest", ->
 
         sibling = null
         session.load('post', 1).then (post) ->
-          comment = post.comments.get('firstObject')
-          sibling = post.comments.get('lastObject')
+          comment = post.comments[0]
+          sibling = post.comments.lastObject
           session.deleteModel(comment)
-          expect(post.comments.get('length')).to.eq(1)
+          expect(post.comments.length).to.eq(1)
           session.flush().then ->
             expect(adapter.h).to.eql(['PUT:/posts/1'])
-            expect(post.comments.get('length')).to.eq(1)
+            expect(post.comments.length).to.eq(1)
 
 
       it 'new parent creates and deletes child before flush', ->
         adapter.r['POST:/posts'] = (url, type, hash) ->
-          expect(hash.data.post.comments.get('length')).to.eq(0)
+          expect(hash.data.post.comments.length).to.eq(0)
           return posts: {client_id: post.clientId, id: 1, title: 'mvcc ftw', comments: []}
 
         post = session.create(@Post, title: 'parent', comments: [])
@@ -343,7 +343,7 @@ describe "rest", ->
         post.comments.removeObject comment
 
         session.flush().then ->
-          expect(post.comments.get('length')).to.eq(0)
+          expect(post.comments.length).to.eq(0)
           expect(post.isNew).to.be.false
           expect(adapter.h).to.eql(['POST:/posts'])
 
@@ -360,12 +360,12 @@ describe "rest", ->
         session.deleteModel post.comments.objectAt(0)
         session.flush().then ->
           expect(adapter.h).to.eql(['PUT:/posts/1'])
-          expect(post.comments.get('length')).to.eq(1)
+          expect(post.comments.length).to.eq(1)
           session.deleteModel post.comments.objectAt(0)
           adapter.r['PUT:/posts/1'] = posts: {id: 1, title: 'mvcc ftw', comments: []}
           session.flush().then ->
             expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
-            expect(post.comments.get('length')).to.eq(0)
+            expect(post.comments.length).to.eq(0)
 
 
       it 'deletes parent and child', ->

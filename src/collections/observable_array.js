@@ -24,7 +24,7 @@ export default class ObservableArray extends Array {
     ```
 
     @method clear
-    @return {Ember.Array} An empty Array.
+    @return {ObservableArray} An empty Array.
   */
   clear () {
     var len = this.length;
@@ -46,7 +46,7 @@ export default class ObservableArray extends Array {
     @method insertAt
     @param {Number} idx index of insert the object at.
     @param {Object} object object to insert
-    @return {Ember.Array} receiver
+    @return {ObservableArray} receiver
   */
   insertAt(idx, object) {
     if (idx > this.length) throw new Error("Index out of range");
@@ -71,7 +71,7 @@ export default class ObservableArray extends Array {
     @method removeAt
     @param {Number} start index, start of range
     @param {Number} len length of passing range
-    @return {Ember.Array} receiver
+    @return {ObservableArray} receiver
   */
   removeAt(start, len) {
     if ('number' === typeof start) {
@@ -117,8 +117,8 @@ export default class ObservableArray extends Array {
     ```
 
     @method pushObjects
-    @param {Ember.Enumerable} objects the objects to add
-    @return {Ember.Array} receiver
+    @param {Array} objects the objects to add
+    @return {ObservableArray} receiver
   */
   pushObjects(objects) {
     this.replace(this.length, 0, objects);
@@ -197,8 +197,8 @@ export default class ObservableArray extends Array {
     ```
 
     @method unshiftObjects
-    @param {Ember.Enumerable} objects the objects to add
-    @return {Ember.Array} receiver
+    @param {Array} objects the objects to add
+    @return {ObservableArray} receiver
   */
   unshiftObjects(objects) {
     this.replace(0, 0, objects);
@@ -210,7 +210,7 @@ export default class ObservableArray extends Array {
     KVO-compliant.
 
     @method reverseObjects
-    @return {Ember.Array} receiver
+    @return {ObservableArray} receiver
    */
   reverseObjects() {
     var len = this.length;
@@ -218,6 +218,10 @@ export default class ObservableArray extends Array {
     var objects = this.toArray().reverse();
     this.replace(0, len, objects);
     return this;
+  }
+  
+  toArray() {
+    return Array.from(this);
   }
 
   /**
@@ -231,9 +235,9 @@ export default class ObservableArray extends Array {
     ```
 
     @method setObjects
-    @param {Ember.Array} objects array whose content will be used for replacing
+    @param {ObservableArray} objects array whose content will be used for replacing
         the content of the receiver
-    @return {Ember.Array} receiver with the new content
+    @return {ObservableArray} receiver with the new content
    */
   setObjects(objects) {
     if (objects.length === 0) return this.clear();
@@ -255,7 +259,7 @@ export default class ObservableArray extends Array {
 
     @method removeObject
     @param {*} obj object to remove
-    @return {Ember.Array} receiver
+    @return {ObservableArray} receiver
   */
   removeObject(obj) {
     var loc = this.length || 0;
@@ -278,7 +282,7 @@ export default class ObservableArray extends Array {
 
     @method addObject
     @param {*} obj object to add, if not already present
-    @return {Ember.Array} receiver
+    @return {ObservableArray} receiver
   */
   addObject(obj) {
     if (!this.contains(obj)) this.pushObject(obj);
@@ -293,7 +297,7 @@ export default class ObservableArray extends Array {
     Adds each object in the passed enumerable to the receiver.
 
     @method addObjects
-    @param {Ember.Enumerable} objects the objects to add.
+    @param {Array} objects the objects to add.
     @return {Object} receiver
   */
   addObjects(objects) {
@@ -307,7 +311,7 @@ export default class ObservableArray extends Array {
     Removes each object in the passed enumerable from the receiver.
 
     @method removeObjects
-    @param {Ember.Enumerable} objects the objects to remove
+    @param {Array} objects the objects to remove
     @return {Object} receiver
   */
   removeObjects(objects) {

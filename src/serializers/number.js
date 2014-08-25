@@ -1,5 +1,4 @@
-var empty = Ember.isEmpty;
-
+import isEmpty from '../utils/is_empty';
 import Serializer from './base';
 
 /**
@@ -9,10 +8,10 @@ import Serializer from './base';
 export default class NumberSerializer extends Serializer {
 
   deserialize(serialized) {
-    return empty(serialized) ? null : Number(serialized);
+    return isEmpty(serialized) ? null : Number(serialized);
   }
 
   serialize(deserialized) {
-    return empty(deserialized) ? null : Number(deserialized);
+    return isEmpty(deserialized) ? null : Number(deserialized);
   }
 }

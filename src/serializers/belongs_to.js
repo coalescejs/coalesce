@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 import Serializer from './base';
 
 /**

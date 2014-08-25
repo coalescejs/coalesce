@@ -34,12 +34,12 @@ export default class InverseManager {
       }    
       
       if(relationship.kind === 'belongsTo') {
-        var inverseModel = get(model, name);
+        var inverseModel =model[name];
         if(inverseModel) {
           checkInverse.call(this, inverseModel);
         }
       } else if(relationship.kind === 'hasMany') {
-        var inverseModels = get(model, name);
+        var inverseModels =model[name];
         inverseModels.forEach(function(inverseModel) {
           checkInverse.call(this, inverseModel);
         }, this);
@@ -113,9 +113,9 @@ export default class InverseManager {
     if(!model || !model.isFieldLoaded(inverse.name)) return;
     model.suspendRelationshipObservers(function() {
       if(inverse.kind === 'hasMany') {
-        get(model, inverse.name).addObject(inverseModel)
+        model[inverse.name].addObject(inverseModel)
       } else if(inverse.kind === 'belongsTo') {
-        set(model, inverse.name, inverseModel);
+        model[inverse.name] = inverseModel;
       }
     }, this);
   }
@@ -126,9 +126,9 @@ export default class InverseManager {
     if(!model || !model.isFieldLoaded(inverse.name)) return;
     model.suspendRelationshipObservers(function() {
       if(inverse.kind === 'hasMany') {
-        get(model, inverse.name).removeObject(inverseModel)
+        model[inverse.name].removeObject(inverseModel)
       } else if(inverse.kind === 'belongsTo') {
-        set(model, inverse.name, null);
+        model[inverse.name] = null;
       }
     }, this);
   }

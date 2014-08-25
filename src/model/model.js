@@ -1,3 +1,4 @@
+import Coalesce from '../namespace';
 import BaseClass from '../utils/base_class';
 import ModelSet from '../collections/model_set';
 import copy from '../utils/copy';
@@ -110,11 +111,11 @@ export default class Model extends BaseClass {
 
   toString() {
     var sessionString = this.session ? this.session.toString() : "(detached)";
-    return this.constructor.toString() + "<" + this.id + ", " + this.clientId + ", " + sessionString + ">";
+    return this.constructor.toString() + "<" + (this.id || '(no id)') + ", " + this.clientId + ", " + sessionString + ">";
   }
   
   static toString() {
-    return classify(this.typeKey);
+    return this.__toString = this.__toString || classify(this.typeKey);
   }
 
   toJSON() {
@@ -195,7 +196,7 @@ export default class Model extends BaseClass {
   willWatchProperty(key) {
     // EmberTODO
     if(this.isManaged && this.shouldTriggerLoad(key)) {
-      Ember.run.scheduleOnce('actions', this, this.load);
+      Coalesce.run.scheduleOnce('actions', this, this.load);
     }
   }
 

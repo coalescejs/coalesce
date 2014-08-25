@@ -22,7 +22,7 @@ import {decamelize, underscore, pluralize} from '../utils/inflector';
   ### Conventional Names
 
   Attribute names in your JSON payload should be the underscored versions of
-  the attributes in your Ember.js models.
+  the attributes in your Coalesce.js models.
 
   For example, if you have a `Person` model:
 

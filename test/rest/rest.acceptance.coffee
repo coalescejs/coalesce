@@ -50,9 +50,9 @@ describe "rest", ->
           expect(adapter.h).to.eql(['POST:/users', 'POST:/groups'])
           expect(user.id).to.not.be.null
           expect(group.id).to.not.be.null
-          expect(group.members.get('length')).to.eq(1)
-          expect(user.groups.get('length')).to.eq(1)
-          expect(user.members.get('length')).to.eq(1)
+          expect(group.members.length).to.eq(1)
+          expect(user.groups.length).to.eq(1)
+          expect(user.members.length).to.eq(1)
           expect(member.id).to.not.be.null
 
           childSession = session.newSession()
@@ -60,16 +60,16 @@ describe "rest", ->
           user = childSession.add(user)
           group = childSession.add(group)
           childSession.deleteModel(member)
-          expect(user.members.get('length')).to.eq(0)
-          expect(group.members.get('length')).to.eq(0)
-          expect(user.groups.get('length')).to.eq(1)
+          expect(user.members.length).to.eq(0)
+          expect(group.members.length).to.eq(0)
+          expect(user.groups.length).to.eq(1)
 
           adapter.r['PUT:/groups/2'] = -> groups: {client_id: group.clientId, id: 2, name: "brogrammers", members: [], user: 1}
           childSession.flushIntoParent().then ->
             expect(member.isDeleted).to.be.true
-            expect(group.members.get('length')).to.eq(0)
-            expect(user.members.get('length')).to.eq(0)
-            expect(user.groups.get('length')).to.eq(1)
+            expect(group.members.length).to.eq(0)
+            expect(user.members.length).to.eq(0)
+            expect(user.groups.length).to.eq(1)
             expect(adapter.h).to.eql(['POST:/users', 'POST:/groups', 'PUT:/groups/2'])
 
 
@@ -78,9 +78,9 @@ describe "rest", ->
 
       session.query("group").then (result) ->
         expect(adapter.h).to.eql(['GET:/groups'])
-        expect(result.get('length')).to.eq(1)
-        expect(result.get('firstObject').name).to.eq("brogrammers")
-        expect(result.get('firstObject').groups).to.be.undefined
+        expect(result.length).to.eq(1)
+        expect(result[0].name).to.eq("brogrammers")
+        expect(result[0].groups).to.be.undefined
 
 
     it 'adds a member to an existing group', ->
@@ -92,23 +92,23 @@ describe "rest", ->
         childSession = session.newSession()
         childGroup = childSession.add(group)
 
-        existingMember = childGroup.members.get('firstObject')
+        existingMember = childGroup.members[0]
         expect(existingMember.user).to.not.be.null
         expect(existingMember.user.isDetached).to.be.false
 
         member = childSession.create('member', {name: "mollie"})
         childGroup.members.addObject(member)
 
-        expect(childGroup.members.get('length')).to.eq(2)
-        expect(group.members.get('length')).to.eq(1)
+        expect(childGroup.members.length).to.eq(2)
+        expect(group.members.length).to.eq(1)
 
         adapter.r['PUT:/groups/1'] = -> groups: {id: 1, name: "employees", members: [{id: 2, name: "kinz", group: 1}, {id: 3, client_id: member.clientId, name: "mollie", group: 1}]}
         promise = childSession.flushIntoParent().then ->
-          expect(childGroup.members.get('length')).to.eq(2)
-          expect(group.members.get('length')).to.eq(2)
+          expect(childGroup.members.length).to.eq(2)
+          expect(group.members.length).to.eq(2)
           expect(adapter.h).to.eql(['GET:/groups/1', 'PUT:/groups/1'])
 
-        expect(group.members.get('length')).to.eq(2)
+        expect(group.members.length).to.eq(2)
         promise
 
 
@@ -130,14 +130,14 @@ describe "rest", ->
         message: '#2',
         post: childPost
 
-      expect(childPost.comments.get('length')).to.eq(2)
+      expect(childPost.comments.length).to.eq(2)
 
       promise = childSession.flushIntoParent().then ->
-        expect(childPost.comments.get('length')).to.eq(2)
-        expect(post.comments.get('length')).to.eq(2)
+        expect(childPost.comments.length).to.eq(2)
+        expect(post.comments.length).to.eq(2)
 
-      expect(childPost.comments.get('length')).to.eq(2)
-      expect(post.comments.get('length')).to.eq(2)
+      expect(childPost.comments.length).to.eq(2)
+      expect(post.comments.length).to.eq(2)
       promise
 
 
@@ -257,8 +257,8 @@ describe "rest", ->
         expect(baz.id).to.not.be.null
         expect(foo.bar).to.not.be.null
         expect(foo.baz).to.not.be.null
-        expect(bar.foos.get('length')).to.eq 1
-        expect(baz.foos.get('length')).to.eq 1
+        expect(bar.foos.length).to.eq 1
+        expect(baz.foos.length).to.eq 1
 
 
   describe 'deep embedded relationship with leaf referencing a model without an inverse', ->
@@ -408,7 +408,7 @@ describe "rest", ->
         id: 3
         campaignStep: step 
 
-      expect(campaign.campaignSteps.get('firstObject')).to.eq(step)
+      expect(campaign.campaignSteps[0]).to.eq(step)
       session = session.newSession()
       campaign = session.add campaign
       campaign.name = 'new name'

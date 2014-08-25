@@ -99,7 +99,7 @@ describe "Session", ->
       comment = session.merge @Comment.create(id: "1", body: "obscurity", post: @Post.create(id: "2"))
       post = session.merge @Post.create(id: "2", comments: [])
       post.comments.addObject(@Comment.create(id: "1", body: "obscurity"))
-      expect(post.comments.get('firstObject')).to.eq(comment)
+      expect(post.comments[0]).to.eq(comment)
 
 
     it 'handles merging detached model with belongsTo child already in session', ->
@@ -111,7 +111,7 @@ describe "Session", ->
     it 'handles merging detached model with lazy belongsTo reference', ->
       post = session.merge @Post.create id: "2", comments: []
       comment = session.merge @Comment.create id: "1", body: "obscurity", post: @Post.create(id: "2")
-      expect(post.comments.get('firstObject')).to.eq(comment)
+      expect(post.comments[0]).to.eq(comment)
       expect(post.isDirty).to.be.false
 
 
@@ -125,7 +125,7 @@ describe "Session", ->
       post = session.merge @Post.create id: "2", comments: []
       comments = post.comments
       session.merge @Post.create id: "2", comments: [@Comment.create(id: "1", post: @Post.create(id: "2"))]
-      expect(comments.get('length')).to.eq(1)
+      expect(comments.length).to.eq(1)
 
 
   describe '.markClean', ->
@@ -214,7 +214,7 @@ describe "Session", ->
           expect(query).to.eql({q: "herpin"})
           Ember.RSVP.resolve([Post.create(id: "1", title: 'herp'), Post.create(id: "2", title: 'derp')])
         session.query('post', {q: "herpin"}).then (models) ->
-          expect(models.get('length')).to.eq(2)
+          expect(models.length).to.eq(2)
 
     describe '.load', ->
 

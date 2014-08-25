@@ -1,7 +1,4 @@
-var get = Ember.get, set = Ember.set;
-
 import Errors from '../model/errors';
-
 
 class RestErrors extends Errors {
   

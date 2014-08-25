@@ -1,5 +1,3 @@
-var get = Ember.get;
-
 /**
   @namespace factory
   @class SerializerFactory
@@ -31,7 +29,7 @@ export default class SerializerFactory {
   }
 
   serializerForType(type) {
-    return this.serializerFor(get(type, 'typeKey'));
+    return this.serializerFor(type.typeKey);
   }
 
   serializerForModel(model) {

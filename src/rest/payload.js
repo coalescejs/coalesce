@@ -1,4 +1,4 @@
-var isArray = Ember.isArray;
+var isArray = Array.isArray;
 
 import ModelSet from '../collections/model_set';
 

@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set, copy = Ember.copy;
-
 import copy from '../utils/copy';
 
 // XXX: fails on FF

@@ -1,6 +1,6 @@
 # Coalesce
 
-[![Build Status](https://travis-ci.org/getoutreach/coalesce.png)](https://travis-ci.org/coalescejs/coalesce)
+[![Build Status](https://travis-ci.org/coalescejs/coalesce.png)](https://travis-ci.org/coalescejs/coalesce)
 
 Coalesce.js is a robust and stable framework for syncing client state with a persistent backend such as a REST API or socket connection. Defining characteristics of coalesce include:
 
@@ -146,7 +146,7 @@ childSession.flush(); // this will flush changes both to the backend and the par
 To build coalesce, follow the instructions below:
 
 * Install [node](http://nodejs.org/).
-* `git clone https://github.com/getoutreach/coalesce`
+* `git clone https://github.com/coalescejs/coalesce`
 * `cd coalesce`
 * `npm install`
 * `npm test` to run the tests via `mocha`

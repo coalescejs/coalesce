@@ -18,15 +18,15 @@ export default function materializeRelationships(models, idManager) {
     // TODO: does this overwrite non-lazy embedded children?
     model.eachLoadedRelationship(function(name, relationship) {
       if(relationship.kind === 'belongsTo') {
-        var child = get(model, name);
+        var child =model[name];
         if(child) {
           if(idManager) idManager.reifyClientId(child);
           child = models.getModel(child) || child;
-          set(model, name, child);
+          model[name] = child;
         }
       } else if(relationship.kind === 'hasMany') {
         // TODO: merge could be per item
-        var children = get(model, name);
+        var children =model[name];
         var lazyChildren = new ModelSet();
         lazyChildren.addObjects(children);
         children.clear();

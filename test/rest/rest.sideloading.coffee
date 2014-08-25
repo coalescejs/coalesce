@@ -24,5 +24,5 @@ describe "rest", ->
 
       session.load('post', 1).then (post) ->
         expect(adapter.h).to.eql(['GET:/posts/1'])
-        expect(post.comments.get('firstObject').body).to.eq('here we')
-        expect(post.comments.get('lastObject').body).to.eq('are')
+        expect(post.comments[0].body).to.eq('here we')
+        expect(post.comments.lastObject.body).to.eq('are')

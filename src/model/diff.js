@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 import Model from './model';
 import ModelSet from '../collections/model_set';
 
@@ -66,7 +64,7 @@ Model.reopen({
             cache.remove(model);
           }
         });
-        if(dirty || get(cache, 'length') > 0) {
+        if(dirty || cache.length > 0) {
           diffs.push({type: 'hasMany', name: name, relationship: relationship});
         }
       }

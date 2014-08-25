@@ -3,23 +3,16 @@
 */
 
 /**
-  All Ember Data methods and functions are defined inside of this namespace.
-
   @class Coalesce
   @static
 */
 
-var Coalesce;
-if ('undefined' === typeof Coalesce) {
-  /**
-    @property VERSION
-    @type String
-    @default '<%= versionStamp %>'
-    @static
-  */
-  Coalesce = Ember.Namespace.create({
-    VERSION: 'VERSION_STRING_PLACEHOLDER'
-  });
+var Coalesce = {
+  VERSION: 'VERSION_STRING_PLACEHOLDER'
 }
+
+Coalesce.Promise = Promise;
+Coalesce.ajax = jQuery.ajax;
+Coalesce.run = Ember.run;
 
 export default Coalesce;

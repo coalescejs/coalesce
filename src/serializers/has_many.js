@@ -1,5 +1,4 @@
-var empty = Ember.isEmpty;
-
+import isEmpty from '../utils/is_empty';
 import Serializer from './base';
 
 /**

@@ -42,8 +42,8 @@ describe "rest", ->
 
       session.remoteCall('post', 'randomize').then (models) ->
           expect(models.length).to.eq(2)
-          expect(models.get('firstObject').title).to.eq('submitted')
-          expect(models.get('firstObject').submitted).to.be.true
+          expect(models[0].title).to.eq('submitted')
+          expect(models[0].submitted).to.be.true
           expect(adapter.h).to.eql(['POST:/posts/randomize'])
 
 
@@ -67,7 +67,7 @@ describe "rest", ->
 
       session.remoteCall('post', 'import').then (posts) ->
         expect(adapter.h).to.eql(['POST:/posts/import'])
-        expect(posts.get('firstObject').id).to.eq("1")
+        expect(posts[0].id).to.eq("1")
 
 
     it 'can accept parameters', ->
@@ -157,7 +157,7 @@ describe "rest", ->
           expect(adapter.h).to.eql(['POST:/posts/1/submit'])
           expect(post.title).to.eq('submitted')
           expect(post.submitted).to.be.true
-          expect(models.get('firstObject')).to.eq(post)
+          expect(models[0]).to.eq(post)
 
 
     it 'returns all models of a type if context is a type', ->
@@ -171,4 +171,4 @@ describe "rest", ->
           expect(adapter.h).to.eql(['POST:/posts/1/submit'])
           expect(post.title).to.eq('submitted')
           expect(post.submitted).to.be.true
-          expect(models.get('firstObject')).to.eq(post)
+          expect(models[0]).to.eq(post)

@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 import BaseClass from '../utils/base_class';
 
 /**
@@ -14,7 +12,7 @@ export default class EmbeddedManager extends BaseClass {
     this.adapter = adapter;
     // bookkeep all the parents of embedded records
     this._parentMap = {};
-    this._cachedIsEmbedded = Ember.Map.create();
+    this._cachedIsEmbedded = new Map();
   }
 
   updateParents(model) {
@@ -25,7 +23,7 @@ export default class EmbeddedManager extends BaseClass {
 
     this.eachEmbeddedRecord(model, function(embedded, kind) {
       this.adapter.reifyClientId(embedded);
-      this._parentMap[get(embedded, 'clientId')] = model;
+      this._parentMap[embedded.clientId] = model;
     }, this);
   }
 
@@ -40,7 +38,7 @@ export default class EmbeddedManager extends BaseClass {
 
     if(result !== undefined) return result;
 
-    var adapter = get(this, 'adapter'),
+    var adapter = this.adapter,
         result = false;
 
     type.eachRelationship(function(name, relationship) {
@@ -75,7 +73,7 @@ export default class EmbeddedManager extends BaseClass {
       if(!model.isFieldLoaded(name)) {
         return;
       }
-      var embeddedRecord = get(model, name);
+      var embeddedRecord =model[name];
       if (embeddedRecord) { callback.call(binding, embeddedRecord, embeddedType); }
     });
   }
@@ -85,8 +83,8 @@ export default class EmbeddedManager extends BaseClass {
       if(!model.isFieldLoaded(name)) {
         return;
       }
-      var array = get(model, name);
-      for (var i=0, l=get(array, 'length'); i<l; i++) {
+      var array =model[name];
+      for (var i=0, l=array.length; i<l; i++) {
         callback.call(binding, array.objectAt(i), embeddedType);
       }
     });
@@ -117,8 +115,8 @@ export default class EmbeddedManager extends BaseClass {
     Traverses the entire embedded graph (including parents)
   */
   eachEmbeddedRelative(model, callback, binding, visited) {
-    if(!visited) visited = new Ember.Set();
-    if(visited.contains(model)) return;
+    if(!visited) visited = new Set();
+    if(visited.has(model)) return;
 
     visited.add(model);
     callback.call(binding, model);

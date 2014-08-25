@@ -1,6 +1,4 @@
-/*global jQuery*/
-var get = Ember.get, set  = Ember.set, forEach = Ember.ArrayPolyfills.forEach;
-
+import Coalesce from '../namespace';
 import Adapter from '../adapter';
 import EmbeddedManager from './embedded_manager';
 import ModelSet from '../collections/model_set';
@@ -16,7 +14,7 @@ import {decamelize, pluralize, camelize} from '../utils/inflector';
 
 /**
   The REST adapter allows your store to communicate with an HTTP server by
-  transmitting JSON via XHR. Most Ember.js apps that consume a JSON API
+  transmitting JSON via XHR. Most Coalesce.js apps that consume a JSON API
   should use the REST adapter.
 
   This adapter is designed around the idea that the JSON exchanged with
@@ -45,7 +43,7 @@ import {decamelize, pluralize, camelize} from '../utils/inflector';
   ### Conventional Names
 
   Attribute names in your JSON payload should be the camelCased versions of
-  the attributes in your Ember.js models.
+  the attributes in your Coalesce.js models.
 
   For example, if you have a `Person` model:
 
@@ -132,9 +130,10 @@ export default class RestAdapter extends Adapter {
   }
   
   _load(model, opts) {
-    opts = Ember.merge({
+    opts = opts || {};
+    _.defaults(opts, {
       type: 'GET'
-    }, opts || {});
+    });
     return this._remoteCall(model, null, null, opts);
   }
 
@@ -143,9 +142,10 @@ export default class RestAdapter extends Adapter {
   }
   
   _update(model, opts) {
-    opts = Ember.merge({
+    opts = opts || {};
+    _.defaults(opts, {
       type: 'PUT'
-    }, opts || {});
+    });
     return this._remoteCall(model, null, model, opts);
   }
   
@@ -162,9 +162,10 @@ export default class RestAdapter extends Adapter {
   }
 
   _deleteModel(model, opts) {
-    opts = Ember.merge({
+    opts = opts || {};
+    _.defaults(opts, {
       type: 'DELETE'
-    }, opts || {});
+    });
     return this._remoteCall(model, null, null, opts);
   }
 
@@ -173,11 +174,12 @@ export default class RestAdapter extends Adapter {
   }
   
   _query(typeKey, query, opts) {
-    opts = Ember.merge({
+    opts = opts || {};
+    _.defaults(opts, {
       type: 'GET',
       serialize: false,
       deserializer: 'payload',
-    }, opts || {});
+    });
     return this._remoteCall(typeKey, null, query, opts);
   }
 
@@ -202,11 +204,12 @@ export default class RestAdapter extends Adapter {
     @param Session [session] the session to merge the results into
   */
   remoteCall(context, name, data, opts, session) {
-    var serialize = data && !!get(data, 'isModel');
-    opts = Ember.merge({
+    var serialize = data && !!data.isModel;
+    opts = opts || {};
+    _.defaults(opts, {
       serialize: serialize,
       deserializer: 'payload'
-    }, opts || {});
+    });
     return this._mergeAndContextualizePromise(this._remoteCall(context, name, data, opts), session, context, opts);
   }
 
@@ -225,7 +228,7 @@ export default class RestAdapter extends Adapter {
     
     if(opts.serialize !== false) {
       var serializer = opts.serializer,
-          serializerOptions = opts.serializerOptions;
+          serializerOptions = opts.serializerOptions || {};
           
       if(!serializer && context) {
         serializer = this.serializerForContext(context);
@@ -233,14 +236,14 @@ export default class RestAdapter extends Adapter {
       
       if(serializer && data) {
         serializer = this.serializerFor(serializer);
-        serializerOptions = Ember.merge({context: context}, serializerOptions || {});
+        serializerOptions = _.defaults(serializerOptions, {context: context});
         data = serializer.serialize(data, serializerOptions);
       }
     }
     
     if(opts.params) {
       data = data || {};
-      data = Ember.merge(data, opts.params);
+      data = _.defaults(data, opts.params);
     }
 
     return this._deserializePromise(this.ajax(url, method, {data: data}), context, opts);
@@ -250,7 +253,7 @@ export default class RestAdapter extends Adapter {
     opts = opts || {};
     // make sure that the context is a typeKey instead of a type
     if(opts.serializerOptions && typeof opts.serializerOptions.context === 'function') {
-      opts.serializerOptions.context = get(opts.serializerOptions.context, 'typeKey');
+      opts.serializerOptions.context = opts.serializerOptions.context.typeKey;
     }
     return opts;
   }
@@ -270,7 +273,7 @@ export default class RestAdapter extends Adapter {
     return promise.then(function(data){
       if(opts.deserialize !== false) {
         var serializer = opts.deserializer || opts.serializer,
-            serializerOptions = opts.serializerOptions;
+            serializerOptions = opts.serializerOptions || {};
         
         if(!serializer && context) {
           serializer = adapter.serializerForContext(context);
@@ -278,7 +281,7 @@ export default class RestAdapter extends Adapter {
         
         if(serializer) {
           serializer = adapter.serializerFor(serializer);
-          serializerOptions = Ember.merge({context: context}, serializerOptions || {});
+          _.defaults(serializerOptions, {context: context});
         }
         
         return serializer.deserialize(data, serializerOptions);
@@ -295,7 +298,7 @@ export default class RestAdapter extends Adapter {
         }
         
         var serializer = opts.errorSerializer || opts.deserializer || opts.serializer,
-            serializerOptions = opts.serializerOptions;
+            serializerOptions = opts.serializerOptions || {};
         
         if(!serializer && context) {
           serializer = adapter.serializerForContext(context);
@@ -303,7 +306,7 @@ export default class RestAdapter extends Adapter {
         
         if(serializer) {
           serializer = adapter.serializerFor(serializer);
-          serializerOptions = Ember.merge({context: context, xhr: xhr}, serializerOptions || {});
+          serializerOptions = _.defaults(serializerOptions, {context: context, xhr: xhr});
         }
             
         throw serializer.deserialize(data, serializerOptions);
@@ -353,18 +356,18 @@ export default class RestAdapter extends Adapter {
 
     function contextualize(merged) {
       // payloads detect their context during deserialization
-      if(context && get(merged, 'isPayload')) {
-        var result = get(merged, 'context');
+      if(context && merged.isPayload) {
+        var result = merged.context;
         // the server might not return any data for the context
         // of the operation (e.g. a delete with an empty response)
         // in this case we just echo back the client's version
         if(!result) {
           result = context;
         }
-        result.meta = get(merged, 'meta');
+        result.meta = merged.meta;
         // TODO: we might want to merge errors here
-        if(get(merged, 'errors') && (!get(result, 'errors') || result === context)) {
-          result.errors = get(merged, 'errors');
+        if(merged.errors && (!result.errors || result === context)) {
+          result.errors = merged.errors;
         }
         return result;
       }
@@ -444,8 +447,8 @@ export default class RestAdapter extends Adapter {
   }
 
   _performFlush(op, session) {
-    var models = get(op, 'models'),
-        pending = Ember.Set.create();
+    var models = op.models,
+        pending = new Set();
     // check for any pending operations
     models.forEach(function(model) {
       var op = this._pendingOps[model.clientId];
@@ -453,8 +456,8 @@ export default class RestAdapter extends Adapter {
     }, this);
 
     var adapter = this;
-    if(get(pending, 'length') > 0) {
-      return Ember.RSVP.all(pending.toArray()).then(function() {
+    if(pending.size > 0) {
+      return Coalesce.Promise.all(Array.from(pending)).then(function() {
         return adapter._performFlush(op, session);
       });
     }
@@ -508,7 +511,7 @@ export default class RestAdapter extends Adapter {
         child.eachLoadedRelationship(function(name, relationship) {
           // TODO: handle hasMany's for non-relational databases...
           if(relationship.kind === 'belongsTo') {
-            var value = get(child, name),
+            var value =child[name],
                 inverse = child.constructor.inverseFor(name);
 
             if(inverse) {
@@ -521,7 +524,7 @@ export default class RestAdapter extends Adapter {
               }
 
               if(inverse.kind === 'hasMany' && parent.isFieldLoaded(inverse.name)) {
-                var parentCollection = get(parent, inverse.name);
+                var parentCollection =parent[inverse.name];
                 if(child.isDeleted) {
                   parentCollection.removeObject(child);
                 } else if(value && value.isEqual(parent)) {
@@ -598,7 +601,7 @@ export default class RestAdapter extends Adapter {
   */
   buildDirtySet(session) {
     var result = new ModelSet()
-    get(session, 'dirtyModels').forEach(function(model) {
+    session.dirtyModels.forEach(function(model) {
       result.add(model.copy());
       // ensure embedded model graphs are part of the set
       this._embeddedManager.eachEmbeddedRelative(model, function(embeddedModel) {
@@ -640,8 +643,8 @@ export default class RestAdapter extends Adapter {
     if(typeof context === 'string') {
       typeKey = context;
     } else {
-      typeKey = get(context, 'typeKey');
-      id = get(context, 'id');
+      typeKey = context.typeKey;
+      id = context.id;
     }
     var url = this.buildUrl(typeKey, id);
     if(action) {
@@ -668,7 +671,7 @@ export default class RestAdapter extends Adapter {
   */
   buildUrl(typeKey, id) {
     var url = [],
-        host = get(this, 'host'),
+        host = this.host,
         prefix = this.urlPrefix();
 
     if (typeKey) { url.push(this.pathForType(typeKey)); }
@@ -690,8 +693,8 @@ export default class RestAdapter extends Adapter {
     @return {String} urlPrefix
   */
   urlPrefix(path, parentURL) {
-    var host = get(this, 'host'),
-        namespace = get(this, 'namespace'),
+    var host = this.host,
+        namespace = this.namespace,
         url = [];
 
     if (path) {
@@ -759,7 +762,7 @@ export default class RestAdapter extends Adapter {
         var error = this._super(jqXHR);
 
         if (jqXHR && jqXHR.status === 422) {
-          var jsonErrors = Ember.$.parseJSON(jqXHR.responseText)["errors"];
+          var jsonErrors = jQuery.parseJSON(jqXHR.responseText)["errors"];
 
           return new Coalesce.InvalidError(jsonErrors);
         } else {
@@ -792,7 +795,7 @@ export default class RestAdapter extends Adapter {
     Takes a URL, an HTTP method and a hash of data, and makes an
     HTTP request.
 
-    When the server responds with a payload, Ember Data will call into `extractSingle`
+    When the server responds with a payload, Coalesce Data will call into `extractSingle`
     or `extractArray` (depending on whether the original query was for one record or
     many records).
 
@@ -815,18 +818,18 @@ export default class RestAdapter extends Adapter {
   ajax(url, type, hash) {
     var adapter = this;
 
-    return new Ember.RSVP.Promise(function(resolve, reject) {
+    return new Coalesce.Promise(function(resolve, reject) {
       hash = adapter.ajaxOptions(url, type, hash);
 
       hash.success = function(json) {
-        Ember.run(null, resolve, json);
+        Coalesce.run(null, resolve, json);
       };
 
       hash.error = function(jqXHR, textStatus, errorThrown) {
-        Ember.run(null, reject, adapter.ajaxError(jqXHR));
+        Coalesce.run(null, reject, adapter.ajaxError(jqXHR));
       };
 
-      Ember.$.ajax(hash);
+      Coalesce.ajax(hash);
     }, "Coalesce: RestAdapter#ajax " + type + " to " + url);
   }
 
@@ -850,10 +853,10 @@ export default class RestAdapter extends Adapter {
       hash.data = JSON.stringify(hash.data);
     }
 
-    var headers = get(this, 'headers');
+    var headers = this.headers;
     if (headers !== undefined) {
       hash.beforeSend = function (xhr) {
-        forEach.call(Ember.keys(headers), function(key) {
+        forEach.call(Object.keys(headers), function(key) {
           xhr.setRequestHeader(key, headers[key]);
         });
       };

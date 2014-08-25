@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 import Serializer from './base';
 import {singularize, camelize, underscore, dasherize} from '../utils/inflector';
 
@@ -89,7 +87,7 @@ export default class ModelSerializer extends Serializer {
     @returns {String} name of the root element
   */
   rootForType(type) {
-    return get(type, 'typeKey');
+    return type.typeKey;
   }
 
   serialize(model) {
@@ -129,7 +127,7 @@ export default class ModelSerializer extends Serializer {
 
   addProperty(serialized, model, name, type, opts) {
     var key = this.keyFor(name, type, opts),
-        value = get(model, name),
+        value =model[name],
         serializer;
 
     if(type) {
@@ -194,7 +192,7 @@ export default class ModelSerializer extends Serializer {
       value = serializer.deserialize(value, opts);
     }
     if(typeof value !== 'undefined') {
-      set(model, name, value);
+      model[name] = value;
     }
   }
 

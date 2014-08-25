@@ -8,7 +8,7 @@
     "test": "testem ci",
     "postinstall": "bower install"
   },
-  "repository": "https://github.com/getoutreach/coalesce.git",
+  "repository": "https://github.com/coalescejs/coalesce.git",
   "keywords": [
     "coalesce",
     "orm",

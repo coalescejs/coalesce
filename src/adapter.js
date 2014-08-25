@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set, merge = Ember.merge;
-
 import Error from './error';
 
 function mustImplement(name) {
@@ -26,7 +24,7 @@ export default class Adapter extends BaseClass {
 
   configFor(type) {
     var configs = this.configs,
-        typeKey = get(type, 'typeKey');
+        typeKey = type.typeKey;
 
     return configs[typeKey] || {};
   }
@@ -66,10 +64,10 @@ export default class Adapter extends BaseClass {
     var serializer = this.serializerFor(typeKey),
         deserialized = serializer.deserialize(data);
 
-    if(get(deserialized, 'isModel')) {
+    if(deserialized.isModel) {
       return this.merge(deserialized, session);
     } else {
-      return Ember.EnumerableUtils.map(deserialized, function(model) {
+      return Array.from(deserialized).map(function(model) {
         return this.merge(model, session);
       }, this);
     }

@@ -214,7 +214,7 @@ describe 'rest serialization', ->
       data = post: [{id: 1, title: 'wat', comments: null}]
       models = @serializer.deserialize(data)
       post = models[0]
-      expect(post.comments.get('length')).to.eq(0)
+      expect(post.comments.length).to.eq(0)
 
 
     it 'deserializes null belongsTo', ->

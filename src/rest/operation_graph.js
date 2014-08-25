@@ -1,6 +1,5 @@
-var get = Ember.get, set = Ember.set;
-
 import Operation from './operation';
+import Coalesce from '../namespace';
 
 export default class OperationGraph {
 
@@ -9,12 +8,7 @@ export default class OperationGraph {
     this.shadows = shadows;
     this.adapter = adapter;
     this.session = session;
-    var graph = this;
-    this.ops = Ember.MapWithDefault.create({
-      defaultValue: function(model) {
-        return new Operation(model, graph, adapter, session);
-      }
-    });
+    this.ops = new Map();
     this.build();
   }
 
@@ -26,8 +20,8 @@ export default class OperationGraph {
       var promise;
 
       // perform after all parents have performed
-      if(op.parents.length > 0) {
-        promise = Ember.RSVP.all(op.parents.toArray()).then(function() {
+      if(op.parents.size > 0) {
+        promise = Coalesce.Promise.all(Array.from(op.parents)).then(function() {
           return op.perform();
         });
       } else {
@@ -43,9 +37,9 @@ export default class OperationGraph {
         throw model;
       });
 
-      if(op.children.length > 0) {
+      if(op.children.size > 0) {
         promise = promise.then(function(model) {
-          return Ember.RSVP.all(op.children.toArray()).then(function(models) {
+          return Coalesce.Promise.all(Array.from(op.children)).then(function(models) {
             adapter.rebuildRelationships(models, model);
             return model;
           }, function(models) {
@@ -58,11 +52,11 @@ export default class OperationGraph {
     }
 
     var promises = [];
-    this.ops.forEach(function(model, op) {
+    this.ops.forEach(function(op, model) {
       promises.push(createNestedPromise(op));
     }); 
 
-    return Ember.RSVP.all(promises).then(function() {
+    return Coalesce.Promise.all(promises).then(function() {
       return cumulative;
     }, function(err) {
       throw cumulative;
@@ -87,10 +81,10 @@ export default class OperationGraph {
 
       console.assert(shadow || model.isNew, "Shadow does not exist for non-new model");
 
-      var op = ops.get(model);
+      var op = this.getOp(model);
       op.shadow = shadow;
 
-      var rels = get(op, 'dirtyRelationships');
+      var rels = op.dirtyRelationships;
       for(var i = 0; i < rels.length; i++) {
         var d = rels[i];
         var name = d.name;
@@ -107,7 +101,7 @@ export default class OperationGraph {
 
       var isEmbedded = adapter.isEmbedded(model);
 
-      if(get(op, 'isDirty') && isEmbedded) {
+      if(op.isDirty && isEmbedded) {
         // walk up the embedded tree and mark root as dirty
         var rootModel = adapter.findEmbeddedRoot(model, models);
         var rootOp = this.getOp(rootModel);
@@ -142,7 +136,12 @@ export default class OperationGraph {
     // solution needs to be figured out for dealing with operations
     // on lazy models
     if(materializedModel) model = materializedModel;
-    return this.ops.get(model);
+    var op = this.ops.get(model);
+    if(!op) {
+      op = new Operation(model, this, this.adapter, this.session);
+      this.ops.set(model, op);
+    }
+    return op;
   }
 
 }

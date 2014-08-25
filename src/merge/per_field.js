@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 import Base from './base';
 import ModelSet from '../collections/model_set';
 import isEqual from '../utils/is_equal';
@@ -34,7 +32,7 @@ export default class PerField extends Base {
   }
 
   mergeRelationships(ours, ancestor, theirs) {
-    var session = get(this, 'session');
+    var session = this.session;
     ours.eachRelationship(function(name, relationship) {
       if(relationship.kind === 'belongsTo') {
         this.mergeBelongsTo(ours, ancestor, theirs, name);
@@ -53,13 +51,13 @@ export default class PerField extends Base {
   }
 
   mergeProperty(ours, ancestor, theirs, name) {
-    var oursValue = get(ours, name),
-        ancestorValue = get(ancestor, name),
-        theirsValue = get(theirs, name);
+    var oursValue = ours[name],
+        ancestorValue = ancestor[name],
+        theirsValue = theirs[name];
 
     if(!ours.isFieldLoaded(name)) {
       if(theirs.isFieldLoaded(name)) {
-        set(ours, name, copy(theirsValue));
+        ours[name] = copy(theirsValue);
       }
       return;
     }
@@ -69,7 +67,7 @@ export default class PerField extends Base {
     // if the ancestor does not have the property loaded we are
     // performing a two-way merge and we just pick theirs
     if(!ancestor.isFieldLoaded(name) || isEqual(oursValue, ancestorValue)) {
-      set(ours, name, copy(theirsValue));
+      ours[name] = copy(theirsValue);
     } else {
       // NO-OP
     }

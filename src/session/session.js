@@ -3,16 +3,11 @@ import ModelSet from '../collections/model_set';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
-import ModelPromise from '../model/promise';
 import Cache from './cache';
 import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
 import copy from '../utils/copy';
 import Error from '../error';
-
-var get = Ember.get, set = Ember.set;
-
-var PromiseArray = Ember.ArrayProxy.extend(Ember.PromiseProxyMixin);
 
 var uuid = 1;
 
@@ -178,7 +173,7 @@ export default class Session {
     // handle deletion
     if(model.isDeleted) {
       // no-op if already deleted
-      if(!get(dest, 'isDeleted')) {
+      if(!dest.isDeleted) {
         this.deleteModel(dest);
       }
       return dest;
@@ -189,13 +184,13 @@ export default class Session {
 
     model.eachLoadedRelationship(function(name, relationship) {
       if(relationship.kind === 'belongsTo') {
-        var child = get(model, name);
+        var child = model[name]
         if(child) {
-          set(dest, name, child);
+          dest[name] = child;
         }
       } else if(relationship.kind === 'hasMany') {
-        var children = get(model, name);
-        var destChildren = get(dest, name);
+        var children = model[name];
+        var destChildren = dest[name];
         children.copyTo(destChildren);
       }
     }, this);
@@ -270,16 +265,11 @@ export default class Session {
       this.cache.addPromise(model, promise);
     }
 
-    promise = ModelPromise.create({
-      content: model,
-      promise: promise
-    });
-
     return promise;
   }
 
   find(type, query, opts) {
-    if (Ember.typeOf(query) === 'object') {
+    if (typeof query === 'object') {
       return this.query(type, query, opts);
     }
     return this.load(type, query, opts);
@@ -288,10 +278,8 @@ export default class Session {
   query(type, query, opts) {
     type = this.typeFor(type);
     var typeKey = type.typeKey;
-    // TODO: return a model array immediately here
-    // and also take into account errors
-    var prom = this.adapter.query(typeKey, query, opts, this);
-    return PromiseArray.create({promise:prom});
+    var promise = this.adapter.query(typeKey, query, opts, this);
+    return promise;
   }
 
   refresh(model, opts) {
@@ -373,7 +361,7 @@ export default class Session {
     var session = this;
 
     if(opts && opts.deserializationContext && typeof opts.deserializationContext !== 'string') {
-      opts.deserializationContext = get(opts.deserializationContext, 'typeKey');
+      opts.deserializationContext = opts.deserializationContext.typeKey;
     }
 
     return this.adapter.remoteCall(context, name, params, opts, this);
@@ -621,7 +609,7 @@ export default class Session {
     // Since we re-use objects during merge if they are detached,
     // we need to precompute all detached children
     model.eachChild(function(child) {
-      if(get(child, 'isDetached')) {
+      if(child.isDetached) {
         detachedChildren.push(child);
       }
     }, this);
@@ -687,7 +675,7 @@ export default class Session {
     if(hasClientChanges) {
       // after merging, if the record is deleted, we remove
       // it entirely from the session
-      if(get(merged, 'isDeleted')) {
+      if(merged.isDeleted) {
         this.remove(merged);
       } else {
         // After a successful merge we update the shadow to the
@@ -702,7 +690,7 @@ export default class Session {
         // is no longer needed
         originals.remove(model);
 
-        if(!get(merged, 'isNew')) {
+        if(!merged.isNew) {
           newModels.remove(merged);
         }
       }
@@ -819,13 +807,13 @@ export default class Session {
   }
 
   _containsRev(modelA, modelB) {
-    if(!get(modelA, 'rev')) return false;
-    if(!get(modelB, 'rev')) return false;
-    return get(modelA, 'rev') >= get(modelB, 'rev');
+    if(!modelA.rev) return false;
+    if(!modelB.rev) return false;
+    return modelA.rev >= modelB.rev;
   }
 
   _containsClientRev(modelA, modelB) {
-    return get(modelA, 'clientRev') >= get(modelB, 'clientRev');
+    return modelA.clientRev >= modelB.clientRev;
   }
   
   toString() {

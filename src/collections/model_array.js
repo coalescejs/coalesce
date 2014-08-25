@@ -1,6 +1,7 @@
 import ObservableArray from './observable_array';
 import ModelSet from './model_set';
 import isEqual from '../utils/is_equal';
+import Coalesce from '../namespace';
 
 export default class ModelArray extends ObservableArray {
   
@@ -98,7 +99,7 @@ export default class ModelArray extends ObservableArray {
 
   load() {
     var array = this;
-    return Ember.RSVP.all(this.map(function(model) {
+    return Coalesce.Promise.all(this.map(function(model) {
       return model.load();
     })).then(function() {
       return array;

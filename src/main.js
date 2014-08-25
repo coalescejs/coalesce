@@ -16,7 +16,6 @@ import PerField from './merge/per_field';
 import Model from './model/model';
 import './model/diff';
 import Errors from './model/errors';
-import ModelPromise from './model/promise';
 
 import RestErrorsSerializer from './rest/serializers/errors';
 import PayloadSerializer from './rest/serializers/payload';
@@ -61,8 +60,6 @@ Coalesce.PerField = PerField;
 
 Coalesce.Model = Model;
 Coalesce.Errors = Errors;
-
-Coalesce.ModelPromise = ModelPromise;
 
 Coalesce.RestErrorsSerializer = RestErrorsSerializer;
 Coalesce.PayloadSerializer = PayloadSerializer;

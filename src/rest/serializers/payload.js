@@ -13,7 +13,7 @@ export default class PayloadSerializer extends Serializer {
 
   typeKeyFor(name) {
     var singular = this.singularize(name),
-        aliases = get(this, 'aliases'),
+        aliases = this.aliases,
         alias = aliases[name];
     return alias || singular;
   }
@@ -38,8 +38,8 @@ export default class PayloadSerializer extends Serializer {
   deserialize(hash, opts) {
     opts = opts || {};
     var result = new Payload(),
-        metaKey = get(this, 'metaKey'),
-        errorsKey = get(this, 'errorsKey'),
+        metaKey = this.metaKey,
+        errorsKey = this.errorsKey,
         context = opts.context,
         xhr = opts.xhr;
 
@@ -57,7 +57,7 @@ export default class PayloadSerializer extends Serializer {
         if(typeof context === 'string' && typeKey === context) {
           // context is a typeKey (e.g. for a query)
           result.context.push(model);
-        } else if(get(context, 'isModel') && context.isEqual(model)) {
+        } else if(context.isModel && context.isEqual(model)) {
           // context is a model
           result.context = model;
         }
@@ -102,7 +102,7 @@ export default class PayloadSerializer extends Serializer {
     // failed. Right now we just check the existence of an
     // xhr object (which is only set on error).
     if(xhr) {
-      var errors = get(result, 'errors');
+      var errors = result.errors;
       if(!errors) {
         var serializer = this.serializerFor('errors'),
             errors = serializer.deserialize({}, opts);
@@ -110,7 +110,7 @@ export default class PayloadSerializer extends Serializer {
       }
     }
 
-    materializeRelationships(result, get(this, 'idManager'));
+    materializeRelationships(result, this.idManager);
 
     return result;
   }

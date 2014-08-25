@@ -1,3 +1,5 @@
+import Coalesce from '../namespace';
+
 /**
   @private
   An operation that is part of a flush
@@ -13,9 +15,9 @@ export default class Operation {
     this.session = session;
     // forces the operation to be performed
     this.force = false
-    this.children = Ember.Set.create();
-    this.parents = Ember.Set.create();
-    this._deferred = Ember.RSVP.defer();
+    this.children = new Set();
+    this.parents = new Set();
+    this._deferred = Coalesce.Promise.defer();
   }
 
   then(...args) {
@@ -103,7 +105,7 @@ export default class Operation {
         promise = this._promiseFromEmbeddedParent();
       } else {
         // return an "identity" promise if we don't want to do anything
-        promise = Ember.RSVP.resolve();
+        promise = Coalesce.Promise.resolve();
       }
     } else if(dirtyType === "created") {
       promise = adapter._contextualizePromise(adapter._create(model), model);
