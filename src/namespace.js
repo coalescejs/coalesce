@@ -1,3 +1,6 @@
+import Backburner from 'backburner';
+Backburner = Backburner.Backburner;
+
 /**
   @module coalesce
 */
@@ -8,11 +11,10 @@
 */
 
 var Coalesce = {
-  VERSION: 'VERSION_STRING_PLACEHOLDER'
+  VERSION: 'VERSION_STRING_PLACEHOLDER',
+  Promise: Promise,
+  ajax: jQuery.ajax,
+  run: new Backburner(['actions'])
 }
-
-Coalesce.Promise = Promise;
-Coalesce.ajax = jQuery.ajax;
-Coalesce.run = Ember.run;
 
 export default Coalesce;

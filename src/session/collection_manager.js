@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 /**
   Handles tracking deleted models and removing from collections.
 
@@ -17,7 +15,7 @@ export default class CollectionManager {
     if(!arrays) {
       arrays = this.modelMap[clientId] = [];
     }
-    if(arrays.contains(array)) return;
+    if(arrays.indexOf(array) !== -1) return;
     arrays.push(array);
   }
 

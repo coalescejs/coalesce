@@ -1,5 +1,3 @@
-var get = Ember.get, set = Ember.set;
-
 import materializeRelationships from '../../utils/materialize_relationships';
 import Serializer from '../../serializers/base';
 import Payload from '../payload';
@@ -85,7 +83,7 @@ export default class PayloadSerializer extends Serializer {
 
       var typeKey = this.typeKeyFor(prop),
           serializer = this.serializerFor(typeKey);
-      if (Ember.isArray(value)) {
+      if (Array.isArray(value)) {
         for (var i=0; i < value.length; i++) {
           var model = serializer.deserialize(value[i]);
           checkForContext(model);

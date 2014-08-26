@@ -53,7 +53,7 @@ describe 'Model', ->
     session.find = (type, id) ->
       expect(type).to.eq(User)
       expect(id).to.eq(1)
-      Ember.RSVP.resolve(new type(id: id.toString()))
+      Coalesce.Promise.resolve(new type(id: id.toString()))
 
     @User.find(1).then (user) ->
       expect(user.id).to.eq("1")
@@ -61,13 +61,13 @@ describe 'Model', ->
   describe 'typeKey class var', ->
     xit 'works with global Ember', ->
       class App.SomeThing extends Coalesce.Model
-      typeKey = Ember.get(App.SomeThing, 'typeKey')
+      typeKey = App.SomeThing.typeKey
       expect(typeKey).to.eq('some_thing')
 
     xit 'works with modular Ember', ->
       class SomeThing extends Coalesce.Model
       SomeThing._toString = "my-app@model:some-thing:"
-      typeKey = Ember.get(SomeThing, 'typeKey')
+      typeKey = Something.typeKey
       expect(typeKey).to.eq('some_thing')
 
   describe '.diff', ->

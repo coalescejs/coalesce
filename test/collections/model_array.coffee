@@ -51,7 +51,7 @@ describe 'ModelArray', ->
       @Post.reopen
         load: ->
           @loadCalled = true
-          Ember.RSVP.resolve(@)
+          Coalesce.Promise.resolve(@)
       array.pushObject(@Post.create(id: "1"))
       array.pushObject(@Post.create(id: "2"))
 

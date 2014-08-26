@@ -1,4 +1,5 @@
 import RestAdapter from 'coalesce/rest/rest_adapter';
+import Coalesce from 'coalesce';
 
 export default class TestRestAdapter extends RestAdapter {
   constructor() {
@@ -9,7 +10,7 @@ export default class TestRestAdapter extends RestAdapter {
 
   ajax(url, type, hash) {
     var adapter = this;
-    return new Ember.RSVP.Promise(function(resolve, reject) {
+    return new Coalesce.Promise(function(resolve, reject) {
       var key = type + ":" + url;
       adapter.h.push(key);
       var json = adapter.r[key];
@@ -27,7 +28,7 @@ export default class TestRestAdapter extends RestAdapter {
   }
 
   runLater(callback) {
-    Ember.run.later(callback, 0);
+    Coalesce.run.later(callback, 0);
   }
 
 }

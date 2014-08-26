@@ -2,6 +2,7 @@
 `import {postWithComments, groupWithMembersWithUsers} from '../support/schemas'`
 `import Model from 'coalesce/model/model'`
 `import ModelSerializer from 'coalesce/serializers/model'`
+`import Coalesce from 'coalesce'`
 
 describe "rest", ->
 
@@ -348,7 +349,7 @@ describe "rest", ->
       # Don't have the requests run at the same time
       adapter.runLater = (callback) ->
         calls++
-        Ember.run.later callback, calls * 100
+        Coalesce.run.later callback, calls * 100
 
       campaign = session.merge @session.build('campaign', id: 1, campaignSteps:[])
 

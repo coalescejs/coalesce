@@ -584,7 +584,7 @@ export default class Session {
 
     @method merge
     @param {Coalesce.Model} model The model to merge
-    @param {Ember.Set} [visited] Cache used to break recursion. This is required for non-version-aware backends.
+    @param {Set} [visited] Cache used to break recursion. This is required for non-version-aware backends.
   */
   merge(model, visited) {
     if(this.parent) {
@@ -593,9 +593,9 @@ export default class Session {
 
     this.reifyClientId(model);
 
-    if(!visited) visited = new Ember.Set();
+    if(!visited) visited = new Set();
 
-    if(visited.contains(model)) {
+    if(visited.has(model)) {
       return this.getModel(model);
     }
     visited.add(model);
@@ -636,7 +636,9 @@ export default class Session {
   }
 
   mergeModels(models) {
-    var merged = ModelArray.create({session: this, content: []});
+    var merged = new ModelArray();
+    merged.session = this;
+    merged.addObjects(models);
     merged.meta = models.meta;
     var session = this;
     models.forEach(function(model) {

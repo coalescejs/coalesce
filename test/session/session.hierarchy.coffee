@@ -1,11 +1,11 @@
 `import {postWithComments} from '../support/schemas'`
+`import Container from 'coalesce/container'`
 
 describe "Session", ->
 
   beforeEach ->
-    @App = Ember.Namespace.create()
-    @container = new Ember.Container()
-    Coalesce.setupContainer(@container)
+    @App = {}
+    @container = new Container()
     Coalesce.__container__ = @container
     @container.register('adapter:main', Coalesce.RestAdapter)
 
@@ -14,10 +14,10 @@ describe "Session", ->
     @adapter = @container.lookup('adapter:main')
     @container = @adapter.container
 
-    @adapter.load = (model) -> Ember.RSVP.resolve(model)
+    @adapter.load = (model) -> Coalesce.Promise.resolve(model)
     @adapter.flush = (session) ->
       models = session.dirtyModels
-      Ember.RSVP.resolve(models.copy(true)).then (models) ->
+      Coalesce.Promise.resolve(models.copy(true)).then (models) ->
         models.forEach (model) -> session.merge(model)
 
 
@@ -46,7 +46,7 @@ describe "Session", ->
         postB = post
         postB.title = "b was here"
 
-      Ember.RSVP.all([pA, pB]).then ->
+      Coalesce.Promise.all([pA, pB]).then ->
         expect(postA.title).to.eq("a was here")
         expect(postB.title).to.eq("b was here")
 

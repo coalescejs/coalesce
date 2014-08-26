@@ -3,7 +3,7 @@ import ModelSerializer from 'coalesce/serializers/model';
 // Common model setups for tests
 
 function postWithComments() {
-  this.App = Ember.Namespace.create();
+  this.App = {};
   class Post extends Coalesce.Model {}
   Post.defineSchema({
     typeKey: 'post',
@@ -44,7 +44,7 @@ function postWithEmbeddedComments() {
 }
 
 function userWithPost() {
-  this.App = Ember.Namespace.create();
+  this.App = {};
   class Post extends Model {}
   Post.defineSchema({
     typeKey: 'post',

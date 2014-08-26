@@ -1,4 +1,5 @@
 `import setup from './_shared'`
+`import Coalesce from 'coalesce'`
 
 describe "rest", ->
 
@@ -32,7 +33,7 @@ describe "rest", ->
       f1 = session.flush()
       post.title = 'update2'
       f2 = session.flush()
-      Ember.RSVP.all([f1, f2]).then ->
+      Coalesce.Promise.all([f1, f2]).then ->
         expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
         expect(post.title).to.eq('update2')
 
@@ -46,7 +47,7 @@ describe "rest", ->
         else
           10
         calls++
-        Ember.run.later callback, delay
+        Coalesce.run.later callback, delay
 
       adapter.r['PUT:/posts/1'] = (url, type, hash) ->
         posts: {id: 1, title: hash.data.post.title, submitted: "true"}
@@ -55,7 +56,7 @@ describe "rest", ->
       f1 = session.flush()
       post.title = 'update2'
       f2 = session.flush()
-      Ember.RSVP.all([f1, f2]).then ->
+      Coalesce.Promise.all([f1, f2]).then ->
         expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
         expect(post.title).to.eq('update2')
 
@@ -69,7 +70,7 @@ describe "rest", ->
         else
           10
         calls++
-        Ember.run.later callback, delay
+        Coalesce.run.later callback, delay
 
       adapter.r['PUT:/posts/1'] = (url, type, hash) ->
         posts: {id: 1, title: hash.data.post.title, submitted: "true"}
@@ -80,7 +81,7 @@ describe "rest", ->
       f2 = session.flush()
       post.title = 'update3'
       f3 = session.flush()
-      Ember.RSVP.all([f1, f2, f3]).then ->
+      Coalesce.Promise.all([f1, f2, f3]).then ->
         expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1', 'PUT:/posts/1'])
         expect(post.title).to.eq('update3')
 
@@ -94,7 +95,7 @@ describe "rest", ->
         else
           10
         calls++
-        Ember.run.later callback, delay
+        Coalesce.run.later callback, delay
 
       adapter.r['PUT:/posts/1'] = (url, type, hash) ->
         if hash.data.post.title == 'update1'

@@ -11,7 +11,7 @@ setup = ->
       @r = {}
     ajax: (url, type, hash) ->
       adapter = @
-      new Ember.RSVP.Promise (resolve, reject) ->
+      new Coalesce.Promise.Promise (resolve, reject) ->
         key = type + ":" + url
         adapter.h.push(key)
         json = adapter.r[key]
@@ -21,9 +21,9 @@ setup = ->
         adapter.runLater ( -> resolve(json) ), 0
 
     runLater: (callback) ->
-      Ember.run.later callback, 0
+      Coalesce.run.later callback, 0
 
-  @App = Ember.Namespace.create()
+  @App = {}
   @container = new Container()
 
   # TestAdapter already is a subclass

@@ -1,4 +1,4 @@
-var get = Ember.get, set = Ember.set;
+import Coalesce from '../namespace';
 
 /**
   Maintains a cache of model-related promises
@@ -15,7 +15,7 @@ export default class Cache {
     // for now we only add the model if some attributes are loaded,
     // eventually this will be on a per-attribute basis
     if(model.anyFieldsLoaded) {
-      this.addPromise(model, Ember.RSVP.resolve());
+      this.addPromise(model, Coalesce.Promise.resolve());
     }
   }
 

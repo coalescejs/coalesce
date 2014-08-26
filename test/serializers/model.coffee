@@ -1,4 +1,5 @@
 `import Model from 'coalesce/model/model'`
+`import Container from 'coalesce/container'`
 
 describe 'ModelSerializer', ->
 
@@ -7,7 +8,7 @@ describe 'ModelSerializer', ->
   serializer = null
 
   beforeEach ->
-    App = Ember.Namespace.create()
+    App = {}
     `class User extends Model {}`
     User.defineSchema
       typeKey: 'user'
@@ -19,8 +20,7 @@ describe 'ModelSerializer', ->
     App.UserSerializer = Coalesce.ModelSerializer.extend
       typeKey: 'user'
 
-    @container = new Ember.Container()
-    Coalesce.setupContainer(@container)
+    @container = new Container()
     @container.register 'model:user', App.User
     @container.register 'serializer:user', App.UserSerializer
     session = @container.lookup('session:main')

@@ -1,9 +1,9 @@
 `import TestRestAdapter from './_test_adapter'`
+`import Container from 'coalesce/container'`
 
 setup = ->
-  @App = Ember.Namespace.create()
-  @container = new Ember.Container()
-  Coalesce.setupContainer(@container)
+  @App = {}
+  @container = new Container()
 
   # TestAdapter already is a subclass
   @RestAdapter = TestRestAdapter.extend()

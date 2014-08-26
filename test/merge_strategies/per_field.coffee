@@ -8,7 +8,7 @@ describe 'PerField', ->
   App = null
 
   beforeEach ->
-    App = Ember.Namespace.create()
+    App = {}
     @container = new Container()
     Coalesce.__container__ = @container
 

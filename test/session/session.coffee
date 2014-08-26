@@ -1,6 +1,7 @@
 `import Model from 'coalesce/model/model'`
 `import ModelSerializer from 'coalesce/serializers/model'`
 `import {postWithComments} from '../support/schemas'`
+`import Container from 'coalesce/container'`
 
 describe "Session", ->
 
@@ -8,9 +9,8 @@ describe "Session", ->
   adapter = null
 
   beforeEach ->
-    @App = Ember.Namespace.create()
-    @container = new Ember.Container()
-    Coalesce.setupContainer(@container)
+    @App = {}
+    @container = new Container()
     Coalesce.__container__ = @container
 
     postWithComments.apply(this)
@@ -81,7 +81,7 @@ describe "Session", ->
       adapter.load = (model) ->
         expect(model).to.eq(post)
         hit = true
-        Ember.RSVP.resolve(model)
+        Coalesce.Promise.resolve(model)
       post.load()
       expect(hit).to.be.false
       session.invalidate(post)
@@ -157,7 +157,7 @@ describe "Session", ->
     beforeEach ->
       adapter.flush = (session) ->
         models = session.dirtyModels
-        Ember.RSVP.resolve(models.copy(true)).then (models) ->
+        Coalesce.Promise.resolve(models.copy(true)).then (models) ->
           models.forEach (model) -> session.merge(model)
 
     it 'can update while flush is pending', ->
@@ -212,7 +212,7 @@ describe "Session", ->
       it 'queries', ->
         adapter.query = (type, query) ->
           expect(query).to.eql({q: "herpin"})
-          Ember.RSVP.resolve([Post.create(id: "1", title: 'herp'), Post.create(id: "2", title: 'derp')])
+          Coalesce.Promise.resolve([Post.create(id: "1", title: 'herp'), Post.create(id: "2", title: 'derp')])
         session.query('post', {q: "herpin"}).then (models) ->
           expect(models.length).to.eq(2)
 

@@ -78,6 +78,7 @@ var devDist = (function() {
       'bundle.js', // jsondiffpatch dist
       'loader.js',
       'traceur-runtime.js',
+      'backburner.amd.js',
       'coalesce-modules.js',
       'bootstrap',
       'iife-stop'
