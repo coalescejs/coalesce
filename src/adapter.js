@@ -1,14 +1,8 @@
 import Error from './error';
-
-function mustImplement(name) {
-  return function() {
-    throw new Error("Your adapter " + this.toString() + " does not implement the required method " + name);
-  };
-}
-
 import BaseClass from './utils/base_class';
 import SerializerFactory from './factories/serializer';
 import Session from './session/session';
+import array_from from './utils/array_from';
 
 export default class Adapter extends BaseClass {
 
@@ -67,7 +61,7 @@ export default class Adapter extends BaseClass {
     if(deserialized.isModel) {
       return this.merge(deserialized, session);
     } else {
-      return Array.from(deserialized).map(function(model) {
+      return array_from(deserialized).map(function(model) {
         return this.merge(model, session);
       }, this);
     }
@@ -86,6 +80,12 @@ export default class Adapter extends BaseClass {
     this.idManager.reifyClientId(model);
   }
 
+}
+
+function mustImplement(name) {
+  return function() {
+    throw new Error("Your adapter " + this.toString() + " does not implement the required method " + name);
+  };
 }
 
 Adapter.reopen({

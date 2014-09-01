@@ -40,8 +40,8 @@ describe "rest", ->
           session.flush().then null, ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('')
-            expect(post.errors.get('title')).to.eq('is too short')
-            expect(post.errors.get('createdAt')).to.eq('cannot be in the past')
+            expect(post.errors.title).to.eq('is too short')
+            expect(post.errors.createdAt).to.eq('cannot be in the past')
             expect(adapter.h).to.eql(['PUT:/posts/1'])
             
       it 'overwrites existing errors when error-only payload returned', ->
@@ -51,11 +51,11 @@ describe "rest", ->
         post = session.merge @Post.create(id: "1", title: 'test')
         post.title = ''
         post.errors = new Errors(title: 'is not good')
-        expect(post.errors.get('title')).to.eq('is not good')
+        expect(post.errors.title).to.eq('is not good')
         session.flush().then null, ->
           expect(post.hasErrors).to.be.true
           expect(post.title).to.eq('')
-          expect(post.errors.get('title')).to.eq('is too short')
+          expect(post.errors.title).to.eq('is too short')
           expect(adapter.h).to.eql(['PUT:/posts/1'])
 
       it 'handles payload with error properties', ->
@@ -69,7 +69,7 @@ describe "rest", ->
           session.flush().then null, ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('')
-            expect(post.errors.get('title')).to.eq('is too short')
+            expect(post.errors.title).to.eq('is too short')
             expect(adapter.h).to.eql(['PUT:/posts/1'])
 
       it 'merges payload with error properties and higher rev', ->
@@ -84,7 +84,7 @@ describe "rest", ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('')
             expect(post.category).to.eq('new')
-            expect(post.errors.get('title')).to.eq('is too short')
+            expect(post.errors.title).to.eq('is too short')
             expect(adapter.h).to.eql(['PUT:/posts/1'])
 
       it 'merges payload with error and latest client changes against latest client version', ->
@@ -121,7 +121,7 @@ describe "rest", ->
 
         post = session.create 'post', title: 'errorz'
         session.flush().then null, ->
-          expect(post.errors.get('title')).to.eq('is lamerz')
+          expect(post.errors.title).to.eq('is lamerz')
 
       it 'merges payload with latest client changes against latest client version', ->
         adapter.r['POST:/posts'] = (url, type, hash) ->
@@ -137,7 +137,7 @@ describe "rest", ->
 
         post = session.create 'post', title: 'errorz'
         session.flush().then null, ->
-          expect(post.errors.get('title')).to.eq('is lamerz')
+          expect(post.errors.title).to.eq('is lamerz')
           adapter.r['POST:/posts'] = (url, type, hash) ->
             post: {title: 'linkbait', id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
           session.title = 'linkbait'
@@ -152,7 +152,7 @@ describe "rest", ->
         post = session.create 'post', title: 'errorz'
         session.flush().then null, ->
           expect(post.title).to.eq('Something')
-          expect(post.errors.get('title')).to.eq('is lamerz')
+          expect(post.errors.title).to.eq('is lamerz')
           adapter.r['POST:/posts'] = (url, type, hash) ->
             post: {title: 'linkbait', id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
           session.title = 'linkbait'
@@ -180,7 +180,7 @@ describe "rest", ->
           session = session.newSession()
           post = session.create 'post', title: 'errorz'
           session.flush().then null, ->
-            expect(post.errors.get('title')).to.eq('is lamerz')
+            expect(post.errors.title).to.eq('is lamerz')
             adapter.r['POST:/posts'] = (url, type, hash) ->
               post: {title: 'linkbait', id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
             session.title = 'linkbait'

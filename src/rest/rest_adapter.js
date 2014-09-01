@@ -3,7 +3,6 @@ import Adapter from '../adapter';
 import EmbeddedManager from './embedded_manager';
 import ModelSet from '../collections/model_set';
 import OperationGraph from './operation_graph';
-import RestErrors from './rest_errors';
 import PayloadSerializer from './serializers/payload';
 import RestErrorsSerializer from './serializers/errors';
 import SerializerFactory from '../factories/serializer';
@@ -11,6 +10,7 @@ import SerializerFactory from '../factories/serializer';
 import materializeRelationships from '../utils/materialize_relationships';
 
 import {decamelize, pluralize, camelize} from '../utils/inflector';
+import array_from from '../utils/array_from';
 
 /**
   The REST adapter allows your store to communicate with an HTTP server by
@@ -424,7 +424,7 @@ export default class RestAdapter extends Adapter {
     // take a snapshot of the models and their shadows
     // (these will be updated by the session before the flush is complete)
     var models = this.buildDirtySet(session);
-    var shadows = new ModelSet(Array.from(models).map(function(model) {
+    var shadows = new ModelSet(array_from(models).map(function(model) {
       // shadows are already frozen copies so no need to re-copy
       return session.shadows.getModel(model) || model.copy();
     }));
@@ -457,7 +457,7 @@ export default class RestAdapter extends Adapter {
 
     var adapter = this;
     if(pending.size > 0) {
-      return Coalesce.Promise.all(Array.from(pending)).then(function() {
+      return Coalesce.Promise.all(array_from(pending)).then(function() {
         return adapter._performFlush(op, session);
       });
     }

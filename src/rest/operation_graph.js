@@ -1,5 +1,6 @@
 import Operation from './operation';
 import Coalesce from '../namespace';
+import array_from from '../utils/array_from';
 
 export default class OperationGraph {
 
@@ -21,7 +22,7 @@ export default class OperationGraph {
 
       // perform after all parents have performed
       if(op.parents.size > 0) {
-        promise = Coalesce.Promise.all(Array.from(op.parents)).then(function() {
+        promise = Coalesce.Promise.all(array_from(op.parents)).then(function() {
           return op.perform();
         });
       } else {
@@ -39,7 +40,7 @@ export default class OperationGraph {
 
       if(op.children.size > 0) {
         promise = promise.then(function(model) {
-          return Coalesce.Promise.all(Array.from(op.children)).then(function(models) {
+          return Coalesce.Promise.all(array_from(op.children)).then(function(models) {
             adapter.rebuildRelationships(models, model);
             return model;
           }, function(models) {

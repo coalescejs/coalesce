@@ -1,4 +1,3 @@
-import RestErrors from '../rest_errors';
 import Serializer from '../../serializers/base';
 import Error from '../../error';
 import {camelize} from '../../utils/inflector';
@@ -11,15 +10,12 @@ export default class ErrorsSerializer extends Serializer {
     
     if(!xhr && (isEmpty(serialized) || isEmptyObject(serialized))) return;
     
-    var content = {};
-    for(var key in serialized) {
-      content[this.transformPropertyKey(key)] = serialized[key];
-    }
+    var Type = this.container.lookupFactory('model:errors');
+    var res = Type.create();
     
-    // XXX: clean up rest errors class
-    var res = new RestErrors({
-      content: content
-    });
+    for(var key in serialized) {
+      res[this.transformPropertyKey(key)] = serialized[key];
+    }
     
     if(xhr) {
       res.status = xhr.status;

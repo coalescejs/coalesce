@@ -8,6 +8,7 @@ import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
 import copy from '../utils/copy';
 import Error from '../error';
+import array_from from '../utils/array_from';
 
 var uuid = 1;
 
@@ -386,7 +387,7 @@ export default class Session {
   }
 
   get dirtyModels() {
-    var models = new ModelSet(Array.from(this.shadows).map(function(model) {
+    var models = new ModelSet(array_from(this.shadows).map(function(model) {
       return this.models.getModel(model);
     }, this));
 

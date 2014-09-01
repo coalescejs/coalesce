@@ -1,6 +1,7 @@
 var isArray = Array.isArray;
 
 import ModelSet from '../collections/model_set';
+import array_from from '../utils/array_from';
 
 class Payload extends ModelSet {
 
@@ -12,7 +13,7 @@ class Payload extends ModelSet {
   }
   
   merge(session) {
-    var merged = Array.from(this).map(function(model) {
+    var merged = array_from(this).map(function(model) {
       return session.merge(model);
     }, this);
     var context = this.context;

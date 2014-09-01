@@ -149,7 +149,9 @@ describe "rest", ->
         expect(post.comments.toArray()).to.eql([comment, sibling])
         session.flush().then ->
           expect(post.comments.toArray()).to.eql([comment, sibling])
-          expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/comments/2', 'POST:/comments'])
+          expect(adapter.h[0]).to.eq('PUT:/posts/1')
+          expect(adapter.h).to.include('PUT:/comments/2')
+          expect(adapter.h).to.include('POST:/comments')
 
 
     it 'updates with unloaded child', ->
@@ -214,7 +216,9 @@ describe "rest", ->
         expect(post.comments.length).to.eq(0)
         session.deleteModel(post)
         session.flush().then ->
-          expect(adapter.h).to.eql(['DELETE:/comments/2', 'DELETE:/posts/1'])
+          expect(adapter.h.length).to.eq(2)
+          expect(adapter.h).to.include('DELETE:/comments/2')
+          expect(adapter.h).to.include('DELETE:/posts/1')
           expect(post.isDeleted).to.be.true
           expect(comment.isDeleted).to.be.true
 

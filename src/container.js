@@ -18,7 +18,10 @@ import PerField from './merge/per_field';
 
 import RestAdapter from './rest/rest_adapter';
 
+import Errors from './model/errors';
+
 function setupContainer(container) {
+  container.register('model:errors', Errors);
   setupSession(container);
   setupInjections(container);
   setupSerializers(container);

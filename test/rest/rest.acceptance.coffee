@@ -252,7 +252,10 @@ describe "rest", ->
       foo.bar = bar
       foo.baz = baz
       childSession.flushIntoParent().then ->
-        expect(adapter.h).to.eql ['POST:/bars', 'POST:/bazs', 'POST:/foos']
+        expect(adapter.h.length).to.eq(3)
+        expect(adapter.h[adapter.h.length-1]).to.eq('POST:/foos')
+        expect(adapter.h).to.include('POST:/bars')
+        expect(adapter.h).to.include('POST:/bazs')
         expect(foo.id).to.not.be.null
         expect(bar.id).to.not.be.null
         expect(baz.id).to.not.be.null

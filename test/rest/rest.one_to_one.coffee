@@ -84,7 +84,9 @@ describe "rest", ->
         session.deleteModel(user)
         session.deleteModel(post)
         session.flush().then ->
-          expect(adapter.h).to.eql(['DELETE:/users/2', 'DELETE:/posts/1'])
+          expect(adapter.h.length).to.eq(2)
+          expect(adapter.h).to.include('DELETE:/users/2')
+          expect(adapter.h).to.include('DELETE:/posts/1')
 
 
     it 'creates on server', ->

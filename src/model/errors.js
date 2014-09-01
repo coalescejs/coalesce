@@ -1,22 +1,24 @@
-import copy from '../utils/copy';
+import BaseClass from '../utils/base_class';
 
-// XXX: fails on FF
-class Errors extends Map {
+class Errors extends BaseClass {
 
   constructor(obj={}) {
     super()
     for(var key in obj) {
       if(!obj.hasOwnProperty(key)) continue;
-      this.set(key, obj[key]);
+      this[key] = obj[key];
+    }
+  }
+  
+  forEach(callback, binding) {
+    for(var key in this) {
+      if(!this.hasOwnProperty(key)) continue;
+      callback.call(binding, this[key], key);
     }
   }
   
   copy() {
-    var res = new this.constructor();
-    this.forEach(function(value, key) {
-      res.set(key, copy(value));
-    });
-    return res;
+    return new this.constructor(this);
   }
 
 }

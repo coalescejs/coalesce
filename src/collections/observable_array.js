@@ -1,5 +1,6 @@
 import Error from '../error';
 import copy from '../utils/copy';
+import array_from from '../utils/array_from';
 
 var EMPTY = [],
     splice = Array.prototype.splice;
@@ -221,7 +222,7 @@ export default class ObservableArray extends Array {
   }
   
   toArray() {
-    return Array.from(this);
+    return array_from(this);
   }
 
   /**

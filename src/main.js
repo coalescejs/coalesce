@@ -24,7 +24,6 @@ import Operation from './rest/operation';
 import OperationGraph from './rest/operation_graph';
 import Payload from './rest/payload';
 import RestAdapter from './rest/rest_adapter';
-import RestErrors from './rest/rest_errors';
 
 import ActiveModelAdapter from './active_model/active_model_adapter';
 import ActiveModelSerializer from './active_model/serializers/model';
@@ -68,7 +67,6 @@ Coalesce.Operation = Operation;
 Coalesce.OperationGraph = OperationGraph;
 Coalesce.Payload = Payload;
 Coalesce.RestAdapter = RestAdapter;
-Coalesce.RestErrors = RestErrors;
 
 Coalesce.ActiveModelAdapter = ActiveModelAdapter;
 Coalesce.ActiveModelSerializer = ActiveModelSerializer;

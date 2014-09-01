@@ -17,11 +17,15 @@ export default class Operation {
     this.force = false
     this.children = new Set();
     this.parents = new Set();
-    this._deferred = Coalesce.Promise.defer();
+    var op = this;
+    this.promise = new Coalesce.Promise(function(resolve, reject) {
+      op.resolve = resolve;
+      op.reject = reject;
+    });
   }
 
   then(...args) {
-    var promise = this._deferred.promise;
+    var promise = this.promise;
     return promise.then.apply(promise, args);
   }
 
@@ -150,7 +154,7 @@ export default class Operation {
       }
       throw serverModel;
     });
-    this._deferred.resolve(promise);
+    this.resolve(promise);
     return this;
   }
 
