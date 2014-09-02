@@ -301,18 +301,18 @@ export default class Model extends BaseClass {
   }
 
   static get attributes() {
-    // TODO: memoize
+    if(this._attributes) return this._attributes;
     var res = new Map();
     this.fields.forEach(function(options, name) {
       if(options.kind === 'attribute') {
         res.set(name, options);
       }
     });
-    return res;
+    return this._attributes = res;
   }
 
   static get relationships() {
-    // TODO: memoize
+    if(this._relationships) return this._relationships;
     var res = new Map();
     this.fields.forEach(function(options, name) {
       if(options.kind === 'belongsTo' || options.kind === 'hasMany') {
@@ -320,7 +320,7 @@ export default class Model extends BaseClass {
         res.set(name, options);
       }
     });
-    return res;
+    return this._relationships = res;
   }
 
   get attributes() {

@@ -1,5 +1,6 @@
+import Coalesce from '../namespace';
 import Field from './field';
-import HasManyArray from '../collections/has_many_array';
+// import HasManyArray from '../collections/has_many_array';
 import isEqual from '../utils/is_equal';
 import copy from '../utils/copy';
 
@@ -17,7 +18,7 @@ export default class HasMany extends Field {
         var value = this._relationships[name];
         if(this.isNew && !value) {
           var content = value;
-          value = this._relationships[name] = new HasManyArray();
+          value = this._relationships[name] = new Coalesce.HasManyArray();
           value.owner = this;
           value.name = name;
           if(content) {
@@ -29,12 +30,12 @@ export default class HasMany extends Field {
       set: function(value) {
         var oldValue = this._relationships[name];
         if(oldValue === value) return;
-        if(value && value instanceof HasManyArray) {
+        if(value && value instanceof Coalesce.HasManyArray) {
           // XXX: this logic might not be necessary without Ember
           // need to copy since this content is being listened to
           value = copy(value);
         }
-        if(oldValue && oldValue instanceof HasManyArray) {
+        if(oldValue && oldValue instanceof Coalesce.HasManyArray) {
           oldValue.clear();
           if(value) {
             oldValue.addObjects(value);
@@ -43,7 +44,7 @@ export default class HasMany extends Field {
           this.hasManyWillChange(name);
           
           var content = value;
-          value = this._relationships[name] = new HasManyArray();
+          value = this._relationships[name] = new Coalesce.HasManyArray();
           value.owner = this;
           value.name = name;
           if(content) {

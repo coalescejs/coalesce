@@ -9,6 +9,7 @@ import IdManager from './id_manager';
 
 import ModelArray from './collections/model_array';
 import ModelSet from './collections/model_set';
+import HasManyArray from './collections/has_many_array';
 
 import MergeStrategy from './merge/base';
 import PerField from './merge/per_field';
@@ -53,6 +54,7 @@ Coalesce.IdManager = IdManager;
 
 Coalesce.ModelArray = ModelArray;
 Coalesce.ModelSet = ModelSet;
+Coalesce.HasManyArray = HasManyArray;
 
 Coalesce.MergeStrategy = MergeStrategy;
 Coalesce.PerField = PerField;

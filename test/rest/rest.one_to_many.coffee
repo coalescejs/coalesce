@@ -149,7 +149,8 @@ describe "rest", ->
         expect(post.comments.toArray()).to.eql([comment, sibling])
         session.flush().then ->
           expect(post.comments.toArray()).to.eql([comment, sibling])
-          expect(adapter.h[0]).to.eq('PUT:/posts/1')
+          expect(adapter.h.length).to.eq(3)
+          expect(adapter.h).to.include('PUT:/posts/1')
           expect(adapter.h).to.include('PUT:/comments/2')
           expect(adapter.h).to.include('POST:/comments')
 
@@ -199,7 +200,9 @@ describe "rest", ->
         session.flush().then ->
           expect(post.comments.length).to.eq(0)
           expect(post.title).to.eq('childless')
-          expect(adapter.h).to.eql(['DELETE:/comments/2', 'PUT:/posts/1'])
+          expect(adapter.h.length).to.eq(2)
+          expect(adapter.h).to.include('DELETE:/comments/2')
+          expect(adapter.h).to.include('PUT:/posts/1')
 
 
     it 'deletes parent and child', ->

@@ -375,17 +375,6 @@ export default class Session {
     this.touch(model);
   }
 
-  destroy() {
-    this._super();
-    this.models.forEach(function(model) {
-      model.destroy();
-    });
-    this.models.destroy();
-    this.shadows.destroy();
-    this.originals.destroy();
-    this.newModels.destroy();
-  }
-
   get dirtyModels() {
     var models = new ModelSet(array_from(this.shadows).map(function(model) {
       return this.models.getModel(model);
@@ -826,8 +815,13 @@ export default class Session {
     }
     return res;
   }
+  
+  destroy() {
+    // NOOP: needed for Ember's container
+  }
+  
+  static create(props) {
+    return new this(props);
+  }
 
 }
-
-// necessary to play with ember's container
-Session.create = function(props) { return new this(props) };

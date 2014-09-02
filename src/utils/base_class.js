@@ -34,4 +34,8 @@ export default class Base {
     }
     return this;
   }
+  
+  destroy() {
+    // NOOP: Needed for Ember's container
+  }
 }
