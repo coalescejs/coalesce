@@ -33,3 +33,19 @@ describe "RestAdapter", ->
     it 'should merge with no context', ->
       models = adapter.mergePayload(data, null, session)
       expect(models.size).to.eq(3)
+
+  describe '.ajaxOptions', ->
+    
+    beforeEach ->
+      adapter.headers = {'X-HEY': 'ohai'}
+    
+    it 'picks up headers from .headers', ->
+      hash = adapter.ajaxOptions('/api/test', 'GET', {})
+      expect(hash.beforeSend).to.not.be.null
+      
+      xhr =
+        setRequestHeader: (key, value) -> @[key] = value
+        
+      hash.beforeSend(xhr)
+      expect(xhr['X-HEY']).to.eq('ohai')
+      

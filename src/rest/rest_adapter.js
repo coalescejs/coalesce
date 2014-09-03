@@ -856,9 +856,10 @@ export default class RestAdapter extends Adapter {
     var headers = this.headers;
     if (headers !== undefined) {
       hash.beforeSend = function (xhr) {
-        forEach.call(Object.keys(headers), function(key) {
+        for(var key in headers) {
+          if(!headers.hasOwnProperty(key)) continue;
           xhr.setRequestHeader(key, headers[key]);
-        });
+        }
       };
     }
 
