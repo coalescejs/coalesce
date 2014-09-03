@@ -70,7 +70,7 @@ var devDist = (function() {
   var iifeStop  = writeFile('iife-stop', '})();');
   var bootstrap = writeFile('bootstrap', 'this.Coalesce = requireModule("coalesce")["default"];\n');
 
-  var trees = findBowerTrees().concat(['vendor', iifeStart, iifeStop, bootstrap, es6Modules]);
+  var trees = findBowerTrees().concat(['vendor', 'node_modules/traceur/bin', iifeStart, iifeStop, bootstrap, es6Modules]);
 
   return concat(mergeTrees(trees), {
     inputFiles: [
