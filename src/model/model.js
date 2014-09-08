@@ -116,7 +116,10 @@ export default class Model extends BaseClass {
   }
   
   static toString() {
-    return this.__toString = this.__toString || classify(this.typeKey);
+    if(this.__toString = this.__toString || this.name || (this.typeKey && classify(this.typeKey))) {
+      return this.__toString;
+    }
+    return "[No Type Key]";
   }
 
   toJSON() {
