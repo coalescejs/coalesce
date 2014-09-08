@@ -284,8 +284,15 @@ export default class Model extends BaseClass {
   static defineField(field) {
     field.defineProperty(this.prototype);
     field.parentType = this;
-    this[`_${field.name}_def`] = field;
+    this.ownFields.set(field.name, field);
     return field;
+  }
+  
+  static get ownFields() {
+    if(!this.hasOwnProperty('_ownFields')) {
+      this._ownFields = new Map();
+    }
+    return this._ownFields;
   }
   
   static get fields() {
@@ -293,18 +300,16 @@ export default class Model extends BaseClass {
     var res = new Map(),
         parentClass = Object.getPrototypeOf(this);
     
+    var maps = [this.ownFields];
+    
     if(parentClass.prototype instanceof Model) {
-      var parentFields = parentClass.fields;
-      parentFields.forEach(function(field, name) {
-        res.set(name, field);
-      });
+      maps.push(parentClass.fields);
     }
     
-    for(var name in this) {
-      if(!this.hasOwnProperty(name)) continue;
-      var value = this[name];
-      if(!(value instanceof Field)) continue;
-      res.set(value.name, value);
+    for(var i = 0; i < maps.length; i++) {
+      maps[i].forEach(function(field, name) {
+        res.set(name, field);
+      });
     }
     
     return this._fields = res;
