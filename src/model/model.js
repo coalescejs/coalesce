@@ -301,12 +301,15 @@ export default class Model extends BaseClass {
   static get fields() {
     if(this._fields) return this._fields;
     var res = new Map(),
-        parentClass = Object.getPrototypeOf(this);
+        parentClass = this.parentType;
     
     var maps = [this.ownFields];
     
     if(parentClass.prototype instanceof Model) {
-      maps.push(parentClass.fields);
+      var parentFields = parentClass.fields;
+      if(parentFields) {
+        maps.push(parentClass.fields);
+      }
     }
     
     for(var i = 0; i < maps.length; i++) {
@@ -440,6 +443,10 @@ export default class Model extends BaseClass {
       callback.call(binding, name, options);
     });
   }
+  
+  static get parentType() {
+    return Object.getPrototypeOf(this);
+  }
 
   eachLoadedRelationship(callback, binding) {
     this.loadedRelationships.forEach(function(options, name) {
@@ -550,11 +557,11 @@ export default class Model extends BaseClass {
         possibleRelationships.push(inverse);
       }
       
-      var superclass = Object.getPrototypeOf(type);
-      if (superclass && superclass.typeKey) {
+      var parentType = type.parentType;
+      if (parentType && parentType.typeKey) {
         // XXX: container extends models and this logic creates duplicates
         // XXX: add test for subclassing and extending the schema
-        // findPossibleInverses(superclass, inverseType, possibleRelationships);
+        // findPossibleInverses(parentType, inverseType, possibleRelationships);
       }
       return possibleRelationships;
     }
