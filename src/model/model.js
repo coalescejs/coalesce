@@ -8,6 +8,7 @@ import Attribute from './attribute';
 import BelongsTo from './belongs_to';
 import HasMany from './has_many';
 import Error from '../error';
+import Field from './field';
 import {camelize, pluralize, underscore, classify} from '../utils/inflector';
 
 export default class Model extends BaseClass {
@@ -66,7 +67,7 @@ export default class Model extends BaseClass {
     console.assert(!this._session || this._session === value, "Cannot re-assign a model's session");
     this._session = value;
   }
-
+  
   constructor(fields) {
     this._meta = {
       _id: null,
@@ -261,8 +262,7 @@ export default class Model extends BaseClass {
     for(var name in attributes) {
       if(!attributes.hasOwnProperty(name)) continue;
       var field = new Attribute(name, attributes[name]);
-      field.defineProperty(this.prototype);
-      this.addFieldDefinition(field);
+      this.defineField(field);
     }
     var relationships = schema.relationships || {};
     for(var name in relationships) {
@@ -277,27 +277,37 @@ export default class Model extends BaseClass {
       } else {
         console.assert(false, "Unkown relationship kind '" + options.kind + "'. Supported kinds are 'belongsTo' and 'hasMany'");
       }
-      field.defineProperty(this.prototype);
-      field.parentType = this;
-      this.addFieldDefinition(field);
+      this.defineField(field);
     }
   }
   
-  static addFieldDefinition(field) {
-    // Make immutable for subclassing
-    var fields = new Map();
-    this.fields.forEach(function(field, name) {
-      fields.set(name, field);
-    });
-    fields.set(field.name, field);
-    this._fields = fields;
+  static defineField(field) {
+    field.defineProperty(this.prototype);
+    field.parentType = this;
+    this[`_${field.name}_def`] = field;
     return field;
   }
   
   static get fields() {
-    // These definitions are set when definied
-    // XXX: should merge in fields from superclass
-    return this._fields || (this._fields = new Map());
+    if(this._fields) return this._fields;
+    var res = new Map(),
+        parentClass = Object.getPrototypeOf(this);
+    
+    if(parentClass.prototype instanceof Model) {
+      var parentFields = parentClass.fields;
+      parentFields.forEach(function(field, name) {
+        res.set(name, field);
+      });
+    }
+    
+    for(var name in this) {
+      if(!this.hasOwnProperty(name)) continue;
+      var value = this[name];
+      if(!(value instanceof Field)) continue;
+      res.set(value.name, value);
+    }
+    
+    return this._fields = res;
   }
 
   static get attributes() {

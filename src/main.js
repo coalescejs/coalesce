@@ -46,6 +46,8 @@ import Session from './session/session';
 
 import isEqual from './utils/is_equal';
 
+import {pluralize, singularize} from './utils/inflector';
+
 Coalesce.Container = Container;
 Coalesce.setupContainer = setupContainer;
 
@@ -87,6 +89,9 @@ Coalesce.StringSerializer = StringSerializer;
 Coalesce.CollectionManager = CollectionManager;
 Coalesce.InverseManager = InverseManager;
 Coalesce.Session = Session;
+
+Coalesce.pluralize = pluralize;
+Coalesce.singularize = singularize;
 
 Coalesce.isEqual = isEqual;
 

@@ -2,6 +2,7 @@ function guidFor(model) {
   return model.clientId;
 }
 
+import array_from from '../utils/array_from';
 // XXX: this is just needed since payload extends this class, should eventually
 // change that
 import BaseClass from '../utils/base_class';
@@ -201,6 +202,10 @@ export default class ModelSet extends BaseClass {
       }
     }
     return this;
+  }
+  
+  toArray() {
+    return array_from(this);
   }
 
 }

@@ -69,6 +69,10 @@ export default class Operation {
         shadow = this.shadow,
         adapter = this.adapter;
 
+    // this case could happen via a dirty relationship where the other side does
+    // not have an inverse (in which case the model will not be dirty and hence no shadow)
+    if(!shadow) return false;
+
     var diff = model.diff(shadow);
     var dirty = false;
     var relDiff = [];
