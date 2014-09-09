@@ -83,10 +83,10 @@ export default class EmbeddedManager extends BaseClass {
       if(!model.isFieldLoaded(name)) {
         return;
       }
-      var array =model[name];
-      for (var i=0, l=array.length; i<l; i++) {
-        callback.call(binding, array.objectAt(i), embeddedType);
-      }
+      var collection = model[name];
+      collection.forEach(function(model) {
+        callback.call(binding, model, embeddedType);
+      });
     });
   }
 

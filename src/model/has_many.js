@@ -1,14 +1,10 @@
 import Coalesce from '../namespace';
-import Field from './field';
-// import HasManyArray from '../collections/has_many_array';
+import Relationship from './relationship';
+import HasManyArray from '../collections/has_many_array';
 import isEqual from '../utils/is_equal';
 import copy from '../utils/copy';
 
-export default class HasMany extends Field {
-  
-  // get kind() {
-  //   return 'hasMany';
-  // }
+export default class HasMany extends Relationship {
   
   defineProperty(prototype) {
     var name = this.name;

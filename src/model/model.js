@@ -571,10 +571,6 @@ export default class Model extends BaseClass {
 }
 
 function reifyRelationshipType(relationship) {
-  if(typeof relationship.type === 'string') {
-    relationship.typeKey = relationship.type;
-    delete relationship.type;
-  }
   if(!relationship.type) {
     relationship.type = Coalesce.__container__.lookupFactory('model:' + relationship.typeKey);
   }

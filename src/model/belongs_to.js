@@ -1,11 +1,7 @@
-import Field from './field';
+import Relationship from './relationship';
 import isEqual from '../utils/is_equal';
 
-export default class BelongsTo extends Field {
-  
-  // get kind() {
-  //   return 'belongsTo';
-  // }
+export default class BelongsTo extends Relationship {
   
   defineProperty(prototype) {
     var name = this.name;
