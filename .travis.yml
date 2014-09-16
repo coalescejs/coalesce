@@ -6,4 +6,4 @@ install:
 before_script:
   - npm run-script build
 script:
-  - npm run-script test 
+  - xvfb-run npm run-script test 
