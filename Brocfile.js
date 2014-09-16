@@ -139,12 +139,10 @@ var testTree = (function() {
     destDir: '/'
   });
   
-  var dummy = writeFile('testem.js', '');
-  var trees = mergeTrees([testVendorJs, testAmd, devAmd, 'test', dummy, testVendorCss]);
+  var trees = mergeTrees([testVendorJs, testAmd, devAmd, 'test', testVendorCss]);
   return pickFiles(trees, {
     srcDir: '/',
     files: [
-      'testem.js',
       'vendor.js',
       'mocha.css',
       'coalesce.amd.js',
@@ -162,7 +160,7 @@ var bowerJSON = writeFile('bower.json', JSON.stringify({
   version: 'VERSION_STRING_PLACEHOLDER',
   license: "MIT",
   main: 'coalesce.js',
-  ignore: ['docs', 'test'],
+  ignore: ['docs', 'test', 'testem.js'],
   keywords: [
     "coalesce",
     "orm",
@@ -191,4 +189,6 @@ var docs = yuidocCompiler('src', {
   destDir: 'docs'
 });
 
-module.exports = mergeTrees([docs, distTree, testTree]);
+var testemDummy = writeFile('testem.js', '');
+
+module.exports = mergeTrees([docs, distTree, testTree, testemDummy]);

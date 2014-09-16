@@ -1,4 +1,5 @@
 {
+  "framework": "mocha",
   "test_page": "dist/test/index.html",
   "launch_in_ci": ["Firefox"],
   "launch_in_dev": ["Chrome", "Firefox"]
