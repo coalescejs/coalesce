@@ -3,27 +3,17 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Coalesce Tests</title>
-    <link rel="stylesheet" href="../bower_components/mocha/mocha.css">
-    <base href="..">
+    <link rel="stylesheet" href="mocha.css">
 </head>
 <body>
     <div id="mocha"></div>
-    <script src="bower_components/mocha/mocha.js"></script>
-    <script>mocha.setup('bdd')</script>
-    <script src="bower_components/chai/chai.js"></script>
-    <script>var expect = chai.expect</script>
+    <script src="vendor.js"></script>
     <script src="/testem.js"></script>
-
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/lodash/dist/lodash.js"></script>
-    <script src="bower_components/loader/loader.js"></script>
-
-    <script src="bower_components/jsondiffpatch/build/bundle.js"></script>
-    <script src="node_modules/traceur/bin/traceur-runtime.js"></script>
-    <script src="vendor/backburner.amd.js"></script>
-    <script src="dist/coalesce-modules.js"></script>
-    <script src="dist/coalesce-test-modules.js"></script>
+    <script src="coalesce.amd.js"></script>
+    <script src="coalesce-test.amd.js"></script>
     <script>
+        mocha.setup('bdd');
+        var expect = chai.expect
         this.Coalesce = requireModule('coalesce')['default'];
         requireModule('coalesce-test/_setup');
         Object.keys(requirejs.entries).forEach(function(entry) {
