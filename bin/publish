@@ -16,6 +16,7 @@ fi
 
 git fetch origin
 git reset --hard origin/master
+git rm -rf *
 
 cp ../dist/* .
 
