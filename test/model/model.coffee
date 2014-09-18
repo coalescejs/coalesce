@@ -25,6 +25,20 @@ describe 'Model', ->
   afterEach ->
     delete Coalesce.__container__
 
+  describe '.id', ->
+    
+    it 'triggers metaWillChange and metaDidChange', ->
+      user = new @User()
+      willHit = false
+      didHit = false
+      user.metaWillChange = ->
+        willHit = true
+      user.metaDidChange = ->
+        didHit = true
+      user.id = 1
+      expect(willHit).to.be.true
+      expect(didHit).to.be.true
+
   describe '.isDirty', ->      
 
     it 'returns false when detached', ->

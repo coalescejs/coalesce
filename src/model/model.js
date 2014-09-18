@@ -17,7 +17,12 @@ export default class Model extends BaseClass {
     return this._meta['_id'];
   }
   set id(value) {
-    return this._meta['_id'] = value;
+    var oldValue = this._meta['_id'];
+    if(oldValue === value) return;
+    this.metaWillChange('id');
+    this._meta['_id'] = value;
+    this.metaDidChange('id');
+    return value;
   }
 
   get clientId() {
@@ -374,6 +379,14 @@ export default class Model extends BaseClass {
       }
     }, this);
     return res;
+  }
+  
+  metaWillChange(name) {
+    
+  }
+  
+  metaDidChange(name) {
+    
   }
 
   attributeWillChange(name) {
