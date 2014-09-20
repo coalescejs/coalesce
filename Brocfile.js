@@ -72,7 +72,6 @@ function concatStandalone(tree, inputFile, outputFile) {
   return concat(mergeTrees(trees), {
     inputFiles: [
       'iife-start',
-      'jsondiffpatch/build/bundle.js',
       'loader/loader.js',
       'traceur-runtime.js',
       'backburner.amd.js',
@@ -126,7 +125,6 @@ var testTree = (function() {
       'jquery/dist/jquery.js',
       'lodash/dist/lodash.js',
       'loader/loader.js',
-      'jsondiffpatch/build/bundle.js',
       'traceur-runtime.js',
       'backburner.amd.js'
     ],

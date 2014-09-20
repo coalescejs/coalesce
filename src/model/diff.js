@@ -3,7 +3,6 @@ import ModelSet from '../collections/model_set';
 
 Model.reopen({
 
-  // TODO: revamp this to use jsondiffpatch on all attributes and relationships
   diff: function(model) {
     var diffs = [];
 
@@ -18,12 +17,10 @@ Model.reopen({
         return;
       }
 
-      // Use jsondiffpatch for raw objects
       if(left && right
         && typeof left === 'object'
         && typeof right === 'object') {
-        var delta = jsondiffpatch.diff(left, right);
-        if(delta) {
+        if(JSON.stringify(left) !== JSON.stringify(right)) {
           diffs.push({type: 'attr', name: name});
         }
         return;
@@ -34,7 +31,6 @@ Model.reopen({
         right = right.getTime();
       }
       if(left !== right) {
-        // eventually we will have an actual diff
         diffs.push({type: 'attr', name: name});
       }
     }, this);
