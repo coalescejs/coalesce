@@ -25,6 +25,7 @@ export default class Session {
     this.shadows = new ModelSet();
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
+    this.touched = new ModelSet();
     this.cache = new Cache();
     this.typeFactory = new TypeFactory(container);
     this.mergeFactory = new MergeFactory(container);
@@ -98,7 +99,7 @@ export default class Session {
     For now we assume this only works with new models or models from a parent session.
 
     @method add
-    @param {Coalesce.Model} model The model to add to the session
+    @param {Model} model The model to add to the session
   */
   add(model) {
     this.reifyClientId(model);
@@ -132,7 +133,7 @@ export default class Session {
     just that the session should no longer keep track of it.
 
     @method remove
-    @param {Coalesce.Model} model The model to remove from the session
+    @param {Model} model The model to remove from the session
   */
   remove(model) {
     // TODO: think through relationships that still reference the model
@@ -151,7 +152,7 @@ export default class Session {
     model will be updated.
 
     @method update
-    @param {Coalesce.Model} model A model containing updated properties
+    @param {Model} model A model containing updated properties
   */
   update(model) {
     this.reifyClientId(model);
@@ -453,7 +454,7 @@ export default class Session {
     effect of making the next `load` call hit the server.
 
     @method invalidate
-    @param {Coalesce.Model} model
+    @param {Model} model
   */
   invalidate(model) {
     this.cache.removeModel(model);
@@ -465,7 +466,7 @@ export default class Session {
     the server until the model is marked dirty again.
 
     @method markClean
-    @param {Coalesce.Model} model
+    @param {Model} model
   */
   markClean(model) {
     // as an optimization, model's without shadows
@@ -478,13 +479,19 @@ export default class Session {
     to be sent to the adapter during a flush.
 
     @method touch
-    @param {Coalesce.Model} model
+    @param {Model} model
   */
   touch(model) {
-    if(!model.isNew) {
-      var shadow = this.shadows.getModel(model);
-      if(!shadow) {
-        this.shadows.addObject(model.copy())
+    var shadow;
+    if(!model.isNew && !(shadow = this.shadows.getModel(model))) {
+      shadow = model.copy();
+      this.shadows.add(shadow);
+      // optimization to re-use the shadow
+      this.touched.add(model);
+    } else {
+      var touched = this.touched.getModel(model);
+      if(!touched) {
+        this.touched.add(model.copy());
       }
     }
   }
@@ -573,7 +580,7 @@ export default class Session {
     this data is assumed to have not seen the latest client changes.
 
     @method merge
-    @param {Coalesce.Model} model The model to merge
+    @param {Model} model The model to merge
     @param {Set} [visited] Cache used to break recursion. This is required for non-version-aware backends.
   */
   merge(model, visited) {
@@ -807,6 +814,44 @@ export default class Session {
   _containsClientRev(modelA, modelB) {
     return modelA.clientRev >= modelB.clientRev;
   }
+  
+  /**
+    Based on changes to this session since the last call to `coalesce`, performs
+    inverse updates, notifies collections, and recomputes dirty status.
+
+    @method coalesce
+  */
+  coalesce() {
+    this.touched.forEach(function(model) {
+      var prevModel = model,
+          nextModel = this.models.getModel(model),
+          shadow = this.getShadow(model);
+      this._coalesceModel(prevModel, nextModel);
+    }, this);
+    this.touched.clear();
+  }
+  
+  _coalesceModel(prevModel, nextModel, shadow) {
+    if(nextModel.isDeleted) {
+      // TODO: make sure prevModel wasn't deleted and update collections
+    }
+    
+    var diff = nextModel.diff(prevModel);
+    
+    // TODO: update inverses based on diff
+    
+    var shadowDiff;
+    // optimization: reusing the shadow
+    if(prevModel === shadow) {
+      shadowDiff = diff;
+    } else {
+      shadowDiff = nextModel.diff(shadow);
+    }
+    
+    if(shadowDiff.length === 0) {
+      this.markClean(nextModel);
+    }
+  },
   
   toString() {
     var res = this.name;

@@ -3,33 +3,7 @@ import ModelSet from './model_set';
 import isEqual from '../utils/is_equal';
 import Coalesce from '../namespace';
 
-export default class ModelArray extends ObservableArray {
-  
-  arrayContentWillChange(index, removed, added) {
-    for (var i=index; i<index+removed; i++) {
-      var model = this.objectAt(i);
-      var session = this.session;
-
-      if(session) {
-        session.collectionManager.unregister(this, model);
-      }
-    }
-
-    super(index, removed, added);
-  }
-
-  arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
-
-    for (var i=index; i<index+added; i++) {
-      var model = this.objectAt(i);
-      var session = this.session;
-
-      if(session) {
-        session.collectionManager.register(this, model);
-      }
-    }
-  }
+export default class ModelArray extends Array {
 
   removeObject(obj) {
     var loc = this.length || 0;
