@@ -14,7 +14,7 @@ export default class ErrorsSerializer extends Serializer {
     var res = Type.create();
     
     for(var key in serialized) {
-      res[this.transformPropertyKey(key)] = serialized[key];
+      res.set(this.transformPropertyKey(key), serialized[key]);
     }
     
     if(xhr) {

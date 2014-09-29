@@ -2,6 +2,10 @@ import BaseClass from '../utils/base_class';
 
 class Errors extends BaseClass {
 
+  set(name, value) {
+    this[name] = value;
+  }
+
   constructor(obj={}) {
     super()
     for(var key in obj) {
