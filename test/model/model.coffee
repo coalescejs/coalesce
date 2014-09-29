@@ -38,6 +38,20 @@ describe 'Model', ->
       user.id = 1
       expect(willHit).to.be.true
       expect(didHit).to.be.true
+      
+  describe '.errors', ->
+    
+    it 'triggers metaWillChange and metaDidChange', ->
+      user = new @User()
+      willHit = false
+      didHit = false
+      user.metaWillChange = ->
+        willHit = true
+      user.metaDidChange = ->
+        didHit = true
+      user.errors = {name: 'invalid'}
+      expect(willHit).to.be.true
+      expect(didHit).to.be.true
 
   describe '.isDirty', ->      
 

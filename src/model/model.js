@@ -17,12 +17,7 @@ export default class Model extends BaseClass {
     return this._meta['_id'];
   }
   set id(value) {
-    var oldValue = this._meta['_id'];
-    if(oldValue === value) return;
-    this.metaWillChange('id');
-    this._meta['_id'] = value;
-    this.metaDidChange('id');
-    return value;
+    return setMeta.call(this, '_id', value);
   }
 
   get clientId() {
@@ -57,7 +52,7 @@ export default class Model extends BaseClass {
     return this._meta['_errors'];
   }
   set errors(value) {
-    return this._meta['_errors'] = value;
+    return setMeta.call(this, '_errors', value);
   }
 
   get isModel() {
@@ -607,6 +602,16 @@ function sessionAlias(name) {
     return session[name].apply(session, args);
   };
 }
+
+function setMeta(name, value) {
+  var oldValue = this._meta[name];
+  if(oldValue === value) return;
+  this.metaWillChange(name);
+  this._meta[name] = value;
+  this.metaDidChange(name);
+  return value;
+}
+
 
 Model.reopen({
   load: sessionAlias('loadModel'),
