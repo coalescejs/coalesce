@@ -14,45 +14,45 @@ import {camelize, pluralize, underscore, classify} from '../utils/inflector';
 export default class Model extends BaseClass {
 
   get id() {
-    return this._meta['_id'];
+    return getMeta.call(this, 'id');
   }
   set id(value) {
-    return setMeta.call(this, '_id', value);
+    return setMeta.call(this, 'id', value);
   }
 
   get clientId() {
-    return this._meta['_clientId'];
+    return getMeta.call(this, 'clientId');
   }
   set clientId(value) {
-    return this._meta['_clientId'] = value;
+    return setMeta.call(this, 'clientId', value);
   }
 
   get rev() {
-    return this._meta['_rev'];
+    return getMeta.call(this, 'rev');
   }
   set rev(value) {
-    return this._meta['_rev'] = value;
+    return setMeta.call(this, 'rev', value);
   }
 
   get clientRev() {
-    return this._meta['_clientRev'];
+    return getMeta.call(this, 'clientRev');
   }
   set clientRev(value) {
-    return this._meta['_clientRev'] = value;
+    return setMeta.call(this, 'clientRev', value);
   }
 
   get isDeleted() {
-    return this._meta['_deleted'];
+    return getMeta.call(this, 'isDeleted');
   }
   set isDeleted(value) {
-    return this._meta['_deleted'] = value;
+    return setMeta.call(this, 'isDeleted', value);
   }
 
   get errors() {
-    return this._meta['_errors'];
+    return getMeta.call(this, 'errors');
   }
   set errors(value) {
-    return setMeta.call(this, '_errors', value);
+    return setMeta.call(this, 'errors', value);
   }
 
   get isModel() {
@@ -70,12 +70,12 @@ export default class Model extends BaseClass {
   
   constructor(fields) {
     this._meta = {
-      _id: null,
-      _clientId: null,
-      _rev: null,
-      _clientRev: 0,
-      _deleted: false,
-      _errors: null
+      id: null,
+      clientId: null,
+      rev: null,
+      clientRev: 0,
+      isDeleted: false,
+      errors: null
     }
     this._attributes = {};
     this._relationships = {};
@@ -603,9 +603,13 @@ function sessionAlias(name) {
   };
 }
 
+function getMeta(name) {
+  return this._meta[name];
+}
+
 function setMeta(name, value) {
   var oldValue = this._meta[name];
-  if(oldValue === value) return;
+  if(oldValue === value) return oldValue;
   this.metaWillChange(name);
   this._meta[name] = value;
   this.metaDidChange(name);
