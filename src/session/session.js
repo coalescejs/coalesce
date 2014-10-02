@@ -328,7 +328,7 @@ export default class Session {
     if(!res && this.parent) {
       res = this.parent.getModel(model);
       if(res) {
-        res = this.adopt(res.copy());
+        res = this.adopt(res.lazyCopy());
         // TODO: is there a better place for this?
         this.updateCache(res);
       }

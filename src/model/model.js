@@ -167,12 +167,21 @@ export default class Model extends BaseClass {
     return copy;
   }
 
-  // creates a shallow copy with lazy children
-  // TODO: we should not lazily copy detached children
   copy() {
     var dest = new this.constructor();
     this.copyTo(dest);
     return dest;
+  }
+  
+  /**
+    Similar to `copy`, but is session-aware.
+    
+    @method fork
+    @param {Session} session
+    @returns {Model} the forked model
+  */
+  fork(session) {
+    
   }
 
   copyTo(dest) {
@@ -213,7 +222,7 @@ export default class Model extends BaseClass {
   }
 
   isFieldLoaded(key) {
-    return this.isNew || typeof this[key] !== 'undefined'
+    return this.isNew || this[key] !== undefined;
   }
 
   get anyFieldsLoaded() {
