@@ -15,7 +15,7 @@ describe "rest", ->
   afterEach ->
     delete Coalesce.__container__
 
-  context 'many children', ->
+  describe 'performance', ->
 
     beforeEach ->
 
@@ -45,5 +45,5 @@ describe "rest", ->
       comments: ({id: i, message: "message#{i}", post: 1, rev: 1} for i in [1..100])
 
       session.query('post').then (posts) ->
-        session.query('post').then (posts) ->
+        posts.refresh().then (posts) ->
           expect(posts[0].comments.length).to.eq(100)

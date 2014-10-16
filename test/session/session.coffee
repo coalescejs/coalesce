@@ -2,6 +2,7 @@
 `import ModelSerializer from 'coalesce/serializers/model'`
 `import {postWithComments} from '../support/schemas'`
 `import Container from 'coalesce/container'`
+`import Query from 'coalesce/session/query'`
 
 describe "Session", ->
 
@@ -87,6 +88,70 @@ describe "Session", ->
       session.invalidate(post)
       post.load()
       expect(hit).to.be.true
+      
+  describe '.query', ->
+    
+    it 'returns a Query', ->
+      adapter.query = =>
+        Coalesce.Promise.resolve([@Post.create id: 1])
+        
+      res = session.query(@Post).then (posts) ->
+        expect(posts).to.be.an.instanceOf(Query)
+    
+    it 'utilizes cache on subsequence calls', ->
+      hit = 0
+      adapter.query = =>
+        hit += 1
+        Coalesce.Promise.resolve([@Post.create id: 1])
+        
+      res = session.query(@Post).then (posts) =>
+        session.query(@Post).then ->
+          expect(hit).to.eq(1)
+    
+  describe '.fetchQuery', ->
+    
+    it 'synchronously returns a query', ->
+      res = session.fetchQuery(@Post)
+      expect(res).to.be.an.instanceOf(Query)
+    
+  describe '.refreshQuery', ->
+    
+    it 'skips cache', ->
+      it 'utilizes cache on subsequence calls', ->
+        hit = 0
+        adapter.query = =>
+          hit += 1
+          Coalesce.Promise.resolve([@Post.create id: 1])
+          
+        res = session.query(@Post).then (posts) ->
+          session.refreshQuery(posts).then ->
+            expect(hit).to.eq(2)
+    
+  describe '.invalidateQuery', ->
+    
+    it 'clears cache', ->
+      hit = 0
+      adapter.query = =>
+        hit += 1
+        Coalesce.Promise.resolve([@Post.create id: 1])
+        
+      res = session.query(@Post).then (posts) =>
+        session.invalidateQuery(posts)
+        session.query(@Post).then ->
+          expect(hit).to.eq(2)
+    
+  describe '.invalidateQueries', ->
+    
+    it 'clears cache for all queries', ->
+      hit = 0
+      adapter.query = =>
+        hit += 1
+        Coalesce.Promise.resolve([@Post.create id: 1])
+        
+      res = session.query(@Post).then (posts) =>
+        session.invalidateQueries(@Post)
+        session.query(@Post).then ->
+          expect(hit).to.eq(2)
 
   describe '.merge', ->
 
@@ -197,7 +262,7 @@ describe "Session", ->
       expect(session.getModel(post)).to.eq(post)
 
 
-  describe 'with parent session', ->
+  context 'with parent session', ->
 
     Post = null
     parent = null

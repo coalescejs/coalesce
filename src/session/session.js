@@ -4,6 +4,8 @@ import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
 import Cache from './cache';
+import Query from './query';
+import QueryCache from './query_cache';
 import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
 import copy from '../utils/copy';
@@ -26,6 +28,7 @@ export default class Session {
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
     this.cache = new Cache();
+    this.queryCache = new QueryCache();
     this.typeFactory = new TypeFactory(container);
     this.mergeFactory = new MergeFactory(container);
     this._dirtyCheckingSuspended = false;
@@ -226,7 +229,6 @@ export default class Session {
     id = id+'';
 
     var model = this.getForId(typeKey, id);
-    // XXX: add isLoaded flag to model
     if(!model) {
       model = this.build(typeKey, {id: id});
       this.adopt(model);
@@ -261,33 +263,115 @@ export default class Session {
         return model;
       });
     } else {
-      // XXX: refactor adapter api to use model
       promise = this.adapter.load(model, opts, this);
       this.cache.addPromise(model, promise);
     }
 
     return promise;
   }
+  
+  /**
+    Similar to `loadModel`, but guarntees a trip to the server and skips the
+    session level model cache.
+    
+    @params {Model} model the model to refresh
+    @return {Promise}
+  */
+  refresh(model, opts) {
+    var session = this;
+    return this.adapter.load(model, opts, this);
+  }
 
+  /**
+    @deprecated
+    
+    Delegates to either `query` or `load` based on the parameter types
+    
+    @returns {Promise}
+  */
   find(type, query, opts) {
     if (typeof query === 'object') {
       return this.query(type, query, opts);
     }
     return this.load(type, query, opts);
   }
-
-  query(type, query, opts) {
+  
+  /**
+    @private
+    
+    Build a query instance
+  */
+  buildQuery(type, params) {
     type = this.typeFor(type);
-    var typeKey = type.typeKey;
-    var promise = this.adapter.query(typeKey, query, opts, this);
+    return new Query(this, type, params);
+  }
+  
+  /**
+    Similar to `fetch`, this method returns a cached local result of the query
+    without a trip to the server.
+    
+    @param {Type} type the type to query against
+    @param {object} params the query parameters
+    @return {Query}
+  */
+  fetchQuery(type, params) {
+    type = this.typeFor(type);
+    var query = this.queryCache.getQuery(type, params);
+    
+    if(!query) {
+      query = this.buildQuery(type, params);
+      this.queryCache.add(query);
+    }
+    
+    return query;
+  }
+
+  /**
+    Queries the server.
+    
+    @param {Type} type Type to query against
+    @param {object} params Query parameters
+    @param {object} opts Additional options
+    @return {Promise}
+  */
+  query(type, params, opts) {
+    var type = this.typeFor(type),
+        query = this.fetchQuery(type, params),
+        promise = this.queryCache.getPromise(query);
+        
+    if(!promise) {
+      promise = this.refreshQuery(query, opts);
+    }
+    
+    return promise;
+  }
+  
+  /**
+    Queries the server and bypasses the cache.
+    
+    @param {Type} type Type to query against
+    @param {object} params Query parameters
+    @param {object} opts Additional options
+    @return {Promise}
+  */
+  refreshQuery(query, opts) {
+    // TODO: for now we populate the query in the session, eventually this
+    // should be done in the adapter layer a la models
+    var promise = this.adapter.query(query.type.typeKey, query.params, opts, this).then(function(models) {
+      query.meta = models.meta;
+      query.replace(0, query.length, models);
+      return query;
+    });
+    this.queryCache.add(query, promise);
+    
     return promise;
   }
 
-  refresh(model, opts) {
-    var session = this;
-    return this.adapter.load(model, opts, this);
-  }
-
+  /**
+    Sends all local changes down to the server
+    
+    @return {Promise}
+  */
   flush() {
     var session = this,
         dirtyModels = this.dirtyModels,
@@ -453,10 +537,31 @@ export default class Session {
     effect of making the next `load` call hit the server.
 
     @method invalidate
-    @param {Coalesce.Model} model
+    @param {Model} model
   */
   invalidate(model) {
     this.cache.removeModel(model);
+  }
+  
+  /**
+    Invalidate the cache for a particular query.
+
+    @method invalidateQuery
+    @param {Query} query
+  */
+  invalidateQuery(query) {
+    this.queryCache.remove(query);
+  }
+  
+  /**
+    Invalidate the cache for all queries corresponding to a particular Type.
+
+    @method invalidateQueries
+    @param {Type} type Type to invalidate
+  */
+  invalidateQueries(type) {
+    var type = this.typeFor(type);
+    this.queryCache.removeAll(type);
   }
 
   /**
