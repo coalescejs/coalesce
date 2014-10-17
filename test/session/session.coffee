@@ -19,6 +19,32 @@ describe "Session", ->
     @container = adapter.container
     session = adapter.newSession()
 
+  describe '.saveToStorage', ->
+
+    it 'should save to storage', ->
+
+      post = session.merge @Post.create id: '1', title: 'save me plz'
+      post2 = session.merge @Post.create id: '2', title: 'save me plz to'
+      post3 = session.merge @Post.create id: '3', title: 'save me plz too'
+      post4 = session.create 'post', title: 'Im new'
+
+      session.saveToStorage().then((value) ->
+        expect(value.models.post.length).to.eq(4)
+        expect(value.newModels.post.length).to.eq(1)
+
+        expect(value.models.post[0].title).to.eq(post.title)
+        expect(value.newModels.post[0].title).to.eq(post4.title)
+        return
+      , (error) ->
+        expect(error).to.be.null
+        return
+      )
+      
+  describe '.loadFromStorage', ->
+
+    it 'should load to storage', ->
+      expect(null).to.not.be.null
+
   describe '.build', ->
   
     it 'instantiates a model', ->
@@ -233,3 +259,4 @@ describe "Session", ->
         expect(comment).to.not.eq(parentComment)
         expect(comment.post).to.not.be.bull
         expect(comment.post.session).to.eq(session)
+
