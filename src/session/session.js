@@ -824,11 +824,14 @@ export default class Session {
     var sessionSerializer = this.adapter.container.lookup('serializer:session');
 
     return localforage.getItem(sessionStorageKey).then(function(value) {
-        var deserializedSession = sessionSerializer.deserialize(value);
 
-        self.models = deserializedSession.models;
-        self.newModels = deserializedSession.newModels;
-        self.shadows = deserializedSession.shadows;
+        if(value != null){
+            var deserializedSession = sessionSerializer.deserialize(value);
+
+            self.models = deserializedSession.models;
+            self.newModels = deserializedSession.newModels;
+            self.shadows = deserializedSession.shadows;
+        }
 
         return value;
     }, function(error) {
@@ -838,6 +841,13 @@ export default class Session {
     });
 
     return;
+  }
+
+  clearStorage(){
+    var self = this;
+    return localforage.removeItem(sessionStorageKey).then(function(){
+        return self;
+    });
   }
   
   toString() {

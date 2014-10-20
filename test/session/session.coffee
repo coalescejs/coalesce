@@ -58,6 +58,19 @@ describe "Session", ->
         expect(error).to.be.null
         return
       )
+  describe '.loading Storage', ->  
+    it 'should skip loading from storage when storage is empty', ->
+      session.clearStorage().then (_session) ->
+        # debugger
+        _session.loadFromStorage().then((value) ->
+          # debugger
+          expect(_session.models).to.not.be.null
+          return
+        , (error) ->
+          # something wrong throw error
+          expect(error).to.be.null
+          return
+        )     
 
   describe '.build', ->
   
