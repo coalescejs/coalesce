@@ -49,3 +49,9 @@ describe "RestAdapter", ->
       hash.beforeSend(xhr)
       expect(xhr['X-HEY']).to.eq('ohai')
       
+  describe '.buildUrl', ->
+    
+    it 'encodes ids', ->
+      expect(@adapter.buildUrl('message', 'asd@asd.com')).to.eq('/messages/asd%40asd.com')
+      
+      
