@@ -812,7 +812,7 @@ export default class Session {
 
   // returns a promoise 
   saveToStorage(){
-    var sessionSerializer = this.container.lookup('serializer:session');
+    var sessionSerializer = this.adapter.container.lookup('serializer:session');
     var serializedSession = sessionSerializer.serialize(this);
 
     return localforage.setItem(sessionStorageKey, serializedSession);
@@ -821,7 +821,7 @@ export default class Session {
   loadFromStorage(){
     var self = this;
 
-    var sessionSerializer = this.container.lookup('serializer:session');
+    var sessionSerializer = this.adapter.container.lookup('serializer:session');
 
     return localforage.getItem(sessionStorageKey).then(function(value) {
         var deserializedSession = sessionSerializer.deserialize(value);
