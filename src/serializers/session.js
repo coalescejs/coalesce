@@ -10,26 +10,28 @@ export default class SessionSerializer extends Serializer {
         super(args);
     }
 
-    deserialize(serialized, opts) {
+    deserialize(serialized) {
         var modelSetSerializer = this.serializerFor('model-set');
 
         var deserialized = {
-            models: [],
-            newModels: [],
-            shadows: []
+            models: null,
+            newModels: null,
+            shadows: null
         };
 
-        if (!serialized) return deserialized;
+        if (!serialized){ return deserialized; }
 
-        if (serialized.models)
+        if (serialized.models){
             deserialized.models = modelSetSerializer.deserialize(serialized.models);
+        }
 
-        if (serialized.newModels)
+        if (serialized.newModels){
             deserialized.newModels = modelSetSerializer.deserialize(serialized.newModels);
+        }
 
-        if (serialized.shadows)
+        if (serialized.shadows){
             deserialized.shadows = modelSetSerializer.deserialize(serialized.shadows);
-
+        }
 
         return deserialized;
     }
@@ -38,20 +40,22 @@ export default class SessionSerializer extends Serializer {
         var modelSetSerializer = this.serializerFor('model-set');
 
         var serialized = {
-            models: [],
-            newModels: [],
-            shadows: []
+            models: {},
+            newModels: {},
+            shadows: {}
         };
 
-        if (session.models)
+        if (session.models){
             serialized.models = modelSetSerializer.serialize(session.models);
+        }
 
-        if (session.newModels)
+        if (session.newModels){
             serialized.newModels = modelSetSerializer.serialize(session.newModels);
+        }
 
-        if (session.shadows)
+        if (session.shadows){
             serialized.shadows = modelSetSerializer.serialize(session.shadows);
-
+        }
 
         return serialized;
     }

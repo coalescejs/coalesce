@@ -19,10 +19,8 @@ describe "Session", ->
     @container = adapter.container
     session = adapter.newSession()
 
-  describe '.saveToStorage', ->
-
+  describe '.saveTo and loadFrom Storage', ->    
     it 'should save to storage', ->
-
       post = session.merge @Post.create id: '1', title: 'save me plz'
       post2 = session.merge @Post.create id: '2', title: 'save me plz to'
       post3 = session.merge @Post.create id: '3', title: 'save me plz too'
@@ -36,14 +34,30 @@ describe "Session", ->
         expect(value.newModels.post[0].title).to.eq(post4.title)
         return
       , (error) ->
+        # something wrong throw error
         expect(error).to.be.null
         return
       )
-      
-  describe '.loadFromStorage', ->
 
-    it 'should load to storage', ->
-      expect(null).to.not.be.null
+      newSession = adapter.newSession()
+
+      expect(post.session).to.not.eq(newSession)
+
+      expect(newSession.getForId('post', 1)).to.be.undefined
+      expect(newSession.getForId('post', 2)).to.be.undefined
+      expect(newSession.getForId('post', 3)).to.be.undefined
+
+      newSession.loadFromStorage().then((value) ->
+        expect(newSession.getForId('post', 1)).to.not.be.undefined
+        expect(newSession.getForId('post', 2)).to.not.be.undefined
+        expect(newSession.getForId('post', 3)).to.not.be.undefined
+
+        return
+      , (error) ->
+        # something wrong throw error
+        expect(error).to.be.null
+        return
+      )
 
   describe '.build', ->
   

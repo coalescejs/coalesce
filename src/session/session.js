@@ -812,7 +812,6 @@ export default class Session {
 
   // returns a promoise 
   saveToStorage(){
-
     var sessionSerializer = this.container.lookup('serializer:session');
     var serializedSession = sessionSerializer.serialize(this);
 
@@ -824,18 +823,21 @@ export default class Session {
 
     var sessionSerializer = this.container.lookup('serializer:session');
 
-    localforage.getItem(sessionStorageKey, function(err, value) {
-      if (err) {
-        console.error('session:_loadFromStorage', err);
-      }
+    return localforage.getItem(sessionStorageKey).then(function(value) {
+        var deserializedSession = sessionSerializer.deserialize(value);
 
-      var deserializedSession = sessionSerializer.deseralize(value);
+        self.models = deserializedSession.models;
+        self.newModels = deserializedSession.newModels;
+        self.shadows = deserializedSession.shadows;
 
-      self.models = deserializedSession.models;
-      self.newModels = deserializedSession.newModels;
-      self.shadows = deserializedSession.shadows;
-      
+        return value;
+    }, function(error) {
+        throw new Error("Session could not be loaded from Storage!");
+        //console.error("loadFromStorage Failed!", error);
+        //return error;
     });
+
+    return;
   }
   
   toString() {
