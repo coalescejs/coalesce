@@ -77,21 +77,31 @@ describe 'SessionSerializer', ->
           seralizedUser2
         ]
 
+      queries = 
+        'post$undefined':['post1', 'post2']
+        'user$undefined':['user3', 'user4']
+      
+
       serializedSessionHash =
         models: data
         newModels: newData
         shadows: [],
         uuidStart: 5,
-        queryCache:[]
+        queryCache: queries
 
       deserializedSession = sessionSerializer.deserialize(serializedSessionHash)
-
+      
       # check hash structure
       expect(deserializedSession.models).to.not.be.undefined
       expect(deserializedSession.newModels).to.not.be.undefined
       expect(deserializedSession.shadows).to.not.be.undefined
       expect(deserializedSession.uuidStart).to.not.be.undefined
       expect(deserializedSession.queryCache).to.not.be.undefined
+
+      expect(deserializedSession.queryCache._queries['post$undefined'].length).to.eq(2)
+      expect(deserializedSession.queryCache._queries['user$undefined'].length).to.eq(2)
+      expect(deserializedSession.queryCache._queries['post$undefined'][0].title).to.eq('heyna')
+      expect(deserializedSession.queryCache._queries['user$undefined'][0].name).to.eq('jerry')
 
       # check that a user was deserialized correctly
       deserializeUser = userSerializer.deserialize(seralizedUser2)
