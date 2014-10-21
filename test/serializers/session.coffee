@@ -2,6 +2,8 @@
 `import Container from 'coalesce/container'`
 `import SessionSerializer from 'coalesce/serializers/session'`
 `import {userWithPost} from '../support/schemas'`
+`import TestRestAdapter from '../rest/_test_adapter'`
+`import Coalesce from 'coalesce'`
 
 describe 'SessionSerializer', ->
 
@@ -11,6 +13,7 @@ describe 'SessionSerializer', ->
   userSerializer = null
   postSerializer = null
   user = null
+  adapter = null
 
   beforeEach ->
     App = {}
@@ -32,6 +35,8 @@ describe 'SessionSerializer', ->
     @container.register 'serializer:post', App.PostSerializer
     postSerializer = @container.lookup('serializer:post')
 
+    @RestAdapter = TestRestAdapter.extend()
+    @container.register 'adapter:main', @RestAdapter
 
     adapter = @container.lookup('adapter:main')
     @container = adapter.container
@@ -75,7 +80,9 @@ describe 'SessionSerializer', ->
       serializedSessionHash =
         models: data
         newModels: newData
-        shadows: []
+        shadows: [],
+        uuidStart: 5,
+        queryCache:[]
 
       deserializedSession = sessionSerializer.deserialize(serializedSessionHash)
 
@@ -83,6 +90,8 @@ describe 'SessionSerializer', ->
       expect(deserializedSession.models).to.not.be.undefined
       expect(deserializedSession.newModels).to.not.be.undefined
       expect(deserializedSession.shadows).to.not.be.undefined
+      expect(deserializedSession.uuidStart).to.not.be.undefined
+      expect(deserializedSession.queryCache).to.not.be.undefined
 
       # check that a user was deserialized correctly
       deserializeUser = userSerializer.deserialize(seralizedUser2)
@@ -107,23 +116,37 @@ describe 'SessionSerializer', ->
       session.merge post2
       session.merge user1
 
-      serializedSession = sessionSerializer.serialize(session)
+      # this response will be returned for both queries
+      adapter.r['GET:/posts'] =
+        posts: [postSerializer.serialize(post1),postSerializer.serialize(post2)]
 
-      # check hash structure
-      expect(serializedSession.models).to.not.be.undefined
-      expect(serializedSession.newModels).to.not.be.undefined
-      expect(serializedSession.shadows).to.not.be.undefined
+      query1 = session.query('post')
+      query2 = session.query('post',{"name":"yo"})
 
-      # check that a user was serialized correctly
-      serializeUser = userSerializer.serialize(user1)
+      Coalesce.Promise.all([query1,query2]).then ->
+        
+        serializedSession = sessionSerializer.serialize(session)
 
-      serializedSessionUser = serializedSession.models.user[0]
+        # check hash structure
+        expect(serializedSession.models).to.not.be.undefined
+        expect(serializedSession.newModels).to.not.be.undefined
+        expect(serializedSession.shadows).to.not.be.undefined
+        expect(serializedSession.queryCache).to.not.be.undefined
 
-      expect(serializeUser).to.eql(serializedSessionUser)
+        expect(serializedSession.queryCache['post$undefined'].length).to.eq(2)
+        expect(serializedSession.queryCache['post${"name":"yo"}'].length).to.eq(2)
+        expect(serializedSession.uuidStart).to.eq(4)
 
-      # check that a post was serialized correctly
-      serializePost = postSerializer.serialize(post1)
+        # check that a user was serialized correctly
+        serializeUser = userSerializer.serialize(user1)
 
-      serializedSessionPost = serializedSession.models.post[0]
+        serializedSessionUser = serializedSession.models.user[0]
 
-      expect(serializePost).to.eql(serializedSessionPost)
+        expect(serializeUser).to.eql(serializedSessionUser)
+
+        # check that a post was serialized correctly
+        serializePost = postSerializer.serialize(post1)
+
+        serializedSessionPost = serializedSession.models.post[0]
+
+        expect(serializePost).to.eql(serializedSessionPost)

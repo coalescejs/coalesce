@@ -62,6 +62,11 @@ export default class SessionSerializer extends Serializer {
     return serialized;
   }
   
+  /**
+    Creates a hash of arrays. Each key is the typeKey$params of the query in the array. 
+    with the values of the array the clientId of each model in cache
+    e.g. {post$undefined: ['post1','post5']}
+  */
   serializeQueryCache(cache) {
     var res = {},
         queries = cache._queries;
