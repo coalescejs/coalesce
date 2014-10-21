@@ -8,8 +8,8 @@ import ModelSet from '../collections/model_set';
 export default class ModelSetSerializer extends Serializer {
 
   /**
-  Turns a hash of arrays. e.g. {post: [...], comment: [...]}
-  into a modelSet
+    Turns a hash of arrays. e.g. {post: [...], comment: [...]}
+    into a modelSet
   */
   deserialize(serialized, opts) {
     var modelSet = new ModelSet();
@@ -32,8 +32,8 @@ export default class ModelSetSerializer extends Serializer {
   }
   
   /**
-  Creates a hash of arrays. Each key is the typeKey of the models in the array.
-  e.g. {post: [...], comment: [...]}
+    Creates a hash of arrays. Each key is the typeKey of the models in the array.
+    e.g. {post: [...], comment: [...]}
   */
   serialize(modelSet) {
     var serialized = {};

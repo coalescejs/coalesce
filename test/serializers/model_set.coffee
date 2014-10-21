@@ -35,54 +35,54 @@ describe 'ModelSetSerializer', ->
 
   describe '.deserialize', ->
     it 'deserializes', ->
-        seralizedPost1 =
-          id: 1
-          title: 'yo'
+      seralizedPost1 =
+        id: 1
+        title: 'yo'
 
-        seralizedPost2 =
-          id: 2
-          title: 'boi'
+      seralizedPost2 =
+        id: 2
+        title: 'boi'
 
-        seralizedUser1 =
-          id: 3
-          name: 'johnny'
+      seralizedUser1 =
+        id: 3
+        name: 'johnny'
 
-        seralizedUser2 =
-          id: 4
-          name: 'bobby'
+      seralizedUser2 =
+        id: 4
+        name: 'bobby'
 
-        data =
-          post: [
-            seralizedPost1
-            seralizedPost2
-          ]
-          user: [
-            seralizedUser1
-            seralizedUser2
-          ]
+      data =
+        post: [
+          seralizedPost1
+          seralizedPost2
+        ]
+        user: [
+          seralizedUser1
+          seralizedUser2
+        ]
 
-        modelSet = modelSetSerializer.deserialize(data)
+      modelSet = modelSetSerializer.deserialize(data)
 
-        expect(modelSet.size).to.eq(4)
+      expect(modelSet.size).to.eq(4)
 
-        modelArray = modelSet.toArray()
+      modelArray = modelSet.toArray()
 
-        # hopefully order isnt a problem here
+      # hopefully order isnt a problem here
 
-        expect(modelArray[0].isModel).to.be.true
-        expect(modelArray[1].isModel).to.be.true
-        expect(modelArray[2].isModel).to.be.true
-        expect(modelArray[3].isModel).to.be.true
+      expect(modelArray[0].isModel).to.be.true
+      expect(modelArray[1].isModel).to.be.true
+      expect(modelArray[2].isModel).to.be.true
+      expect(modelArray[3].isModel).to.be.true
 
-        expect(modelArray[0].title).to.eq('yo')
-        expect(modelArray[1].title).to.eq('boi')
-        expect(modelArray[2].name).to.eq('johnny')
-        expect(modelArray[3].name).to.eq('bobby')
+      expect(modelArray[0].title).to.eq('yo')
+      expect(modelArray[1].title).to.eq('boi')
+      expect(modelArray[2].name).to.eq('johnny')
+      expect(modelArray[3].name).to.eq('bobby')
 
-        expect(modelArray[0].id).to.eq('1')
-        expect(modelArray[1].id).to.eq('2')
-        expect(modelArray[2].id).to.eq('3')
-        expect(modelArray[3].id).to.eq('4')
+      expect(modelArray[0].id).to.eq('1')
+      expect(modelArray[1].id).to.eq('2')
+      expect(modelArray[2].id).to.eq('3')
+      expect(modelArray[3].id).to.eq('4')
 
   describe '.serialize', ->
 

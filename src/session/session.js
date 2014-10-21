@@ -937,6 +937,8 @@ export default class Session {
         self.models = deserializedSession.models;
         self.newModels = deserializedSession.newModels;
         self.shadows = deserializedSession.shadows;
+        self.queryCache = deserializedSession.queryCache;
+        self.idManager.uuid = deserializedSession.uuidStart;
       }
 
       return value;
