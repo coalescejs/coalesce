@@ -8,8 +8,8 @@ describe "Session", ->
 
   session = null
   adapter = null
-
-  beforeEach ->
+  
+  reset = ->
     @App = {}
     @container = new Container()
     Coalesce.__container__ = @container
@@ -20,45 +20,47 @@ describe "Session", ->
     @container = adapter.container
     session = adapter.newSession()
 
-  describe '.saveTo and loadFrom Storage', ->    
+  beforeEach ->
+    reset.apply(@)
+
+  describe '.saveTo and loadFrom Storage', ->
+    beforeEach ->
+      session.clearStorage()
+    
     it 'should save to storage', ->
       post = session.merge @Post.create id: '1', title: 'save me plz'
       post2 = session.merge @Post.create id: '2', title: 'save me plz to'
       post3 = session.merge @Post.create id: '3', title: 'save me plz too'
       post4 = session.create 'post', title: 'Im new'
 
-      session.saveToStorage().then((value) ->
+      session.saveToStorage().then (value) =>
         expect(value.models.post.length).to.eq(4)
         expect(value.newModels.post.length).to.eq(1)
 
         expect(value.models.post[0].title).to.eq(post.title)
         expect(value.newModels.post[0].title).to.eq(post4.title)
-        return
-      , (error) ->
-        # something wrong throw error
-        expect(error).to.be.null
-        return
-      )
 
-      newSession = adapter.newSession()
+        # Reset everything 
+        reset.apply(@)
+        
+        # XXX: wtf, tests seem to sporadically fail without this sleep, despite
+        # both setItem and getItem returning promises. Maybe localforage promise
+        # implementation bug?
+        timeout = new Coalesce.Promise (resolve, reject) ->
+          Coalesce.run.later resolve
 
-      expect(post.session).to.not.eq(newSession)
+        timeout.then ->
+          expect(post.session).to.not.eq(session)
 
-      expect(newSession.getForId('post', 1)).to.be.undefined
-      expect(newSession.getForId('post', 2)).to.be.undefined
-      expect(newSession.getForId('post', 3)).to.be.undefined
+          expect(session.getForId('post', 1)).to.be.undefined
+          expect(session.getForId('post', 2)).to.be.undefined
+          expect(session.getForId('post', 3)).to.be.undefined
 
-      newSession.loadFromStorage().then((value) ->
-        expect(newSession.getForId('post', 1)).to.not.be.undefined
-        expect(newSession.getForId('post', 2)).to.not.be.undefined
-        expect(newSession.getForId('post', 3)).to.not.be.undefined
-
-        return
-      , (error) ->
-        # something wrong throw error
-        expect(error).to.be.null
-        return
-      )
+          session.loadFromStorage().then (value) =>
+            expect(session.getForId('post', 1)).to.not.be.undefined
+            expect(session.getForId('post', 2)).to.not.be.undefined
+            expect(session.getForId('post', 3)).to.not.be.undefined
+        
   describe '.loading Storage', ->  
     it 'should skip loading from storage when storage is empty', ->
       session.clearStorage().then (_session) ->
@@ -351,4 +353,3 @@ describe "Session", ->
         expect(comment).to.not.eq(parentComment)
         expect(comment.post).to.not.be.bull
         expect(comment.post.session).to.eq(session)
-

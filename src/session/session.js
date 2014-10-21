@@ -923,26 +923,25 @@ export default class Session {
     return localforage.setItem(sessionStorageKey, serializedSession);
   }
 
+  // TODO: make this a static method and deserialize an entire session instance
   loadFromStorage(){
     var self = this;
-
+    
     var sessionSerializer = this.adapter.container.lookup('serializer:session');
 
     return localforage.getItem(sessionStorageKey).then(function(value) {
 
-        if(value != null){
-            var deserializedSession = sessionSerializer.deserialize(value);
+      if(value != null){
+        var deserializedSession = sessionSerializer.deserialize(value);
 
-            self.models = deserializedSession.models;
-            self.newModels = deserializedSession.newModels;
-            self.shadows = deserializedSession.shadows;
-        }
+        self.models = deserializedSession.models;
+        self.newModels = deserializedSession.newModels;
+        self.shadows = deserializedSession.shadows;
+      }
 
-        return value;
+      return value;
     }, function(error) {
-        throw new Error("Session could not be loaded from Storage!");
-        //console.error("loadFromStorage Failed!", error);
-        //return error;
+      throw new Error("Session could not be loaded from Storage!");
     });
 
     return;
@@ -951,7 +950,7 @@ export default class Session {
   clearStorage(){
     var self = this;
     return localforage.removeItem(sessionStorageKey).then(function(){
-        return self;
+      return self;
     });
   }
   
