@@ -14,6 +14,8 @@ import array_from from '../utils/array_from';
 
 var uuid = 1;
 
+var sessionStorageKey = "___session_collections"
+
 export default class Session {
 
   constructor({adapter, idManager, container, parent}) {
@@ -911,6 +913,46 @@ export default class Session {
 
   _containsClientRev(modelA, modelB) {
     return modelA.clientRev >= modelB.clientRev;
+  }
+
+  // returns a promoise 
+  saveToStorage(){
+    var sessionSerializer = this.adapter.container.lookup('serializer:session');
+    var serializedSession = sessionSerializer.serialize(this);
+
+    return localforage.setItem(sessionStorageKey, serializedSession);
+  }
+
+  loadFromStorage(){
+    var self = this;
+
+    var sessionSerializer = this.adapter.container.lookup('serializer:session');
+
+    return localforage.getItem(sessionStorageKey).then(function(value) {
+
+        if(value != null){
+            var deserializedSession = sessionSerializer.deserialize(value);
+
+            self.models = deserializedSession.models;
+            self.newModels = deserializedSession.newModels;
+            self.shadows = deserializedSession.shadows;
+        }
+
+        return value;
+    }, function(error) {
+        throw new Error("Session could not be loaded from Storage!");
+        //console.error("loadFromStorage Failed!", error);
+        //return error;
+    });
+
+    return;
+  }
+
+  clearStorage(){
+    var self = this;
+    return localforage.removeItem(sessionStorageKey).then(function(){
+        return self;
+    });
   }
   
   toString() {

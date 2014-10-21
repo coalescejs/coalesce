@@ -20,6 +20,59 @@ describe "Session", ->
     @container = adapter.container
     session = adapter.newSession()
 
+  describe '.saveTo and loadFrom Storage', ->    
+    it 'should save to storage', ->
+      post = session.merge @Post.create id: '1', title: 'save me plz'
+      post2 = session.merge @Post.create id: '2', title: 'save me plz to'
+      post3 = session.merge @Post.create id: '3', title: 'save me plz too'
+      post4 = session.create 'post', title: 'Im new'
+
+      session.saveToStorage().then((value) ->
+        expect(value.models.post.length).to.eq(4)
+        expect(value.newModels.post.length).to.eq(1)
+
+        expect(value.models.post[0].title).to.eq(post.title)
+        expect(value.newModels.post[0].title).to.eq(post4.title)
+        return
+      , (error) ->
+        # something wrong throw error
+        expect(error).to.be.null
+        return
+      )
+
+      newSession = adapter.newSession()
+
+      expect(post.session).to.not.eq(newSession)
+
+      expect(newSession.getForId('post', 1)).to.be.undefined
+      expect(newSession.getForId('post', 2)).to.be.undefined
+      expect(newSession.getForId('post', 3)).to.be.undefined
+
+      newSession.loadFromStorage().then((value) ->
+        expect(newSession.getForId('post', 1)).to.not.be.undefined
+        expect(newSession.getForId('post', 2)).to.not.be.undefined
+        expect(newSession.getForId('post', 3)).to.not.be.undefined
+
+        return
+      , (error) ->
+        # something wrong throw error
+        expect(error).to.be.null
+        return
+      )
+  describe '.loading Storage', ->  
+    it 'should skip loading from storage when storage is empty', ->
+      session.clearStorage().then (_session) ->
+        # debugger
+        _session.loadFromStorage().then((value) ->
+          # debugger
+          expect(_session.models).to.not.be.null
+          return
+        , (error) ->
+          # something wrong throw error
+          expect(error).to.be.null
+          return
+        )     
+
   describe '.build', ->
   
     it 'instantiates a model', ->
@@ -298,3 +351,4 @@ describe "Session", ->
         expect(comment).to.not.eq(parentComment)
         expect(comment.post).to.not.be.bull
         expect(comment.post.session).to.eq(session)
+

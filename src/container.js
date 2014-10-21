@@ -13,6 +13,8 @@ import NumberSerializer from './serializers/number';
 import ModelSerializer from './serializers/model';
 import RevisionSerializer from './serializers/revision';
 import StringSerializer from './serializers/string';
+import SessionSerializer from './serializers/session';
+import ModelSetSerializer from './serializers/model_set';
 
 import PerField from './merge/per_field';
 
@@ -52,6 +54,8 @@ function setupSerializers(container) {
   container.register('serializer:model', ModelSerializer);
   container.register('serializer:revision', RevisionSerializer);
   container.register('serializer:string', StringSerializer);
+  container.register('serializer:session', SessionSerializer);
+  container.register('serializer:model-set', ModelSetSerializer);
 }
 
 function setupMergeStrategies(container) {

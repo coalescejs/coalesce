@@ -675,7 +675,7 @@ export default class RestAdapter extends Adapter {
         prefix = this.urlPrefix();
 
     if (typeKey) { url.push(this.pathForType(typeKey)); }
-    if (id) { url.push(id); }
+    if (id) { url.push(encodeURIComponent(id)); }
 
     if (prefix) { url.unshift(prefix); }
 
