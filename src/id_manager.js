@@ -1,7 +1,5 @@
 import BaseClass from './utils/base_class';
 
-var uuid = 1;
-
 /**
   This class is responsible for maintaining a centralized mapping
   between client-side identifiers (`clientId`) and server-side
@@ -12,6 +10,7 @@ var uuid = 1;
 export default class IdManager extends BaseClass {
   constructor() {
     this.idMaps = {};
+    this.uuid = 1;
   }
 
   /**
@@ -65,7 +64,7 @@ export default class IdManager extends BaseClass {
   }
 
   _generateClientId(typeKey) {
-    return typeKey + (uuid++);
+    return typeKey + (this.uuid++);
   }
 
 }
