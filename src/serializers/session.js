@@ -1,6 +1,8 @@
 import Serializer from './base';
 import ModelSetSerializer from './model_set';
 import QueryCache from '../session/query_cache';
+import Query from '../session/query';
+
 
 /**
   @namespace serializers
@@ -8,38 +10,47 @@ import QueryCache from '../session/query_cache';
 */
 export default class SessionSerializer extends Serializer {
   
-  // TODO return an entire session instance
-  deserialize(serialized) {
+  /**
+  @return {Session}
+  */
+  deserialize(session, serializedSessionData) {
     var modelSetSerializer = this.serializerFor('model-set');
     
-    var deserialized = {
-      models: null,
-      newModels: null,
-      shadows: null,
-      queryCache: null
-    };
-    
-    if (!serialized){ return deserialized; }
+    if (!serializedSessionData){ return session; }
       
-    deserialized.models = modelSetSerializer.deserialize(serialized.models);
-    deserialized.newModels = modelSetSerializer.deserialize(serialized.newModels);
-    deserialized.shadows = modelSetSerializer.deserialize(serialized.shadows);
-    deserialized.queryCache = this.deserializeQueryCache(serialized.queryCache, deserialized.models);
+    session.models = modelSetSerializer.deserialize(serializedSessionData.models);
+    session.newModels = modelSetSerializer.deserialize(serializedSessionData.newModels);
+    session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);
+    session.queryCache = this.deserializeQueryCache(session, serializedSessionData.queryCache);
     // We also need to track where to start assigning clientIds since the models
     // we deserialize will already have clientIds assigned.
-    deserialized.uuidStart = serialized.uuidStart;
-    
-    return deserialized;
+    session.idManager.uuid = serializedSessionData.uuidStart;
+
+    return session;
   }
   
-  // TODO: could be a separate serializer, but need ref to models
-  deserializeQueryCache(serialized, models) {
+  deserializeQueryCache(session, serialized) {
     var queries = {};
     for(var key in serialized) {
       if(!serialized.hasOwnProperty(key)) continue;
-      queries[key] = serialized[key].map(function(clientId) {
-        return models.getForClientId(clientId);
+
+      var arrayOfModels = serialized[key].map(function(clientId) {
+        return session.models.getForClientId(clientId);
       });
+
+      var typeKey = key.split('$')[0];
+      var stringedParams = key.split('$')[1];
+      var params = {};
+
+      if(stringedParams !== 'undefined'){
+        params = JSON.parse(stringedParams);
+      }
+
+      var newQuery = new Query(session, typeKey, params);
+
+      newQuery.setObjects(arrayOfModels);
+
+      queries[key] = newQuery;
     }
     return new QueryCache(queries);
   }

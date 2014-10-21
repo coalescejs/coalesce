@@ -4,6 +4,7 @@
 `import {userWithPost} from '../support/schemas'`
 `import TestRestAdapter from '../rest/_test_adapter'`
 `import Coalesce from 'coalesce'`
+`import Query from 'coalesce/session/query'`
 
 describe 'SessionSerializer', ->
 
@@ -89,15 +90,16 @@ describe 'SessionSerializer', ->
         uuidStart: 5,
         queryCache: queries
 
-      deserializedSession = sessionSerializer.deserialize(serializedSessionHash)
+      deserializedSession = sessionSerializer.deserialize(session, serializedSessionHash)
       
       # check hash structure
       expect(deserializedSession.models).to.not.be.undefined
       expect(deserializedSession.newModels).to.not.be.undefined
       expect(deserializedSession.shadows).to.not.be.undefined
-      expect(deserializedSession.uuidStart).to.not.be.undefined
       expect(deserializedSession.queryCache).to.not.be.undefined
+      expect(deserializedSession.idManager.uuid).to.eq(5)
 
+      expect(deserializedSession.queryCache._queries['post$undefined']).to.be.an.instanceOf(Query)
       expect(deserializedSession.queryCache._queries['post$undefined'].length).to.eq(2)
       expect(deserializedSession.queryCache._queries['user$undefined'].length).to.eq(2)
       expect(deserializedSession.queryCache._queries['post$undefined'][0].title).to.eq('heyna')

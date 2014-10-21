@@ -915,38 +915,30 @@ export default class Session {
     return modelA.clientRev >= modelB.clientRev;
   }
 
-  // returns a promoise 
-  saveToStorage(){
-    var sessionSerializer = this.adapter.container.lookup('serializer:session');
-    var serializedSession = sessionSerializer.serialize(this);
+  /**
+  @return {Promise}
+  */
+  static saveToStorage(session){
+    var sessionSerializer = session.adapter.container.lookup('serializer:session');
+    var serializedSession = sessionSerializer.serialize(session);
 
     return localforage.setItem(sessionStorageKey, serializedSession);
   }
 
-  // TODO: make this a static method and deserialize an entire session instance
-  loadFromStorage(){
-    var self = this;
-    
-    var sessionSerializer = this.adapter.container.lookup('serializer:session');
+  /**
+  @return {Promise}
+  */
+  static loadFromStorage(session){
+    var sessionSerializer = session.adapter.container.lookup('serializer:session');
 
-    return localforage.getItem(sessionStorageKey).then(function(value) {
+    return localforage.getItem(sessionStorageKey).then(function(serializedSessionData) {
 
-      if(value != null){
-        var deserializedSession = sessionSerializer.deserialize(value);
+      // returns the updated (from storage) session
+      return sessionSerializer.deserialize(session, serializedSessionData);
 
-        self.models = deserializedSession.models;
-        self.newModels = deserializedSession.newModels;
-        self.shadows = deserializedSession.shadows;
-        self.queryCache = deserializedSession.queryCache;
-        self.idManager.uuid = deserializedSession.uuidStart;
-      }
-
-      return value;
     }, function(error) {
-      throw new Error("Session could not be loaded from Storage!");
+      throw new Error("Session could not be loaded from Storage!");      
     });
-
-    return;
   }
 
   clearStorage(){

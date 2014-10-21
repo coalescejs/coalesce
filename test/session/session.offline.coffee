@@ -4,6 +4,7 @@
 `import {postWithComments} from '../support/schemas'`
 `import Container from 'coalesce/container'`
 `import Query from 'coalesce/session/query'`
+`import Session from 'coalesce/session/session'`
 
 describe "Session", ->
 
@@ -33,7 +34,7 @@ describe "Session", ->
       post3 = session.merge @Post.create id: '3', title: 'save me plz too'
       post4 = session.create 'post', title: 'Im new'
 
-      session.saveToStorage().then (value) =>
+      Session.saveToStorage(session).then (value) =>
         expect(value.models.post.length).to.eq(4)
         expect(value.newModels.post.length).to.eq(1)
 
@@ -57,7 +58,7 @@ describe "Session", ->
           expect(session.getForId('post', 2)).to.be.undefined
           expect(session.getForId('post', 3)).to.be.undefined
 
-          session.loadFromStorage().then (value) =>
+          Session.loadFromStorage(session).then (value) =>
             expect(session.getForId('post', 1)).to.not.be.undefined
             expect(session.getForId('post', 2)).to.not.be.undefined
             expect(session.getForId('post', 3)).to.not.be.undefined
@@ -69,7 +70,7 @@ describe "Session", ->
       session.query(@Post).then (posts) =>
         expect(posts.length).to.eq(1)
         
-        session.saveToStorage().then (value) =>
+        Session.saveToStorage(session).then (value) =>
           # Reset everything 
           reset.apply(@)
           
@@ -80,7 +81,7 @@ describe "Session", ->
             Coalesce.run.later resolve
             
           timeout.then =>
-            session.loadFromStorage().then (value) =>
+            Session.loadFromStorage(session).then (value) =>
               posts = session.fetchQuery(@Post)
               expect(posts.length).to.eq(1)
         
@@ -90,7 +91,7 @@ describe "Session", ->
     it 'should skip loading from storage when storage is empty', ->
       session.clearStorage().then (_session) ->
         # debugger
-        _session.loadFromStorage().then((value) ->
+        Session.loadFromStorage(_session).then((value) ->
           # debugger
           expect(_session.models).to.not.be.null
           return
