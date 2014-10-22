@@ -18,7 +18,7 @@ export default class SessionSerializer extends Serializer {
     
     if (!serializedSessionData){ return session; }
       
-    session.models = modelSetSerializer.deserialize(serializedSessionData.models);
+    session.models = modelSetSerializer.deserialize(serializedSessionData.models, {session: session, adopt: true});
     session.newModels = modelSetSerializer.deserialize(serializedSessionData.newModels);
     session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);
     session.queryCache = this.deserializeQueryCache(session, serializedSessionData.queryCache);
@@ -30,26 +30,18 @@ export default class SessionSerializer extends Serializer {
   }
   
   deserializeQueryCache(session, serialized) {
+
     var queries = {};
     for(var key in serialized) {
       if(!serialized.hasOwnProperty(key)) continue;
 
       var arrayOfModels = serialized[key].map(function(clientId) {
-        var model = session.models.getForClientId(clientId);
-
-        //  TODO: the session setting should probably be 
-        //  happening in getForClientId??????
-        model.session = session;
-        return model;
+        return session.models.getForClientId(clientId);
       });
 
       var typeKey = key.split('$')[0];
       var stringedParams = key.split('$')[1];
-      var params = {};
-
-      if(stringedParams !== 'undefined'){
-        params = JSON.parse(stringedParams);
-      }
+      var params = JSON.parse(stringedParams);
 
       var newQuery = new Query(session, typeKey, params);
 

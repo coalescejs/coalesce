@@ -23,8 +23,14 @@ export default class ModelSetSerializer extends Serializer {
       
       var modelArray = serialized[typeKey];
       
-      modelArray.forEach(function(model){
-        modelSet.add(serializer.deserialize(model));
+      modelArray.forEach(function(serializedModel){
+        var model = serializer.deserialize(serializedModel);
+
+        if(opts && opts.session && opts.adopt && opts.adopt === true) {
+          opts.session.adopt(model);
+        }
+
+        modelSet.add(model);
       });
     }
     

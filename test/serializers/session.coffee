@@ -79,8 +79,8 @@ describe 'SessionSerializer', ->
         ]
 
       queries = 
-        'post$undefined':['post1', 'post2']
-        'user$undefined':['user3', 'user4']
+        'post${}':['post1', 'post2']
+        'user${}':['user3']
       
 
       serializedSessionHash =
@@ -99,11 +99,11 @@ describe 'SessionSerializer', ->
       expect(deserializedSession.queryCache).to.not.be.undefined
       expect(deserializedSession.idManager.uuid).to.eq(5)
 
-      expect(deserializedSession.queryCache._queries['post$undefined']).to.be.an.instanceOf(Query)
-      expect(deserializedSession.queryCache._queries['post$undefined'].length).to.eq(2)
-      expect(deserializedSession.queryCache._queries['user$undefined'].length).to.eq(2)
-      expect(deserializedSession.queryCache._queries['post$undefined'][0].title).to.eq('heyna')
-      expect(deserializedSession.queryCache._queries['user$undefined'][0].name).to.eq('jerry')
+      expect(deserializedSession.queryCache._queries['post${}']).to.be.an.instanceOf(Query)
+      expect(deserializedSession.queryCache._queries['post${}'].length).to.eq(2)
+      expect(deserializedSession.queryCache._queries['user${}'].length).to.eq(1)
+      expect(deserializedSession.queryCache._queries['post${}'][0].title).to.eq('heyna')
+      expect(deserializedSession.queryCache._queries['user${}'][0].name).to.eq('jerry')
 
       # check that a user was deserialized correctly
       deserializeUser = userSerializer.deserialize(seralizedUser2)
@@ -114,8 +114,8 @@ describe 'SessionSerializer', ->
       # check that a post was deserialized correctly
       deserializePost = postSerializer.deserialize(seralizedPost1)
       deserializedSessionPost = deserializedSession.models[0]
-
-      expect(deserializedSessionPost).to.eql(deserializePost)
+      
+      expect(deserializedSessionPost.id).to.eql(deserializePost.id)
       
   describe '.serialize', ->
 
@@ -145,7 +145,7 @@ describe 'SessionSerializer', ->
         expect(serializedSession.shadows).to.not.be.undefined
         expect(serializedSession.queryCache).to.not.be.undefined
 
-        expect(serializedSession.queryCache['post$undefined'].length).to.eq(2)
+        expect(serializedSession.queryCache['post${}'].length).to.eq(2)
         expect(serializedSession.queryCache['post${"name":"yo"}'].length).to.eq(2)
         expect(serializedSession.uuidStart).to.eq(4)
 
