@@ -105,6 +105,7 @@ export default class ModelSerializer extends Serializer {
     this.addProperty(serialized, model, 'clientId', 'string');
     this.addProperty(serialized, model, 'rev', 'revision');
     this.addProperty(serialized, model, 'clientRev', 'revision');
+    this.addProperty(serialized, model, 'isDeleted', 'boolean');
   }
 
   addAttributes(serialized, model) {
@@ -156,6 +157,7 @@ export default class ModelSerializer extends Serializer {
     this.extractProperty(model, hash, 'clientId', 'string');
     this.extractProperty(model, hash, 'rev', 'revision');
     this.extractProperty(model, hash, 'clientRev', 'revision');
+    this.extractProperty(model, hash, 'isDeleted', 'boolean');
     this.extractProperty(model, hash, 'errors', 'errors');
     if(!opts || opts.reifyClientId !== false) {
       this.idManager.reifyClientId(model);
