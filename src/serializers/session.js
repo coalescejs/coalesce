@@ -35,7 +35,12 @@ export default class SessionSerializer extends Serializer {
       if(!serialized.hasOwnProperty(key)) continue;
 
       var arrayOfModels = serialized[key].map(function(clientId) {
-        return session.models.getForClientId(clientId);
+        var model = session.models.getForClientId(clientId);
+
+        //  TODO: the session setting should probably be 
+        //  happening in getForClientId??????
+        model.session = session;
+        return model;
       });
 
       var typeKey = key.split('$')[0];

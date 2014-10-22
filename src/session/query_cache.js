@@ -53,4 +53,15 @@ export default class QueryCache {
     return type.typeKey + '$' + JSON.stringify(params);
   }
 
+  /**
+    Applies a callback to each query in the queries object
+  */
+  forEachQuery(callback, binding) {
+    var queries = this._queries;
+    for(var key in queries) {
+      if(!queries.hasOwnProperty(key)) continue;
+      
+      queries[key] = callback.call(binding, queries[key]);
+    }
+  }
 }
