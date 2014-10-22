@@ -123,7 +123,7 @@ describe 'rest serialization', ->
           rev: 123
           clientRev: 321
         data = @serializer.serialize(post)
-        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', long_title: 'wat omgawd', rev: 123, client_rev: 321)
+        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', long_title: 'wat omgawd', rev: 123, client_rev: 321, is_deleted: false)
 
       it 'obeys custom keys', ->
         @serializer.constructor.reopen
@@ -136,7 +136,7 @@ describe 'rest serialization', ->
         post.title = 'wat'
         post.longTitle = 'wat omgawd'
         data = @serializer.serialize(post)
-        expect(data).to.eql({client_id: "2", id: 1, POST_TITLE: 'wat', long_title: 'wat omgawd'})
+        expect(data).to.eql({client_id: "2", id: 1, POST_TITLE: 'wat', long_title: 'wat omgawd', is_deleted: false})
 
 
   context 'model with raw and object properties', ->
@@ -175,7 +175,7 @@ describe 'rest serialization', ->
           title: "wat"
           object: {prop: 'sup'}
         data = @serializer.serialize(post)
-        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: {prop: 'sup'})
+        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: {prop: 'sup'}, is_deleted: false)
 
       it 'serializes array', ->
         post = @Post.create
@@ -184,7 +184,7 @@ describe 'rest serialization', ->
           title: "wat"
           object: ['asd']
         data = @serializer.serialize(post)
-        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: ['asd'])
+        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: ['asd'], is_deleted: false)
 
       it 'serializes empty array', ->
         post = @Post.create
@@ -193,7 +193,7 @@ describe 'rest serialization', ->
           title: "wat"
           object: []
         data = @serializer.serialize(post)
-        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: [])
+        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: [], is_deleted: false)
 
       it 'serializes complex object', ->
         post = @Post.create
@@ -202,7 +202,7 @@ describe 'rest serialization', ->
           title: "wat"
           object: {tags: ['ruby', 'java']}
         data = @serializer.serialize(post)
-        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: {tags: ['ruby', 'java']})
+        expect(data).to.eql(client_id: "2", id: 1, title: 'wat', object: {tags: ['ruby', 'java']}, is_deleted: false)
 
   context 'one->many', ->
 
