@@ -50,7 +50,8 @@ export default class QueryCache {
   }
   
   keyFor(type, params) {
-    return type.typeKey + '$' + JSON.stringify(params);
+    var stringifiedParams = (params === undefined) ? "{}" : JSON.stringify(params)
+    return type.typeKey + '$' + stringifiedParams;
   }
 
   /**
