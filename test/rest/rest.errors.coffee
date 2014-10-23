@@ -250,7 +250,7 @@ describe "rest", ->
     
     context 'on delete', ->
       
-      it 'should retain deleted state', ->
+      it 'retains deleted state', ->
         adapter.r['DELETE:/posts/1'] = ->
           throw status: 0
           
@@ -260,5 +260,34 @@ describe "rest", ->
         session.flush().then null, ->
           expect(post.isDirty).to.be.true
           expect(post.isDeleted).to.be.true
+      
+      it 'retains deleted state on multiple models and succeeds subsequently', ->
+        adapter.r['DELETE:/posts/1'] = ->
+          throw status: 0
+        adapter.r['DELETE:/posts/2'] = ->
+          throw status: 0
+          
+        post1 = session.merge new @Post(id: 1, title: 'bad post')
+        post2 = session.merge new @Post(id: 2, title: 'another bad post')
+        session.deleteModel(post1)
+        session.deleteModel(post2)
+        expect(post1.isDeleted).to.be.true
+        expect(post2.isDeleted).to.be.true
+        session.flush().then null, ->
+          expect(post1.isDirty).to.be.true
+          expect(post1.isDeleted).to.be.true
+          expect(post2.isDirty).to.be.true
+          expect(post2.isDeleted).to.be.true
+          
+          adapter.r['DELETE:/posts/1'] = -> {}
+          adapter.r['DELETE:/posts/2'] = -> {}
+          
+          session.flush().then ->
+            expect(post1.isDirty).to.be.false
+            expect(post1.isDeleted).to.be.true
+            expect(post2.isDirty).to.be.false
+            expect(post2.isDeleted).to.be.true
+          
+      
         
       
