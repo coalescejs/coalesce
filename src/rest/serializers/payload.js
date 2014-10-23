@@ -83,6 +83,7 @@ export default class PayloadSerializer extends Serializer {
 
       var typeKey = this.typeKeyFor(prop),
           serializer = this.serializerFor(typeKey);
+      console.assert(!!serializer, `No serializer found for '${typeKey}'`);
       if (Array.isArray(value)) {
         for (var i=0; i < value.length; i++) {
           var model = serializer.deserialize(value[i]);

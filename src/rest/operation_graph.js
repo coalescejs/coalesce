@@ -15,7 +15,8 @@ export default class OperationGraph {
 
   perform() {
     var adapter = this.adapter,
-        cumulative = [];
+        results = [],
+        pending = [];
 
     function createNestedPromise(op) {
       var promise;
@@ -31,10 +32,12 @@ export default class OperationGraph {
 
       // keep track of all models for the resolution of the entire flush
       promise = promise.then(function(model) {
-        cumulative.push(model);
+        results.push(model);
+        _.remove(pending, op);
         return model;
       }, function(model) {
-        cumulative.push(model);
+        results.push(model);
+        _.remove(pending, op);
         throw model;
       });
 
@@ -55,12 +58,19 @@ export default class OperationGraph {
     var promises = [];
     this.ops.forEach(function(op, model) {
       promises.push(createNestedPromise(op));
+      pending.push(op);
     }); 
 
     return Coalesce.Promise.all(promises).then(function() {
-      return cumulative;
+      return results;
     }, function(err) {
-      throw cumulative;
+      // all the promises that haven't finished, we need still merge them into
+      // the session
+      var failures = pending.map(function(op) {
+        return op.fail();
+      });
+      results = results.concat(failures);
+      throw results;
     });
   }
 

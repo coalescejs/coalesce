@@ -28,7 +28,7 @@ describe "rest", ->
       @container.register 'model:post', @Post
 
 
-    context 'on create', ->
+    context 'on update', ->
       it 'handles validation errors', ->
         adapter.r['PUT:/posts/1'] = ->
           throw status: 422, responseText: JSON.stringify(errors: {title: 'is too short', created_at: 'cannot be in the past'})
@@ -115,13 +115,44 @@ describe "rest", ->
 
 
     context 'on create', ->
-      it 'handles error', ->
+      it 'handles 422', ->
         adapter.r['POST:/posts'] = ->
           throw status: 422, responseText: JSON.stringify(errors: {title: 'is lamerz'})
 
         post = session.create 'post', title: 'errorz'
         session.flush().then null, ->
           expect(post.errors.title).to.eq('is lamerz')
+          
+      it 'handle arbitrary errors', ->
+        adapter.r['POST:/posts'] = ->
+          throw status: 500, responseText: JSON.stringify(error: "something is wrong")
+
+        post = session.create 'post', title: 'errorz'
+        session.flush().then null, ->
+          expect(session.newModels.has(post)).to.be.true
+          expect(post.isNew).to.be.true
+          
+      it 'handle errors with multiple staggered creates', ->
+        calls = 0
+        # interleave requests
+        adapter.runLater = (callback) ->
+          delay = if calls % 2 == 1
+            0
+          else
+            1000
+          calls++
+          Coalesce.run.later callback, delay
+          
+        adapter.r['POST:/posts'] = ->
+          throw status: 0
+
+        post1 = session.create 'post', title: 'bad post'
+        post2 = session.create 'post', title: 'another bad post'
+        session.flush().then null, ->
+          expect(session.newModels.has(post1)).to.be.true
+          expect(session.newModels.has(post2)).to.be.true
+          expect(post1.isNew).to.be.true
+          expect(post2.isNew).to.be.true
 
       it 'merges payload with latest client changes against latest client version', ->
         adapter.r['POST:/posts'] = (url, type, hash) ->
@@ -212,6 +243,22 @@ describe "rest", ->
             throw status: errorCode
 
           session.load('post', 1).then null, (post) ->
-            expect(post.hasErrors).to.eq.true
+            expect(post.hasErrors).to.be.true
             expect(post.errors.status).to.eq(errorCode)
             expect(adapter.h).to.eql(['GET:/posts/1'])
+            
+    
+    context 'on delete', ->
+      
+      it 'should retain deleted state', ->
+        adapter.r['DELETE:/posts/1'] = ->
+          throw status: 0
+          
+        post = session.merge new @Post(id: 1, title: 'errorz')
+        session.deleteModel(post)
+        expect(post.isDeleted).to.be.true
+        session.flush().then null, ->
+          expect(post.isDirty).to.be.true
+          expect(post.isDeleted).to.be.true
+        
+      
