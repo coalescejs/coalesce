@@ -610,7 +610,9 @@ export default class RestAdapter extends Adapter {
   buildDirtySet(session) {
     var result = new ModelSet()
     session.dirtyModels.forEach(function(model) {
-      result.add(model.copy());
+      var copy = model.copy();
+      copy.errors = null;
+      result.add(copy);
       // ensure embedded model graphs are part of the set
       this._embeddedManager.eachEmbeddedRelative(model, function(embeddedModel) {
         // updated adapter level tracking of embedded parents
@@ -618,6 +620,7 @@ export default class RestAdapter extends Adapter {
 
         if (result.contains(embeddedModel)) { return; }
         var copy = embeddedModel.copy();
+        copy.errors = null;
         result.add(copy);
       }, this);
     }, this);
