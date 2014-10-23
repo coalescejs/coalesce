@@ -186,8 +186,9 @@ export default class Model extends BaseClass {
   }
   
   copyAttributes(dest) {
-    // RegressionTODO keep loaded attributes on dest that aren't present here?
-    dest._attributes = copy(this._attributes, true);
+    this.loadedAttributes.forEach(function(options, name) {
+      dest._attributes[name] = copy(this._attributes[name], true);
+    }, this);
   }
   
   copyRelationships(dest) {

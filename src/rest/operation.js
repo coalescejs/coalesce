@@ -161,6 +161,12 @@ export default class Operation {
     this.resolve(promise);
     return this;
   }
+  
+  // Fail this operation. This is called externally when this operation's
+  // dependencies fail
+  fail() {
+    return this.model;
+  }
 
   get _embeddedParent() {
     var model = this.model,

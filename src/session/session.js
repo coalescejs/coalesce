@@ -814,13 +814,13 @@ export default class Session {
         merged,
         ancestor,
         existing = models.getModel(model);
-
+        
     if(!existing) {
-      // Two cases where this would happen:
-      // 1. Load errors
-      // 2. Error during create inside child session
+      // This case could happen on error during create inside child session
       return model;
     }
+    
+    var original = originals.getModel(model);
 
     var hasClientChanges = this._containsClientRev(model, existing);
     if(hasClientChanges) {
@@ -834,9 +834,11 @@ export default class Session {
       ancestor = shadows.getModel(model) || existing;
     } else {
       // If doesn't have the latest client rev, merge against original
-      ancestor = originals.getModel(model);
+      ancestor = original;
     }
 
+    // TODO: load errors are merged here, harmless since no loaded data, but
+    // need to rethink
     // only merge if we haven't already seen this version
     if(ancestor && !this._containsRev(existing, model)) {
       this.suspendDirtyChecking(function() {
@@ -850,13 +852,20 @@ export default class Session {
     // TODO: we need to do a proper merge here
     merged.errors = copy(model.errors);
  
-    if(!model.isNew) {
-      // "rollback" the shadow to have what was returned by the server
+    if(!model.isNew && original) {
+      // "rollback" shadow to the original
+      shadows.addData(original);
+      // add any new loaded data from the server
+      // TODO: rethink case above here where "the server returns valid values without saving"
+      // we should not update the model in this case
       shadows.addData(model);
 
       // the shadow is now the server version, so no reason to
       // keep the original around
       originals.remove(model);
+    } else if(model.isNew) {
+      // re-track the model as a new model
+      newModels.add(existing);
     }
 
     return merged;
@@ -881,7 +890,9 @@ export default class Session {
     dest.clientId = model.clientId;
     // copy the server revision
     dest.rev = model.rev;
-    dest.isDeleted = model.isDeleted;
+    
+    // TODO: move merging isDeleted into merge strategy
+    // dest.isDeleted = model.isDeleted;
 
     //XXX: why do we need this? at this point shouldn't the dest always be in
     // the session?

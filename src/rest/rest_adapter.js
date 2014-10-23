@@ -268,22 +268,21 @@ export default class RestAdapter extends Adapter {
     Deserialize the contents of a promise.
   */
   _deserializePromise(promise, context, opts) {
-    var adapter = this;
+    var serializer = opts.deserializer || opts.serializer,
+        serializerOptions = opts.serializerOptions || {};
+    
+    if(!serializer && context) {
+      serializer = this.serializerForContext(context);
+    }
+    
+    if(serializer) {
+      serializer = this.serializerFor(serializer);
+      _.defaults(serializerOptions, {context: context});
+    }
 
+    var adapter = this;
     return promise.then(function(data){
       if(opts.deserialize !== false) {
-        var serializer = opts.deserializer || opts.serializer,
-            serializerOptions = opts.serializerOptions || {};
-        
-        if(!serializer && context) {
-          serializer = adapter.serializerForContext(context);
-        }
-        
-        if(serializer) {
-          serializer = adapter.serializerFor(serializer);
-          _.defaults(serializerOptions, {context: context});
-        }
-        
         return serializer.deserialize(data, serializerOptions);
       }
       
@@ -297,19 +296,28 @@ export default class RestAdapter extends Adapter {
           data = {};
         }
         
-        var serializer = opts.errorSerializer || opts.deserializer || opts.serializer,
-            serializerOptions = opts.serializerOptions || {};
+        serializerOptions = _.defaults(serializerOptions, {context: context, xhr: xhr});
         
-        if(!serializer && context) {
-          serializer = adapter.serializerForContext(context);
+        // TODO: handle other errors codes such as 409
+        // determine serializer behavior off of xhr response code
+        if(xhr.status === 422) {
+          // in the event of a 422 response, handle a full payload, possibly with
+          // models that have `error` properties, therefore we just use the same
+          // serializer that we use in the success case
+          throw serializer.deserialize(data, serializerOptions);
+        } else {
+          // treat other errors generically
+          serializer = adapter.serializerFor(opts.errorSerializer || 'errors');
+          var errors = serializer.deserialize(data, serializerOptions);
+          if(context.isModel) {
+            // if the context is a model we want to return a model with errors
+            // so that it can be merged by the session
+            var model = context.lazyCopy();
+            model.errors = errors;
+            throw model;
+          }
+          throw errors;
         }
-        
-        if(serializer) {
-          serializer = adapter.serializerFor(serializer);
-          serializerOptions = _.defaults(serializerOptions, {context: context, xhr: xhr});
-        }
-            
-        throw serializer.deserialize(data, serializerOptions);
       }
       throw xhr;
     });
