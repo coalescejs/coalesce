@@ -267,6 +267,16 @@ describe "rest", ->
         adapter.r['DELETE:/posts/2'] = ->
           throw status: 0
           
+        calls = 0
+        # interleave requests
+        adapter.runLater = (callback) ->
+          delay = if calls % 2 == 1
+            0
+          else
+            1000
+          calls++
+          Coalesce.run.later callback, delay
+          
         post1 = session.merge new @Post(id: 1, title: 'bad post')
         post2 = session.merge new @Post(id: 2, title: 'another bad post')
         session.deleteModel(post1)

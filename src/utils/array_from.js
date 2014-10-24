@@ -1,7 +1,8 @@
 
 // When using firefox, we cannot use Array.from since it apparently does not
 // support custom iterables
-var USE_NATIVE = typeof Set.prototype[Symbol.iterator] !== 'undefined';
+// XXX: always use forEach until we get to the bottom of firefox issues
+var USE_NATIVE = false; // typeof Set.prototype[Symbol.iterator] !== 'undefined';
 
 export default function from_array(iterable) {
   

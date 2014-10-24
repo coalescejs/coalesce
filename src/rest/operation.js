@@ -165,6 +165,11 @@ export default class Operation {
   // Fail this operation. This is called externally when this operation's
   // dependencies fail
   fail() {
+    var errors = this.adapter.serializerFactory.serializerFor('errors');
+    // TODO: for now just set a status code, need to think through differentiating
+    // types of errors, especially ones that are not field-specific
+    errors.status = 0;
+    this.model.errors = errors;
     return this.model;
   }
 
