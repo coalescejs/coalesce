@@ -10,7 +10,7 @@ export default class ErrorsSerializer extends Serializer {
     
     if(!xhr && (isEmpty(serialized) || isEmptyObject(serialized))) return;
     
-    var Type = this.container.lookupFactory('model:errors');
+    var Type = this.context.typeFor('errors');
     var res = Type.create();
     
     for(var key in serialized) {

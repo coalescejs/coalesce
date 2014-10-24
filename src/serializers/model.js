@@ -201,11 +201,11 @@ export default class ModelSerializer extends Serializer {
   }
 
   typeFor(typeKey) {
-    return this.container.lookupFactory('model:' + typeKey);
+    return this.context.typeFor(typeKey);
   }
 
   serializerFor(typeKey) {
-    return this.serializerFactory.serializerFor(typeKey);
+    return this.context.serializerFor(typeKey);
   }
 
   embeddedType(type, name) {

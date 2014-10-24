@@ -1,38 +1,17 @@
 import Error from './error';
 import BaseClass from './utils/base_class';
-import SerializerFactory from './factories/serializer';
 import Session from './session/session';
 import array_from from './utils/array_from';
 
 export default class Adapter extends BaseClass {
 
-  constructor() {
+  constructor(context) {
+    this.context = context;
     this.configs = {};
-    this.container = this.setupContainer(this.container);
-    this.serializerFactory = new SerializerFactory(this.container);
-  }
-
-  setupContainer(container) {
-    return container;
-  }
-
-  configFor(type) {
-    var configs = this.configs,
-        typeKey = type.typeKey;
-
-    return configs[typeKey] || {};
-  }
-
-  newSession() {
-    return new Session({
-      adapter: this,
-      idManager: this.idManager,
-      container: this.container
-    });
   }
 
   serialize(model, opts) {
-    return this.serializerFactory.serializerForModel(model).serialize(model, opts);
+    return this.serializerFor(model.typeKey).serialize(model, opts);
   }
 
   deserialize(typeKey, data, opts) {
@@ -40,7 +19,7 @@ export default class Adapter extends BaseClass {
   }
 
   serializerFor(typeKey) {
-    return this.serializerFactory.serializerFor(typeKey);
+    return this.context.serializerFor(typeKey);
   }
 
   merge(model, session) {

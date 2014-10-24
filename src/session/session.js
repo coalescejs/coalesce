@@ -3,9 +3,7 @@ import ModelSet from '../collections/model_set';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
-import Cache from './cache';
-import TypeFactory from '../factories/type';
-import MergeFactory from '../factories/merge';
+import Cache from './model/cache';
 import copy from '../utils/copy';
 import Error from '../error';
 import array_from from '../utils/array_from';
@@ -14,21 +12,23 @@ var uuid = 1;
 
 export default class Session {
 
-  constructor({adapter, idManager, container, parent}) {
-    this.adapter = adapter;
-    this.idManager = idManager;
-    this.container = container;
+  constructor(context, parent=null) {
+    this.context = context;
     this.parent = parent;
-    this.models = new ModelSet();
+    
+    this.adapter = context.adapter;
+    this.idManager = context.idManager;
+    
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
+    
+    this.models = new ModelSet();
     this.shadows = new ModelSet();
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
-    this.cache = new Cache();
-    this.typeFactory = new TypeFactory(container);
-    this.mergeFactory = new MergeFactory(container);
+    
     this._dirtyCheckingSuspended = false;
+    
     this.name = "session" + uuid++;
   }
 
@@ -253,17 +253,17 @@ export default class Session {
   loadModel(model, opts) {
     console.assert(model.id, "Cannot load a model with an id");
     // TODO: this should be done on a per-attribute bases
-    var promise = this.cache.getPromise(model);
+    var promise = this.modelCacheFor(model)For(model).getPromise(model);
 
     if(promise) {
-      // the cache's promise is not guaranteed to return anything
+      // the modelCache's promise is not guaranteed to return anything
       promise = promise.then(function() {
         return model;
       });
     } else {
       // XXX: refactor adapter api to use model
       promise = this.adapter.load(model, opts, this);
-      this.cache.addPromise(model, promise);
+      this.modelCacheFor(model).addPromise(model, promise);
     }
 
     return promise;
@@ -427,7 +427,7 @@ export default class Session {
       return key;
     }
 
-    return this.typeFactory.typeFor(key);
+    return this.context.typeFor(key);
   }
 
   getShadow(model) {
@@ -442,21 +442,21 @@ export default class Session {
   /**
     @private
 
-    Updates the promise cache
+    Updates the promise modelCache
   */
   updateCache(model) {
-    this.cache.addModel(model);
+    this.modelCacheFor(model).addModel(model);
   }
 
   /**
-    Invalidate the cache for a particular model. This has the
+    Invalidate the modelCache for a particular model. This has the
     effect of making the next `load` call hit the server.
 
     @method invalidate
     @param {Coalesce.Model} model
   */
   invalidate(model) {
-    this.cache.removeModel(model);
+    this.modelCacheFor(model).removeModel(model);
   }
 
   /**
@@ -792,7 +792,7 @@ export default class Session {
       this.reifyClientId(child);
     }, this);
 
-    var strategy = this.mergeFactory.mergeFor(model.typeKey);
+    var strategy = this.context.mergeStrategyFor(model.typeKey);
     strategy.merge(dest, ancestor, model);
 
     return dest;
@@ -806,6 +806,10 @@ export default class Session {
 
   _containsClientRev(modelA, modelB) {
     return modelA.clientRev >= modelB.clientRev;
+  }
+  
+  modelCacheFor(model) {
+    return this.context.lookupModelCache(model.typeKey);
   }
   
   toString() {

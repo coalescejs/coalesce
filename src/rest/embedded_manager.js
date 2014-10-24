@@ -59,7 +59,7 @@ export default class EmbeddedManager extends BaseClass {
   }
 
   embeddedType(type, name) {
-    var serializer = this.adapter.serializerFactory.serializerForType(type);
+    var serializer = this.adapter.context.serializerFor(type.typeKey);
     return serializer.embeddedType(type, name);
   }
 

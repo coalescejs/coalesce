@@ -579,9 +579,10 @@ export default class Model extends BaseClass {
 }
 
 function reifyRelationshipType(relationship) {
-  if(!relationship.type) {
-    relationship.type = Coalesce.__container__.lookupFactory('model:' + relationship.typeKey);
-  }
+  // TODO
+  // if(!relationship.type) {
+  //   relationship.type = Coalesce.__container__.lookupFactory('model:' + relationship.typeKey);
+  // }
   if(!relationship.type) {
     throw new Error("Could not find a type for '" + relationship.name + "' with typeKey '" + relationship.typeKey + "'");
   }

@@ -1,6 +1,59 @@
 import Model from 'coalesce/model/model';
 import ModelSerializer from 'coalesce/serializers/model';
+import DefaultContext from 'coalesce/context/default_context';
 // Common model setups for tests
+
+var defaults = _.defaults;
+
+class PostWithComments extends DefaultContext {
+  
+  constructor(config={}) {
+    class Post extends Model {}
+    Post.defineSchema({
+      attributes: {
+        title: {type: 'string'}
+      },
+      relationships: {
+        comments: {kind: 'hasMany', type: 'comment'}
+      }
+    });
+    
+    class Comment extends Coalesce.Model {}
+    Comment.defineSchema({
+      attributes: {
+        body: {type: 'string'}
+      },
+      relationships: {
+        post: {kind: 'belongsTo', type: 'post'}
+      }
+    });
+    
+    super(defaults(config, {
+      types: {
+        post: {
+          relationships: {
+            comments: {
+              embedded: 'always'
+            }
+          }
+        }
+      }
+    }));
+  }
+  
+}
+
+class PostWithEmbeddedComments extends PostWithComments {
+  
+  constructor() {
+    super({
+      types: {
+        
+      }
+    })
+  }
+  
+}
 
 function postWithComments() {
   this.App = {};

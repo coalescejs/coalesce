@@ -5,7 +5,6 @@ import ModelSet from '../collections/model_set';
 import OperationGraph from './operation_graph';
 import PayloadSerializer from './serializers/payload';
 import RestErrorsSerializer from './serializers/errors';
-import SerializerFactory from '../factories/serializer';
 
 import materializeRelationships from '../utils/materialize_relationships';
 
@@ -111,14 +110,15 @@ import array_from from '../utils/array_from';
   @extends Adapter
 */
 export default class RestAdapter extends Adapter {
-  constructor() {
-    super();
+  constructor(context) {
+    super(context);
     this._embeddedManager = new EmbeddedManager(this);
-    this.serializerFactory = new SerializerFactory(this.container);
     this._pendingOps = {};
+    this.setupContext();
   }
 
-  setupContainer(parent) {
+  setupContext(parent) {
+    // TODO
     var container = parent.child();
     container.register('serializer:errors', RestErrorsSerializer);
     container.register('serializer:payload', PayloadSerializer);
@@ -559,7 +559,7 @@ export default class RestAdapter extends Adapter {
   }
 
   isDirtyFromRelationships(model, cached, relDiff) {
-    var serializer = this.serializerFactory.serializerForModel(model);
+    var serializer = this.serializerFor(model.typeKey);
     for(var i = 0; i < relDiff.length; i++) {
       var diff = relDiff[i];
       if(this.isRelationshipOwner(diff.relationship) || serializer.embeddedType(model.constructor, diff.name) === 'always') {
