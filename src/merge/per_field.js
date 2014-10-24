@@ -18,10 +18,8 @@ import copy from '../utils/copy';
 export default class PerField extends Base {
 
   merge(ours, ancestor, theirs) {
-    //ours.beginPropertyChanges();
     this.mergeAttributes(ours, ancestor, theirs);
     this.mergeRelationships(ours, ancestor, theirs);
-    //ours.endPropertyChanges();
     return ours;
   }
 
