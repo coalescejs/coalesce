@@ -34,14 +34,7 @@ describe "Session", ->
       post3 = session.merge @Post.create id: '3', title: 'save me plz too'
       post4 = session.create 'post', title: 'Im new'
 
-      Session.saveToStorage(session).then (value) =>
-        expect(value.models.post.length).to.eq(4)
-        expect(value.newModels.post.length).to.eq(1)
-
-        expect(value.models.post[0].title).to.eq(post.title)
-        expect(value.newModels.post[0].title).to.eq(post4.title)
-
-        
+      Session.saveToStorage(session).then (_session) =>       
         # Reset everything 
         reset.apply(@)
         

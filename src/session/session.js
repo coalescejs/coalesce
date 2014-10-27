@@ -933,7 +933,12 @@ export default class Session {
     var sessionSerializer = session.adapter.container.lookup('serializer:session');
     var serializedSession = sessionSerializer.serialize(session);
 
-    return localforage.setItem(sessionStorageKey, serializedSession);
+    return localforage.setItem(sessionStorageKey, serializedSession).then(function(values){
+      //console.log('session:saveToStorage localforage setItem success');
+      return session;
+    }, function(error){
+      throw new Error("Session could not be saved to Storage!");  
+    });
   }
 
   /**
@@ -943,7 +948,6 @@ export default class Session {
     var sessionSerializer = session.adapter.container.lookup('serializer:session');
 
     return localforage.getItem(sessionStorageKey).then(function(serializedSessionData) {
-
       // returns the updated (from storage) session
       return sessionSerializer.deserialize(session, serializedSessionData);
 
