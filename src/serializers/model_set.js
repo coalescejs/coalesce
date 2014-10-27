@@ -11,7 +11,7 @@ export default class ModelSetSerializer extends Serializer {
     Turns a hash of arrays. e.g. {post: [...], comment: [...]}
     into a modelSet
   */
-  deserialize(serialized, opts) {
+  deserialize(serialized) {
     var modelSet = new ModelSet();
     var serializerFactory = this.serializerFactory;
     
@@ -25,11 +25,6 @@ export default class ModelSetSerializer extends Serializer {
       
       modelArray.forEach(function(serializedModel){
         var model = serializer.deserialize(serializedModel);
-
-        if(opts && opts.session && opts.adopt && opts.adopt === true) {
-          opts.session.adopt(model);
-        }
-
         modelSet.add(model);
       });
     }
