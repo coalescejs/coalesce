@@ -336,9 +336,10 @@ export default class RestAdapter extends Adapter {
     function merge(deserialized) {
       if(typeof deserialized.merge === 'function') {
         return deserialized.merge(session);
-      } else {
+      } else if(deserialized.isModel) {
         return session.merge(deserialized);
       }
+      return deserialized;
     }
 
     return promise.then(function(deserialized) {
