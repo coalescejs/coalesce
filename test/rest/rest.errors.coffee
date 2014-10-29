@@ -192,6 +192,16 @@ describe "rest", ->
             expect(adapter.h).to.eql(['POST:/posts', 'POST:/posts'])
             expect(post.hasErrors).to.be.false
 
+    context 'when querying', ->
+      
+      it 'does not merge into session', ->
+        adapter.r['GET:/posts'] = (url, type, hash) ->
+          throw status: 0, responseText: ""
+          
+        session.query('post').then null, (err) ->
+          expect(err.status).to.eq(0)
+        
+
 
       context 'in child session', ->
 
