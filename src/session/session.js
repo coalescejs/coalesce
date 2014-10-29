@@ -682,6 +682,7 @@ export default class Session {
     @param {Set} [visited] Cache used to break recursion. This is required for non-version-aware backends.
   */
   merge(model, visited) {
+    console.assert(model.isModel, `${model} is not a model`);
     if(this.parent) {
       model = this.parent.merge(model, visited);
     }
