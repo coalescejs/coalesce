@@ -1,3 +1,4 @@
+import Coalesce from '../namespace';
 import ModelArray from '../collections/model_array';
 import ModelSet from '../collections/model_set';
 import CollectionManager from './collection_manager';
@@ -927,41 +928,75 @@ export default class Session {
     return modelA.clientRev >= modelB.clientRev;
   }
 
+
   /**
-  @return {Promise}
+    Store a seralized session to localForage
+    localForage promise implmentation was causing timing issues
+    so here we implement our own promise implmentation
+
+    @method saveToStorage
+    @param {Coalesce.Session} session The session to store
+    @return {Promise}
   */
   static saveToStorage(session){
-    var sessionSerializer = session.adapter.container.lookup('serializer:session');
-    var serializedSession = sessionSerializer.serialize(session);
+    return new Coalesce.Promise(function(resolve, reject) {
 
-    return localforage.setItem(sessionStorageKey, serializedSession).then(function(values){
-      //console.log('session:saveToStorage localforage setItem success');
-      return session;
-    }, function(error){
-      throw new Error("Session could not be saved to Storage!");  
+      var sessionSerializer = session.adapter.container.lookup('serializer:session');
+      var serializedSession = sessionSerializer.serialize(session);
+
+      localforage.setItem(sessionStorageKey, serializedSession, function(error, _serializedSession){
+        if(error !== null){
+          throw new Error("Session could not save to storage");
+        }else{
+          resolve(session);
+        }    
+      });
+
     });
   }
 
   /**
-  @return {Promise}
+    Load seralized data from localForage, deserialze and 
+    load into a session
+
+    @method loadFromStorage
+    @param {Coalesce.Session} session The session to restore from storage
+    @return {Promise}
   */
   static loadFromStorage(session){
-    var sessionSerializer = session.adapter.container.lookup('serializer:session');
+    return new Coalesce.Promise(function(resolve, reject) {
 
-    return localforage.getItem(sessionStorageKey).then(function(serializedSessionData) {
-      // returns the updated (from storage) session
-      return sessionSerializer.deserialize(session, serializedSessionData);
+      var sessionSerializer = session.adapter.container.lookup('serializer:session');
 
-    }, function(error) {
-      throw new Error("Session could not be loaded from Storage!");      
+      localforage.getItem(sessionStorageKey, function(error, serializedSessionData){
+        
+        if(error !== null){
+          throw new Error("Session could not be loaded from storage");
+        }else{
+          var deserializedSession = sessionSerializer.deserialize(session, serializedSessionData);
+          resolve(deserializedSession);
+        }   
+      });
     });
   }
 
-  clearStorage(){
-    var self = this;
-    return localforage.removeItem(sessionStorageKey).then(function(){
-      return self;
+  /**
+    Clear the session storage key value
+
+    @method clearStorage
+    @return {Promise}
+  */
+  static clearStorage(){
+    var promise = new Coalesce.Promise(function(resolve, reject) {
+      var storeCallback = function(){
+        resolve();
+      };
+
+      localforage.removeItem(sessionStorageKey, storeCallback);
+
     });
+
+    return promise;
   }
   
   toString() {

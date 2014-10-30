@@ -24,7 +24,7 @@ describe "Session", ->
 
   beforeEach ->
     reset.apply(@)
-    session.clearStorage()
+    Session.clearStorage()
 
   describe '.saveTo and loadFrom Storage', ->
 
@@ -34,27 +34,20 @@ describe "Session", ->
       post3 = session.merge @Post.create id: '3', title: 'save me plz too'
       post4 = session.create 'post', title: 'Im new'
 
-      Session.saveToStorage(session).then (_session) =>       
+      Session.saveToStorage(session).then (_session) =>   
         # Reset everything 
         reset.apply(@)
         
-        # XXX: wtf, tests seem to sporadically fail without this sleep, despite
-        # both setItem and getItem returning promises. Maybe localforage promise
-        # implementation bug?
-        timeout = new Coalesce.Promise (resolve, reject) ->
-          Coalesce.run.later resolve
+        expect(post.session).to.not.eq(session)
 
-        timeout.then ->
-          expect(post.session).to.not.eq(session)
+        expect(session.getForId('post', 1)).to.be.undefined
+        expect(session.getForId('post', 2)).to.be.undefined
+        expect(session.getForId('post', 3)).to.be.undefined
 
-          expect(session.getForId('post', 1)).to.be.undefined
-          expect(session.getForId('post', 2)).to.be.undefined
-          expect(session.getForId('post', 3)).to.be.undefined
-
-          Session.loadFromStorage(session).then (value) =>
-            expect(session.getForId('post', 1)).to.not.be.undefined
-            expect(session.getForId('post', 2)).to.not.be.undefined
-            expect(session.getForId('post', 3)).to.not.be.undefined
+        Session.loadFromStorage(session).then (value) =>
+          expect(session.getForId('post', 1)).to.not.be.undefined
+          expect(session.getForId('post', 2)).to.not.be.undefined
+          expect(session.getForId('post', 3)).to.not.be.undefined
             
     it 'preserves cached queries', ->
       adapter.query = =>
@@ -82,11 +75,11 @@ describe "Session", ->
         
   describe '.loading Storage', ->  
     it 'should skip loading from storage when storage is empty', ->
-      session.clearStorage().then (_session) ->
-        # debugger
-        Session.loadFromStorage(_session).then((value) ->
-          # debugger
-          expect(_session.models).to.not.be.null
+      Session.clearStorage().then () ->
+
+        Session.loadFromStorage(session).then((value) ->
+
+          expect(session.models).to.not.be.null
           return
         , (error) ->
           # something wrong throw error
