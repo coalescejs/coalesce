@@ -30,15 +30,7 @@ export default class StoredModelSet extends ModelSet {
   add(obj) {
     super(obj);
 
-    var typeKey = obj.typeKey,
-        serializer = this.serializerFor(typeKey),
-        serializedObject = serializer.serialize(obj);
-    
-    this.store.setItem(StoredModelSet.getStoreKeyForModel(obj), serializedObject, function(error, _serializedObject){
-      if(error !== null){
-        throw new Error("Model could not be saved to storage.");
-      }  
-    });
+    addModelToStore(obj);
     
     return this;
   }
@@ -57,6 +49,24 @@ export default class StoredModelSet extends ModelSet {
 
   serializerFor(typeKey) {
     return this.serializerFactory.serializerFor(typeKey);
+  }
+
+  addModelToStore(obj){
+    var self = this,
+        typeKey = obj.typeKey,
+        serializer = this.serializerFor(typeKey),
+        serializedObject = serializer.serialize(obj);
+
+    return new Coalesce.Promise(function(resolve, reject) {
+
+      self.store.setItem(StoredModelSet.getStoreKeyForModel(obj), serializedObject, function(error, _serializedObject){
+        if(error !== null){
+          reject(error);
+        }else{
+          resolve();
+        }
+      });
+    });
   }
 
   static getStoreKeyForModel(model) {

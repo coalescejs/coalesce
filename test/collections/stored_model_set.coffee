@@ -4,7 +4,7 @@
 
 describe 'StoredModelSet', ->
 
-  beforeEach ->
+  beforeEach (done) ->
     @container = new Container()
     Coalesce.__container__ = @container
 
@@ -23,26 +23,23 @@ describe 'StoredModelSet', ->
 
     @set = new StoredModelSet 'models', @container
 
-  afterEach (done) ->
-    set = @set
-
-    set._clearStore().then ->  
+    @set._clearStore().then ->  
       done()
       return
 
     return
 
-  it 'adds to storage', (done)->
+  it 'adds to storage with correct key', ->
     Post = @Post
     postA = @Post.create(id: "1", title: "one", clientId: "post1")
 
-    @set.add(postA)
+    set = @set
 
-    storeKey = StoredModelSet.getStoreKeyForModel(postA)
+    @set.addModelToStore(postA).then ->
+      storeKey = StoredModelSet.getStoreKeyForModel(postA)
 
-    expect(storeKey).to.eq('post:post1')
+      expect(storeKey).to.eq('post:post1')
 
-    @set.store.getItem storeKey, (errors, model)->
-      expect(errors).to.be.null 
-      expect(model.client_id).to.eq('post1')
-      done()
+      set.store.getItem storeKey, (errors, model)->
+        expect(errors).to.be.null 
+        expect(model.client_id).to.eq('post1')
