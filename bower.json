@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "lodash": "~2.4.1",
-    "localforage": "~1.0.4"
+    "localforage": "https://github.com/mozilla/localForage.git#master"
   }
 }

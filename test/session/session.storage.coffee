@@ -19,6 +19,13 @@ describe "Session Storage", ->
     @container = adapter.container
     session = adapter.newSession()
 
+  afterEach (done) ->
+    Session.clearStorage().then ->  
+      done()
+      return
+
+    return
+
   describe '.saveToStorage', ->
 
     it 'returns a promise', ->

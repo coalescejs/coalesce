@@ -1,6 +1,7 @@
 import Coalesce from '../namespace';
 import ModelArray from '../collections/model_array';
 import ModelSet from '../collections/model_set';
+import StoredModelSet from '../collections/stored_model_set';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
@@ -24,7 +25,9 @@ export default class Session {
     this.idManager = idManager;
     this.container = container;
     this.parent = parent;
-    this.models = new ModelSet();
+
+    this.models = new ModelSet();    
+    //this.models = new StoredModelSet('models', container);
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
     this.shadows = new ModelSet();

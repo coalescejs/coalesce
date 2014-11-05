@@ -31,6 +31,17 @@ function postWithComments() {
   this.container.register('model:comment', Comment);
 }
 
+function postWithCommentsAndSerializers() {
+  postWithComments.apply(this);
+  this.PostSerializer = ModelSerializer.extend({});
+  
+  this.container.register('serializer:post', this.PostSerializer);
+  
+  this.UserSerializer = ModelSerializer.extend({});
+  
+  this.container.register('serializer:user', this.UserSerializer);
+}
+
 function postWithEmbeddedComments() {
   postWithComments.apply(this);
   this.PostSerializer = ModelSerializer.extend({
@@ -157,4 +168,4 @@ function groupWithMembersWithUsers() {
   this.container.register('model:user', this.User);
 }
 
-export {postWithComments, postWithEmbeddedComments, userWithPost, groupWithMembersWithUsers};
+export {postWithComments, postWithEmbeddedComments, userWithPost, groupWithMembersWithUsers, postWithCommentsAndSerializers};
