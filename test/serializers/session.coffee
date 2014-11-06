@@ -13,6 +13,7 @@ describe 'SessionSerializer', ->
   sessionSerializer = null
   userSerializer = null
   postSerializer = null
+  storageModelSerializer = null
   user = null
   adapter = null
 
@@ -36,6 +37,8 @@ describe 'SessionSerializer', ->
     @container.register 'serializer:post', App.PostSerializer
     postSerializer = @container.lookup('serializer:post')
 
+    storageModelSerializer = @container.lookup('serializer:storage-model')
+
     @RestAdapter = TestRestAdapter.extend()
     @container.register 'adapter:main', @RestAdapter
 
@@ -51,30 +54,32 @@ describe 'SessionSerializer', ->
       seralizedPost1 =
           id: 1
           title: 'heyna'
+          type_key: 'post'
 
       seralizedPost2 =
         id: 2
         title: 'yao'
+        type_key: 'post'
 
       seralizedUser1 =
         id: 3
         name: 'jerry'
+        type_key: 'user'
 
       seralizedUser2 =
         id: 4
         name: 'garcia'
+        type_key: 'user'
 
       data =
-        post: [
+        [
           seralizedPost1
           seralizedPost2
-        ]
-        user: [
           seralizedUser1
         ]
 
       newData =
-        user: [
+        [
           seralizedUser2
         ]
 
@@ -149,16 +154,9 @@ describe 'SessionSerializer', ->
         expect(serializedSession.queryCache['post${"name":"yo"}'].length).to.eq(2)
         expect(serializedSession.uuidStart).to.eq(4)
 
-        # check that a user was serialized correctly
-        serializeUser = userSerializer.serialize(user1)
-
-        serializedSessionUser = serializedSession.models.user[0]
-
-        expect(serializeUser).to.eql(serializedSessionUser)
-
         # check that a post was serialized correctly
-        serializePost = postSerializer.serialize(post1)
+        serializePost = storageModelSerializer.serialize(post1)
 
-        serializedSessionPost = serializedSession.models.post[0]
+        serializedSessionPost = serializedSession.models[0]
 
         expect(serializePost).to.eql(serializedSessionPost)

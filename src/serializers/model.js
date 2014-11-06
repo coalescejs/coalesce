@@ -137,6 +137,7 @@ export default class ModelSerializer extends Serializer {
     if(serializer) {
       value = serializer.serialize(value, opts);
     }
+
     if(value !== undefined) {
       serialized[key] = value;
     }

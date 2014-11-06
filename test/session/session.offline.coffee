@@ -22,10 +22,11 @@ describe "Session", ->
     @container = adapter.container
     session = adapter.newSession()
 
-  beforeEach ->
+  beforeEach (done) ->
     reset.apply(@)
-    Session.clearStorage()
-
+    Session.clearStorage().then -> 
+      done()
+    
   describe '.saveTo and loadFrom Storage', ->
 
     it 'should save to storage', ->
@@ -35,6 +36,7 @@ describe "Session", ->
       post4 = session.create 'post', title: 'Im new'
 
       Session.saveToStorage(session).then (_session) =>   
+        #debugger
         # Reset everything 
         reset.apply(@)
         

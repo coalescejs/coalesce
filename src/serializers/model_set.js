@@ -8,51 +8,44 @@ import ModelSet from '../collections/model_set';
 export default class ModelSetSerializer extends Serializer {
 
   /**
-    Turns a hash of arrays. e.g. {post: [...], comment: [...]}
+    Turns an array of models
     into a modelSet
   */
   deserialize(serialized) {
-    var modelSet = new ModelSet();
-    var serializerFactory = this.serializerFactory;
+    var self = this,
+        modelSet = new ModelSet();
     
     if (!serialized) return modelSet;
+  
+    // seralizer for this array of models
+    var serializer = self.storageModelSerializer();
     
-    for (var typeKey in serialized) {
-      // seralizer for this array of models
-      var serializer = serializerFactory.serializerFor(typeKey);
-      
-      var modelArray = serialized[typeKey];
-      
-      modelArray.forEach(function(serializedModel){
-        var model = serializer.deserialize(serializedModel);
-        modelSet.add(model);
-      });
-    }
+    serialized.forEach(function(serializedModel){
+      var model = serializer.deserialize(serializedModel);
+      modelSet.add(model);
+    });
     
     return modelSet;
   }
   
   /**
-    Creates a hash of arrays. Each key is the typeKey of the models in the array.
-    e.g. {post: [...], comment: [...]}
+    Creates an array of serialized models
   */
   serialize(modelSet) {
-    var serialized = {};
-    var serializerFactory = this.serializerFactory;
+    var self = this;
     
-    modelSet.forEach(function(model) {
-      var typeKey = model.typeKey;
-      var serializer = serializerFactory.serializerFor(typeKey);
+    return modelSet.toArray().map(function(model) {
+      var serializer = self.storageModelSerializer();
       
-      // initialized the key to empty array value
-      if (!(typeKey in serialized)) {
-        serialized[typeKey] = [];
-      }
-      
-      serialized[typeKey].push(serializer.serialize(model));
+      return serializer.serialize(model);
       
     });
-    
-    return serialized;
+  }
+
+  storageModelSerializer() {
+    // Not using the application provided seralizer 
+    // and using the custom storage model seralization
+    var storageModelTypeKey = "storage-model";
+    return this.serializerFactory.serializerFor(storageModelTypeKey);
   }
 }

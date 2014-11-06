@@ -38,25 +38,27 @@ describe 'ModelSetSerializer', ->
       seralizedPost1 =
         id: 1
         title: 'yo'
+        type_key: 'post'
 
       seralizedPost2 =
         id: 2
         title: 'boi'
+        type_key: 'post'
 
       seralizedUser1 =
         id: 3
         name: 'johnny'
+        type_key: 'user'
 
       seralizedUser2 =
         id: 4
         name: 'bobby'
+        type_key: 'user'
 
       data =
-        post: [
+        [
           seralizedPost1
           seralizedPost2
-        ]
-        user: [
           seralizedUser1
           seralizedUser2
         ]
@@ -87,21 +89,12 @@ describe 'ModelSetSerializer', ->
   describe '.serialize', ->
 
     it 'serializes', -> 
-      post1 = @Post.create id: 1, title: "yo"
-      post2 = @Post.create id: 2, title: "boi"
-      user1 = @User.create id: 3, name: "johnny"
 
-      session.merge post1
-      session.merge post2
-      session.merge user1
+      post1 = session.create 'post',
+        title: "yo"
 
-      serializedModelSetHash = modelSetSerializer.serialize(session.models)
-
-      expect(serializedModelSetHash[post1.typeKey]).to.not.be.undefined
-      expect(serializedModelSetHash[user1.typeKey]).to.not.be.undefined
-
-      expect(serializedModelSetHash[post1.typeKey].length).to.eq(2)
-      expect(serializedModelSetHash[user1.typeKey].length).to.eq(1)
+      serializedModelSetArray = modelSetSerializer.serialize(session.newModels)
+      
+      expect(serializedModelSetArray[0]).to.not.be.undefined
     
-      expect(serializedModelSetHash[post1.typeKey][0].title).to.eq('yo')
-      expect(serializedModelSetHash[user1.typeKey][0].name).to.eq('johnny')
+      expect(serializedModelSetArray[0].title).to.eq('yo')
