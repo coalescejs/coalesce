@@ -96,6 +96,48 @@ function userWithPost() {
   this.container.register('model:user', this.User);
 }
 
+function userWithPosts() {
+  this.App = {};
+  class Post extends Model {}
+  Post.defineSchema({
+    typeKey: 'post',
+    attributes: {
+      title: {
+        type: 'string'
+      }
+    },
+    relationships: {
+      user: {
+        kind: 'belongsTo',
+        type: 'user'
+      }
+    }
+  });
+
+  this.App.Post = this.Post = Post;
+
+  class User extends Model {};
+  User.defineSchema({
+    typeKey: 'user',
+    attributes: {
+      name: {
+        type: 'string'
+      }
+    },
+    relationships: {
+      posts: {
+        kind: 'hasMany',
+        type: 'post'
+      }
+    }
+  });
+
+  this.App.User = this.User = User;
+
+  this.container.register('model:post', this.Post);
+  this.container.register('model:user', this.User);
+}
+
 function groupWithMembersWithUsers() {
   class Group extends Model {};
   Group.defineSchema({
@@ -168,4 +210,4 @@ function groupWithMembersWithUsers() {
   this.container.register('model:user', this.User);
 }
 
-export {postWithComments, postWithEmbeddedComments, userWithPost, groupWithMembersWithUsers, postWithCommentsAndSerializers};
+export {postWithComments, postWithEmbeddedComments, userWithPost, userWithPosts, groupWithMembersWithUsers, postWithCommentsAndSerializers};

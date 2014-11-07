@@ -1,7 +1,7 @@
 `import Model from 'coalesce/model/model'`
 `import Container from 'coalesce/container'`
 `import SessionSerializer from 'coalesce/serializers/session'`
-`import {userWithPost} from '../support/schemas'`
+`import {userWithPosts} from '../support/schemas'`
 `import TestRestAdapter from '../rest/_test_adapter'`
 `import Coalesce from 'coalesce'`
 `import Query from 'coalesce/session/query'`
@@ -23,7 +23,7 @@ describe 'SessionSerializer', ->
     @container = new Container()
     Coalesce.__container__ = @container
 
-    userWithPost.apply(this)
+    userWithPosts.apply(this)
 
     App.UserSerializer = Coalesce.ModelSerializer.extend
       typeKey: 'user'
@@ -52,9 +52,9 @@ describe 'SessionSerializer', ->
   describe '.deserialize', ->
     it 'deserializes', ->
       seralizedPost1 =
-          id: 1
-          title: 'heyna'
-          type_key: 'post'
+        id: 1
+        title: 'heyna'
+        type_key: 'post'
 
       seralizedPost2 =
         id: 2
@@ -126,7 +126,7 @@ describe 'SessionSerializer', ->
 
     it 'serializes', ->
       post1 = @Post.create id: 1, title: "yo"
-      post2 = @Post.create id: 2, title: "boi"
+      post2 = @Post.create id: 2, title: "yo boi"
       user1 = @User.create id: 3, name: "johnny"
 
       session.merge post1
@@ -138,7 +138,7 @@ describe 'SessionSerializer', ->
         posts: [postSerializer.serialize(post1),postSerializer.serialize(post2)]
 
       query1 = session.query('post')
-      query2 = session.query('post',{"name":"yo"})
+      query2 = session.query('post',{"title":"yo"})
 
       Coalesce.Promise.all([query1,query2]).then ->
         
@@ -151,7 +151,7 @@ describe 'SessionSerializer', ->
         expect(serializedSession.queryCache).to.not.be.undefined
 
         expect(serializedSession.queryCache['post${}'].length).to.eq(2)
-        expect(serializedSession.queryCache['post${"name":"yo"}'].length).to.eq(2)
+        expect(serializedSession.queryCache['post${"title":"yo"}'].length).to.eq(2)
         expect(serializedSession.uuidStart).to.eq(4)
 
         # check that a post was serialized correctly
@@ -160,3 +160,24 @@ describe 'SessionSerializer', ->
         serializedSessionPost = serializedSession.models[0]
 
         expect(serializePost).to.eql(serializedSessionPost)
+
+    describe "relationships", ->
+
+      it 'should serialize/deserialize hasMany relationships', ->
+        adapter.r['GET:/users/1'] = users: [{id: 1, name: 'johnny', posts: [2,3]}], posts: [{id: 2, title: 'I party', user: 1},{id: 3, title: 'everyday', user: 1}]
+
+        session.load('user', 1).then (user) ->        
+          expect(user.posts.length).to.eq(2)
+
+          serializedSession = sessionSerializer.serialize(session)
+
+          newSession = sessionSerializer.deserialize(session.newSession(), serializedSession)
+
+          user = newSession.fetch('user', 1)
+
+          expect(user.posts.length).to.eq(2)
+
+
+
+
+

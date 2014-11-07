@@ -7,6 +7,11 @@ import ModelSet from '../collections/model_set';
 */
 export default class ModelSetSerializer extends Serializer {
 
+  constructor() {
+    super();
+    this.storageModelSerializer = this.serializerFactory.serializerFor("storage-model");
+  }
+
   /**
     Turns an array of models
     into a modelSet
@@ -17,11 +22,9 @@ export default class ModelSetSerializer extends Serializer {
     
     if (!serialized) return modelSet;
   
-    // seralizer for this array of models
-    var serializer = self.storageModelSerializer();
     
     serialized.forEach(function(serializedModel){
-      var model = serializer.deserialize(serializedModel);
+      var model = self.storageModelSerializer.deserialize(serializedModel);
       modelSet.add(model);
     });
     
@@ -35,17 +38,8 @@ export default class ModelSetSerializer extends Serializer {
     var self = this;
     
     return modelSet.toArray().map(function(model) {
-      var serializer = self.storageModelSerializer();
-      
-      return serializer.serialize(model);
+      return self.storageModelSerializer.serialize(model);
       
     });
-  }
-
-  storageModelSerializer() {
-    // Not using the application provided seralizer 
-    // and using the custom storage model seralization
-    var storageModelTypeKey = "storage-model";
-    return this.serializerFactory.serializerFor(storageModelTypeKey);
   }
 }

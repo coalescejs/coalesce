@@ -30,7 +30,6 @@ export default class SessionSerializer extends Serializer {
     // We also need to track where to start assigning clientIds since the models
     // we deserialize will already have clientIds assigned.
     session.idManager.uuid = serializedSessionData.uuidStart;
-
     return session;
   }
   

@@ -5,22 +5,9 @@ import ModelSerializer from './model';
   @class StorageModelSerializer
 */
 export default class StorageModelSerializer extends ModelSerializer {
-    serialize(model) {
-        var serialized = {};
-
-        this.addMeta(serialized, model);
-        this.addAttributes(serialized, model);
-        this.addRelationships(serialized, model);
-
-        return serialized;
-    }
 
     addMeta(serialized, model) {
-        this.addProperty(serialized, model, 'id', 'id');
-        this.addProperty(serialized, model, 'clientId', 'string');
-        this.addProperty(serialized, model, 'rev', 'revision');
-        this.addProperty(serialized, model, 'clientRev', 'revision');
-        this.addProperty(serialized, model, 'isDeleted', 'boolean');
+        super(serialized,model);
         this.addProperty(serialized, model, 'typeKey', 'string');
     }
 
@@ -36,5 +23,24 @@ export default class StorageModelSerializer extends ModelSerializer {
 
     createModel(typeKey) {
         return this.typeFor(typeKey).create();
+    }
+
+    // overwrite the has many with one for storage
+    extractProperty(model, hash, name, type, opts) {
+
+        if (type === 'has-many') {
+            type = 'storage-has-many';
+        }
+
+        return super(model, hash, name, type, opts);
+    }
+
+    // overwrite the has many with one for storage
+    addProperty(serialized, model, name, type, opts) {
+      if (type === 'has-many') {
+        type = 'storage-has-many';
+      }
+
+      return super(serialized, model, name, type, opts);
     }
 }
