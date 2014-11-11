@@ -29,7 +29,16 @@ export default class StorageModelSerializer extends ModelSerializer {
     createModel()
   */
   deserialize (hash, opts) {
-    var model = this.createModel(hash.type_key);
+    var type_key;
+
+    if(hash.type_key){
+      type_key = hash.type_key;
+    }else if(opts.typeKey){
+      //  a deleted models belongsTo deserialization would get into here
+      type_key = opts.typeKey;
+    }
+
+    var model = this.createModel(type_key);
 
     this.extractMeta(model, hash, opts);
     this.extractAttributes(model, hash);

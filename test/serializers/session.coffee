@@ -188,6 +188,9 @@ describe 'SessionSerializer', ->
 
         post = session.create "post", title: "he dont party", user: user
         post2 = session.create "post", title: "he def parties", user: user
+        post3 = session.create "post", title: "Delete me!", user: user
+
+        session.deleteModel post3
 
         expect(user.isNew).to.be.true
         expect(post.isNew).to.be.true
