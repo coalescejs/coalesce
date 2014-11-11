@@ -2,7 +2,7 @@ import isEmpty from '../utils/is_empty';
 import Serializer from './base';
 
 /**
-  The serialization of session models for storage needs has_many reguardless of 
+  The serialization of session models for storage needs has_many regardless of 
   a model's relationship imbedded flag.
 
   @namespace serializers
@@ -11,10 +11,10 @@ import Serializer from './base';
 export default class StorageHasManySerializer extends Serializer {
 
   /**
-    Turn an array of objects into an array of unloaded models
+    Turn an array of seralized objects into an array of unloaded models
 
     @param {Array} serialized - A array of objects, 
-      ex: [{id: 1, type_key: "post"}, {id: 2, type_key: "post"} ]
+      ex: [{client_id: 1, type_key: "post"}, {client_id: 2, type_key: "post"} ]
 
     @return Array array of unloaded models
  */
@@ -26,7 +26,9 @@ export default class StorageHasManySerializer extends Serializer {
     var serializer = this.serializerFor('storage-model');
 
     return serialized.map(function(hash) {
-      return serializer.deserialize(hash, opts);
+      var model = serializer.deserialize(hash, opts);
+
+      return model;
     });
   }
 
@@ -35,13 +37,13 @@ export default class StorageHasManySerializer extends Serializer {
 
     @param {Array} models - An array of models
 
-    @return Array  A array of objects, 
-      ex: [{id: 1, type_key: "post"}, {id: 2, type_key: "post"} ]
+    @return Array  A array of seralized objects, 
+      ex: [{client_id: post1, type_key: "post"}, {client_id: post2, type_key: "post"} ]
  */
   serialize (models, opts = {}) {
     return models.map(function(model) {
       return {
-        id: model.id,
+        client_id: model.clientId,
         type_key: model.typeKey
       };
     });

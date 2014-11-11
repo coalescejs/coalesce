@@ -1,5 +1,5 @@
 import ModelSerializer from './model';
-
+import {dasherize} from '../utils/inflector';
 /**
   This class decouples the storage serialization of models from the standard 
   application/rest serialization.  This way storage serialization is 
@@ -20,8 +20,8 @@ export default class StorageModelSerializer extends ModelSerializer {
     deserialization.
   */
   addMeta (serialized, model) {
-      super(serialized,model);
-      this.addProperty(serialized, model, 'typeKey', 'string');
+    super(serialized,model);
+    this.addProperty(serialized, model, 'typeKey', 'string');
   }
 
   /**
@@ -29,13 +29,13 @@ export default class StorageModelSerializer extends ModelSerializer {
     createModel()
   */
   deserialize (hash, opts) {
-      var model = this.createModel(hash.type_key);
+    var model = this.createModel(hash.type_key);
 
-      this.extractMeta(model, hash, opts);
-      this.extractAttributes(model, hash);
-      this.extractRelationships(model, hash);
+    this.extractMeta(model, hash, opts);
+    this.extractAttributes(model, hash);
+    this.extractRelationships(model, hash);
 
-      return model;
+    return model;
   }
 
   /**
@@ -51,12 +51,15 @@ export default class StorageModelSerializer extends ModelSerializer {
     has many serailzer
   */
   extractProperty (model, hash, name, type, opts) {
+    
+    if (type === 'has-many') {
+      type = 'storage-has-many';
+    } 
+    else if(type === 'belongs-to'){
+      type = 'storage-belongs-to';
+    }
 
-      if (type === 'has-many') {
-          type = 'storage-has-many';
-      }
-
-      return super(model, hash, name, type, opts);
+    return super(model, hash, name, type, opts);
   }
 
    /**
@@ -64,8 +67,12 @@ export default class StorageModelSerializer extends ModelSerializer {
     has many serailzer
   */
   addProperty (serialized, model, name, type, opts) {
+    
     if (type === 'has-many') {
       type = 'storage-has-many';
+    } 
+    else if(type === 'belongs-to'){
+      type = 'storage-belongs-to';
     }
 
     return super(serialized, model, name, type, opts);

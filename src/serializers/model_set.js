@@ -21,10 +21,10 @@ export default class ModelSetSerializer extends Serializer {
         modelSet = new ModelSet();
     
     if (!serialized) return modelSet;
-  
-    
+   
     serialized.forEach(function(serializedModel){
       var model = self.storageModelSerializer.deserialize(serializedModel);
+
       modelSet.add(model);
     });
     

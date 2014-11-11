@@ -22,8 +22,13 @@ export default class SessionSerializer extends Serializer {
     // for now this will be slow, need to make deserialization more intelligent
     // and aware of the model graph
     models.forEach(function(model) {
-      session.merge(model);
+      if(model.isNew){
+        session.add(model);
+      }else{
+        session.merge(model);  
+      }
     });
+
     session.newModels = modelSetSerializer.deserialize(serializedSessionData.newModels);
     session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);
     session.queryCache = this.deserializeQueryCache(session, serializedSessionData.queryCache);

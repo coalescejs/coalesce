@@ -23,27 +23,28 @@ describe 'StorageHasManySerializer', ->
 
   describe '.deserialize', ->
     it 'deserializes', ->
-      data = [{id: 1, type_key: 'comment'}, {id: 2, type_key: 'comment'}]
+      data = [{client_id: 'comment1', type_key: 'comment'}, {client_id: 'comment2', type_key: 'comment'}]
       comments = storageHasManySerializer.deserialize(data)
+      
       expect(comments.length).to.eq(2)
-      expect(comments[0].isDetached).to.be.true
+      expect(comments[0]).to.be.an.instanceOf(@Comment)
 
   describe '.serialize', ->
 
     it 'serializes', -> 
       comment = @Comment.create
         id: 1
-        clientId: "1"
+        clientId: "comment1"
         body: "this is body"
         post: 1
 
       post = @Post.create
         id: 1
-        clientId: "2"
+        clientId: "post2"
         title: "wat"
         comments: [comment]
 
       data = storageHasManySerializer.serialize(post.comments)
 
-      expect(data).to.eql([{id: 1, type_key: "comment"}])
+      expect(data).to.eql([{client_id: "comment1", type_key: "comment"}])
 

@@ -163,7 +163,7 @@ describe 'SessionSerializer', ->
 
     describe "relationships", ->
 
-      it 'should serialize/deserialize hasMany relationships', ->
+      it 'should serialize/deserialize relationships for existing models ', ->
         adapter.r['GET:/users/1'] = users: [{id: 1, name: 'johnny', posts: [2,3]}], posts: [{id: 2, title: 'I party', user: 1},{id: 3, title: 'everyday', user: 1}]
 
         session.load('user', 1).then (user) ->        
@@ -172,12 +172,42 @@ describe 'SessionSerializer', ->
           serializedSession = sessionSerializer.serialize(session)
 
           newSession = sessionSerializer.deserialize(session.newSession(), serializedSession)
-
+          
           user = newSession.fetch('user', 1)
+          post = newSession.fetch('post', 2)
 
+          # check has many
           expect(user.posts.length).to.eq(2)
+          expect(user.posts[0]).to.eq(post)
 
+          # check belongs to
+          expect(post.user).to.eq(user)
 
+      it 'should serialize/deserialize relationships for new models ', ->
+        user = session.create "user", name: "John"
 
+        post = session.create "post", title: "he dont party", user: user
+        post2 = session.create "post", title: "he def parties", user: user
 
+        expect(user.isNew).to.be.true
+        expect(post.isNew).to.be.true
+        expect(post2.isNew).to.be.true
+
+        expect(user.posts.length).to.eq(2)
+        expect(user.posts[0]).to.eq(post)
+        expect(post.user).to.eq(user)
+
+        serializedSession = sessionSerializer.serialize(session)
+
+        newSession = sessionSerializer.deserialize(session.newSession(), serializedSession)
+
+        _user = newSession.getForClientId(user.clientId)
+        _post = newSession.getForClientId(post.clientId)
+
+        # check has many
+        expect(_user.posts.length).to.eq(2)
+        expect(_user.posts[0].clientId).to.eq(_post.clientId)
+
+        # check belongs to
+        expect(_post.user.clientId).to.eq(_user.clientId)
 
