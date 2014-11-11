@@ -1,11 +1,12 @@
 import Coalesce from '../namespace';
+import BaseClass from '../utils/base_class';
 
 /**
   Maintains a cache of query-related promises
 
   @class QueryCache
 */
-export default class QueryCache {
+export default class QueryCache extends BaseClass {
 
   constructor() {
     this._queries = {};

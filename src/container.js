@@ -16,6 +16,8 @@ import StringSerializer from './serializers/string';
 
 import PerField from './merge/per_field';
 
+import QueryCache from './session/query_cache';
+
 import RestAdapter from './rest/rest_adapter';
 
 import Errors from './model/errors';
@@ -26,6 +28,7 @@ function setupContainer(container) {
   setupInjections(container);
   setupSerializers(container);
   setupMergeStrategies(container);
+  setupQueryCaches(container);
 }
 
 function setupSession(container) {
@@ -57,6 +60,10 @@ function setupSerializers(container) {
 function setupMergeStrategies(container) {
   container.register('merge-strategy:per-field', PerField);
   container.register('merge-strategy:default', PerField);
+}
+
+function setupQueryCaches(container) {
+  container.register('query-cache:default', QueryCache);
 }
 
 function CoalesceContainer() {

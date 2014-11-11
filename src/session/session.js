@@ -8,6 +8,7 @@ import Query from './query';
 import QueryCache from './query_cache';
 import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
+import QueryCacheFactory from '../factories/query_cache';
 import copy from '../utils/copy';
 import Error from '../error';
 import array_from from '../utils/array_from';
@@ -28,9 +29,9 @@ export default class Session {
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
     this.cache = new Cache();
-    this.queryCache = new QueryCache();
     this.typeFactory = new TypeFactory(container);
     this.mergeFactory = new MergeFactory(container);
+    this.queryCacheFactory = new QueryCacheFactory(container);
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
   }
@@ -316,11 +317,12 @@ export default class Session {
   */
   fetchQuery(type, params) {
     type = this.typeFor(type);
-    var query = this.queryCache.getQuery(type, params);
+    var queryCache = this.queryCacheFor(type),
+        query = queryCache.getQuery(type, params);
     
     if(!query) {
       query = this.buildQuery(type, params);
-      this.queryCache.add(query);
+      queryCache.add(query);
     }
     
     return query;
@@ -337,7 +339,8 @@ export default class Session {
   query(type, params, opts) {
     var type = this.typeFor(type),
         query = this.fetchQuery(type, params),
-        promise = this.queryCache.getPromise(query);
+        queryCache = this.queryCacheFor(type),
+        promise = queryCache.getPromise(query);
         
     if(!promise) {
       promise = this.refreshQuery(query, opts);
@@ -362,7 +365,8 @@ export default class Session {
       query.replace(0, query.length, models);
       return query;
     });
-    this.queryCache.add(query, promise);
+    var queryCache = this.queryCacheFor(query.type);
+    queryCache.add(query, promise);
     
     return promise;
   }
@@ -513,6 +517,14 @@ export default class Session {
 
     return this.typeFactory.typeFor(key);
   }
+  
+  queryCacheFor(key) {
+    if (typeof key !== 'string') {
+      key = key.typeKey;
+    }
+
+    return this.queryCacheFactory.queryCacheFor(key);
+  }
 
   getShadow(model) {
     var shadows = this.shadows;
@@ -550,7 +562,8 @@ export default class Session {
     @param {Query} query
   */
   invalidateQuery(query) {
-    this.queryCache.remove(query);
+    var queryCache = this.queryCacheFor(query.type);
+    queryCache.remove(query);
   }
   
   /**
@@ -560,8 +573,9 @@ export default class Session {
     @param {Type} type Type to invalidate
   */
   invalidateQueries(type) {
-    var type = this.typeFor(type);
-    this.queryCache.removeAll(type);
+    var type = this.typeFor(type),
+        queryCache = this.queryCacheFor(type);
+    queryCache.removeAll(type);
   }
 
   /**
