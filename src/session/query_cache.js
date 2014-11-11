@@ -16,11 +16,15 @@ export default class QueryCache extends BaseClass {
   add(query, promise=null) {
     var key = this.keyFor(query.type, query.params);
     
-    if(promise) {
+    if(promise && this.shouldCache(query)) {
       this._promises[key] = promise;
     }
     
     this._queries[key] = query;
+  }
+  
+  shouldCache(query) {
+    return true;
   }
 
   remove(query) {
