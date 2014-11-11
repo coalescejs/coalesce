@@ -23,10 +23,6 @@ export default class QueryCache extends BaseClass {
     this._queries[key] = query;
   }
   
-  shouldCache(query) {
-    return true;
-  }
-
   remove(query) {
     var key = this.keyFor(query.type, query.params);
     delete this._queries[key];
@@ -50,12 +46,25 @@ export default class QueryCache extends BaseClass {
   }
   
   getPromise(query) {
-    var key = this.keyFor(query.type, query.params);
-    return this._promises[key];
+    var key = this.keyFor(query.type, query.params),
+        cached =  this._promises[key];
+    if(cached && this.shouldInvalidate(cached)) {
+      this.remove(cached);
+      return;
+    }
+    return cached;
   }
   
   keyFor(type, params) {
     return type.typeKey + '$' + JSON.stringify(params);
+  }
+  
+  shouldCache(query) {
+    return true;
+  }
+
+  shouldInvalidate(query) {
+    return false;
   }
 
 }

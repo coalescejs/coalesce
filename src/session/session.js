@@ -12,6 +12,7 @@ import QueryCacheFactory from '../factories/query_cache';
 import copy from '../utils/copy';
 import Error from '../error';
 import array_from from '../utils/array_from';
+import evented from '../utils/evented';
 
 var uuid = 1;
 
@@ -712,6 +713,7 @@ export default class Session {
 
     var adapter = this.adapter;
     adapter.willMergeModel(model);
+    this.emit('willMerge', model);
 
     this.updateCache(model);
 
@@ -742,6 +744,7 @@ export default class Session {
     }
 
     adapter.didMergeModel(model);
+    this.emit('didMerge', model);
     return merged;
   }
 
@@ -956,3 +959,5 @@ export default class Session {
   }
 
 }
+
+evented(Session.prototype);

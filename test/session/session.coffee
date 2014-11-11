@@ -158,6 +158,20 @@ describe "Session", ->
     it 'reuses detached model', ->
       post = @Post.create(id: "1", title: 'test')
       expect(session.merge(post)).to.eq(post)
+      
+    
+    it 'emites willMerge and didMerge', ->
+      willMergeHit = false
+      didMergeHit = false
+      session.on 'willMerge', ->
+        willMergeHit = true
+      session.on 'didMerge', ->
+        didMergeHit = true
+        
+      post = @Post.create(id: "1", title: 'test')
+      session.merge(post)
+      expect(willMergeHit).to.be.true
+      expect(didMergeHit).to.be.true
 
 
     it 'handles merging detached model with hasMany child already in session', ->
