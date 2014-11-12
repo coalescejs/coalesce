@@ -16,6 +16,7 @@ import StringSerializer from './serializers/string';
 
 import PerField from './merge/per_field';
 
+import ModelCache from './session/model_cache';
 import QueryCache from './session/query_cache';
 
 import RestAdapter from './rest/rest_adapter';
@@ -28,7 +29,7 @@ function setupContainer(container) {
   setupInjections(container);
   setupSerializers(container);
   setupMergeStrategies(container);
-  setupQueryCaches(container);
+  setupCaches(container);
 }
 
 function setupSession(container) {
@@ -43,6 +44,8 @@ function setupInjections(container) {
   container.typeInjection('serializer', 'idManager', 'id-manager:main');
   container.typeInjection('session', 'idManager', 'id-manager:main');
   container.typeInjection('adapter', 'idManager', 'id-manager:main');
+  container.typeInjection('model-cache', 'session', 'session:main');
+  container.typeInjection('query-cache', 'session', 'session:main');
 }
 
 function setupSerializers(container) {
@@ -62,8 +65,9 @@ function setupMergeStrategies(container) {
   container.register('merge-strategy:default', PerField);
 }
 
-function setupQueryCaches(container) {
+function setupCaches(container) {
   container.register('query-cache:default', QueryCache);
+  container.register('model-cache:default', ModelCache);
 }
 
 function CoalesceContainer() {

@@ -3,11 +3,10 @@ import ModelSet from '../collections/model_set';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
-import Cache from './cache';
 import Query from './query';
-import QueryCache from './query_cache';
 import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
+import ModelCacheFactory from '../factories/model_cache';
 import QueryCacheFactory from '../factories/query_cache';
 import copy from '../utils/copy';
 import Error from '../error';
@@ -29,10 +28,10 @@ export default class Session {
     this.shadows = new ModelSet();
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
-    this.cache = new Cache();
     this.typeFactory = new TypeFactory(container);
     this.mergeFactory = new MergeFactory(container);
     this.queryCacheFactory = new QueryCacheFactory(container);
+    this.modelCacheFactory = new ModelCacheFactory(container);
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
   }
@@ -257,7 +256,8 @@ export default class Session {
   loadModel(model, opts) {
     console.assert(model.id, "Cannot load a model with an id");
     // TODO: this should be done on a per-attribute bases
-    var promise = this.cache.getPromise(model);
+    var cache = this.modelCacheFor(model),
+        promise = cache.getPromise(model);
 
     if(promise) {
       // the cache's promise is not guaranteed to return anything
@@ -266,7 +266,7 @@ export default class Session {
       });
     } else {
       promise = this.adapter.load(model, opts, this);
-      this.cache.addPromise(model, promise);
+      cache.add(model, promise);
     }
 
     return promise;
@@ -519,6 +519,10 @@ export default class Session {
     return this.typeFactory.typeFor(key);
   }
   
+  modelCacheFor(model) {
+    return this.modelCacheFactory.modelCacheFor(model.typeKey);
+  }
+  
   queryCacheFor(key) {
     if (typeof key !== 'string') {
       key = key.typeKey;
@@ -542,7 +546,8 @@ export default class Session {
     Updates the promise cache
   */
   updateCache(model) {
-    this.cache.addModel(model);
+    var cache = this.modelCacheFor(model);
+    cache.add(model);
   }
 
   /**
@@ -553,7 +558,8 @@ export default class Session {
     @param {Model} model
   */
   invalidate(model) {
-    this.cache.removeModel(model);
+    var cache = this.modelCacheFor(model);
+    cache.remove(model);
   }
   
   /**

@@ -1,14 +1,14 @@
 import Coalesce from '../namespace';
-import BaseClass from '../utils/base_class';
 
 /**
   Maintains a cache of query-related promises
 
   @class QueryCache
 */
-export default class QueryCache extends BaseClass {
+export default class QueryCache {
 
-  constructor() {
+  constructor({session}) {
+    this.session = session;
     this._queries = {};
     this._promises = {};
   }
@@ -66,5 +66,14 @@ export default class QueryCache extends BaseClass {
   shouldInvalidate(query) {
     return false;
   }
+  
+  destroy() {
+    // NOOP: needed for Ember's container
+  }
+  
+  static create(props) {
+    return new this(props);
+  }
+
 
 }
