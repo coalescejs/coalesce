@@ -6,13 +6,13 @@ import SerializerFactory from '../factories/serializer';
   
   Uniqueness is determined by the `clientId`. If a model is added and an
   equivalent model already exists in the ModelSet, the existing model will be
-  overwritten.  StoreModelSet will also keep a copy of each model in storage 
-  (to be used for session serializer).  Each instance of storedModelSet 
+  overwritten.  StorageModelSet will also keep a copy of each model in storage 
+  (to be used for session serializer).  Each instance of StorageModelSet 
   has its own localforage store.
 
-  @class StoredModelSet
+  @class StorageModelSet
 */
-export default class StoredModelSet extends ModelSet {
+export default class StorageModelSet extends ModelSet {
 
   constructor(storeName, container, iterable) {
     super(iterable);
@@ -20,6 +20,7 @@ export default class StoredModelSet extends ModelSet {
     this.container = container;
 
     this.serializerFactory = new SerializerFactory(this.container);
+    this.storageModelSerializer = this.serializerFactory.serializerFor("storage-model");
 
     this.store = localforage.createInstance({
         name: storeName,
@@ -30,7 +31,7 @@ export default class StoredModelSet extends ModelSet {
   add(obj) {
     super(obj);
 
-    addModelToStore(obj);
+    this.addModelToStore(obj);
     
     return this;
   }
@@ -47,19 +48,14 @@ export default class StoredModelSet extends ModelSet {
     return isDeleted;
   }
 
-  serializerFor(typeKey) {
-    return this.serializerFactory.serializerFor(typeKey);
-  }
-
   addModelToStore(obj){
     var self = this,
         typeKey = obj.typeKey,
-        serializer = this.serializerFor(typeKey),
-        serializedObject = serializer.serialize(obj);
+        serializedObject = this.storageModelSerializer.serialize(obj);
 
     return new Coalesce.Promise(function(resolve, reject) {
 
-      self.store.setItem(StoredModelSet.getStoreKeyForModel(obj), serializedObject, function(error, _serializedObject){
+      self.store.setItem(StorageModelSet.getStoreKeyForModel(obj), serializedObject, function(error, _serializedObject){
         if(error !== null){
           reject(error);
         }else{
@@ -83,11 +79,13 @@ export default class StoredModelSet extends ModelSet {
     return this.store.iterate(function(value, key) {
         
         var typeKey = key.split(":")[0],
-        serializer = self.serializerFor(typeKey),
-        deserializedModel = serializer.deserialize(value);
+            deserializedModel = self.storageModelSerializer.deserialize(value);
 
-        session.merge(deserializedModel);
-
+        if(deserializedModel.isNew){
+          session.add(deserializedModel);
+        }else{
+          session.merge(deserializedModel);  
+        }
     });
   }
 

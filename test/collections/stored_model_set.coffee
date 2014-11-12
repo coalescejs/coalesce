@@ -1,5 +1,5 @@
 `import Model from 'coalesce/model/model'`
-`import StoredModelSet from 'coalesce/collections/stored_model_set'`
+`import StorageModelSet from 'coalesce/collections/storage_model_set'`
 `import Container from 'coalesce/container'`
 
 describe 'StoredModelSet', ->
@@ -21,7 +21,7 @@ describe 'StoredModelSet', ->
     @container.register 'model:post', @Post
     @container.register 'serializer:post', PostSerializer
 
-    @set = new StoredModelSet 'models', @container
+    @set = new StorageModelSet 'models', @container
 
     @set._clearStore().then ->  
       done()
@@ -36,7 +36,7 @@ describe 'StoredModelSet', ->
     set = @set
 
     @set.addModelToStore(postA).then ->
-      storeKey = StoredModelSet.getStoreKeyForModel(postA)
+      storeKey = StorageModelSet.getStoreKeyForModel(postA)
 
       expect(storeKey).to.eq('post:post1')
 
