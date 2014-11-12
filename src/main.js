@@ -44,6 +44,7 @@ import CollectionManager from './session/collection_manager';
 import InverseManager from './session/inverse_manager';
 import Session from './session/session';
 import QueryCache from './session/query_cache';
+import ModelCache from './session/model_cache';
 
 import isEqual from './utils/is_equal';
 
@@ -91,6 +92,7 @@ Coalesce.CollectionManager = CollectionManager;
 Coalesce.InverseManager = InverseManager;
 Coalesce.Session = Session;
 Coalesce.QueryCache = QueryCache;
+Coalesce.ModelCache = ModelCache;
 
 Coalesce.pluralize = pluralize;
 Coalesce.singularize = singularize;

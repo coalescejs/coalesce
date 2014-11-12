@@ -389,6 +389,7 @@ export default class Session {
       model.clientRev += 1;
     }, this);
     
+    this.emit('willFlush', dirtyModels);
     // the adapter will return a list of models regardless
     // of whether the flush succeeded. it is in the merge
     // logic that the errors property of the model is consumed

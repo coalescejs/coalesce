@@ -251,6 +251,16 @@ describe "Session", ->
         post.title = 'update 3'
         session.flush().then ->
           expect(post.title).to.eq('update 3')
+          
+    it 'emits willFlush event', ->
+      it 'can update while flush is pending', ->
+        willFlushHit = false
+        session.on 'willFlush', ->
+          willFlushHit = true
+        post = session.merge @Post.create(id: "1", title: 'original')
+        post.title = 'update 1'
+        session.flush().then ->
+          expect(willFlushHit).to.be.true
 
   describe '.isDirty', ->
 
