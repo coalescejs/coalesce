@@ -158,6 +158,20 @@ describe "Session", ->
     it 'reuses detached model', ->
       post = @Post.create(id: "1", title: 'test')
       expect(session.merge(post)).to.eq(post)
+      
+    
+    it 'emites willMerge and didMerge', ->
+      willMergeHit = false
+      didMergeHit = false
+      session.on 'willMerge', ->
+        willMergeHit = true
+      session.on 'didMerge', ->
+        didMergeHit = true
+        
+      post = @Post.create(id: "1", title: 'test')
+      session.merge(post)
+      expect(willMergeHit).to.be.true
+      expect(didMergeHit).to.be.true
 
 
     it 'handles merging detached model with hasMany child already in session', ->
@@ -237,6 +251,16 @@ describe "Session", ->
         post.title = 'update 3'
         session.flush().then ->
           expect(post.title).to.eq('update 3')
+          
+    it 'emits willFlush event', ->
+      it 'can update while flush is pending', ->
+        willFlushHit = false
+        session.on 'willFlush', ->
+          willFlushHit = true
+        post = session.merge @Post.create(id: "1", title: 'original')
+        post.title = 'update 1'
+        session.flush().then ->
+          expect(willFlushHit).to.be.true
 
   describe '.isDirty', ->
 

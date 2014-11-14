@@ -20,6 +20,9 @@ import StorageHasManySerializer from './serializers/storage_has_many';
 import StorageBelongsToSerializer from './serializers/storage_belongs_to';
 import PerField from './merge/per_field';
 
+import ModelCache from './session/model_cache';
+import QueryCache from './session/query_cache';
+
 import RestAdapter from './rest/rest_adapter';
 
 import Errors from './model/errors';
@@ -30,6 +33,7 @@ function setupContainer(container) {
   setupInjections(container);
   setupSerializers(container);
   setupMergeStrategies(container);
+  setupCaches(container);
 }
 
 function setupSession(container) {
@@ -44,6 +48,8 @@ function setupInjections(container) {
   container.typeInjection('serializer', 'idManager', 'id-manager:main');
   container.typeInjection('session', 'idManager', 'id-manager:main');
   container.typeInjection('adapter', 'idManager', 'id-manager:main');
+  container.typeInjection('model-cache', 'session', 'session:main');
+  container.typeInjection('query-cache', 'session', 'session:main');
 }
 
 function setupSerializers(container) {
@@ -66,6 +72,11 @@ function setupSerializers(container) {
 function setupMergeStrategies(container) {
   container.register('merge-strategy:per-field', PerField);
   container.register('merge-strategy:default', PerField);
+}
+
+function setupCaches(container) {
+  container.register('query-cache:default', QueryCache);
+  container.register('model-cache:default', ModelCache);
 }
 
 function CoalesceContainer() {

@@ -217,10 +217,24 @@ export default class Model extends BaseClass {
     return this.isNew || typeof this[key] !== 'undefined'
   }
 
-  get anyFieldsLoaded() {
+  /**
+    Returns true if *any* fields are loaded on the model
+  */
+  get isPartiallyLoaded() {
     var res = false;
     this.fields.forEach(function(options, name) {
       res = res || this.isFieldLoaded(name);
+    }, this);
+    return res;
+  }
+  
+  /**
+    Returns true if *all* fields (including relationships) are loaded on the model.
+  */
+  get isLoaded() {
+    var res = true;
+    this.fields.forEach(function(options, name) {
+      res = res && this.isFieldLoaded(name);
     }, this);
     return res;
   }

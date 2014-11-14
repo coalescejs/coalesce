@@ -7,21 +7,22 @@ import Coalesce from '../namespace';
 */
 export default class QueryCache {
 
-  constructor(queries={}) {
-    this._queries = queries;
+  constructor({session}) {
+    this.session = session;
+    this._queries = {};
     this._promises = {};
   }
 
   add(query, promise=null) {
     var key = this.keyFor(query.type, query.params);
     
-    if(promise) {
+    if(promise && this.shouldCache(query)) {
       this._promises[key] = promise;
     }
     
     this._queries[key] = query;
   }
-
+  
   remove(query) {
     var key = this.keyFor(query.type, query.params);
     delete this._queries[key];
@@ -45,13 +46,22 @@ export default class QueryCache {
   }
   
   getPromise(query) {
-    var key = this.keyFor(query.type, query.params);
-    return this._promises[key];
+    var key = this.keyFor(query.type, query.params),
+        cached =  this._promises[key];
+    if(cached && this.shouldInvalidate(cached)) {
+      this.remove(cached);
+      return;
+    }
+    return cached;
   }
   
   keyFor(type, params) {
     var stringifiedParams = (params === undefined) ? "{}" : JSON.stringify(params)
     return type.typeKey + '$' + stringifiedParams;
+  }
+  
+  shouldCache(query) {
+    return true;
   }
 
   /**
@@ -65,4 +75,18 @@ export default class QueryCache {
       queries[key] = callback.call(binding, queries[key]);
     }
   }
+
+  shouldInvalidate(query) {
+    return false;
+  }
+  
+  destroy() {
+    // NOOP: needed for Ember's container
+  }
+  
+  static create(props) {
+    return new this(props);
+  }
+
+
 }

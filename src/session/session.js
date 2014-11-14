@@ -1,18 +1,19 @@
 import Coalesce from '../namespace';
 import ModelArray from '../collections/model_array';
 import ModelSet from '../collections/model_set';
-import StorageModelSet from '../collections/storage_model_set';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
-import Cache from './cache';
+
 import Query from './query';
-import QueryCache from './query_cache';
 import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
+import ModelCacheFactory from '../factories/model_cache';
+import QueryCacheFactory from '../factories/query_cache';
 import copy from '../utils/copy';
 import Error from '../error';
 import array_from from '../utils/array_from';
+import evented from '../utils/evented';
 
 var uuid = 1;
 
@@ -40,10 +41,10 @@ export default class Session {
     this.shadows = new ModelSet();
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
-    this.cache = new Cache();
-    this.queryCache = new QueryCache();
     this.typeFactory = new TypeFactory(container);
     this.mergeFactory = new MergeFactory(container);
+    this.queryCacheFactory = new QueryCacheFactory(container);
+    this.modelCacheFactory = new ModelCacheFactory(container);
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
   }
@@ -268,7 +269,8 @@ export default class Session {
   loadModel(model, opts) {
     console.assert(model.id, "Cannot load a model with an id");
     // TODO: this should be done on a per-attribute bases
-    var promise = this.cache.getPromise(model);
+    var cache = this.modelCacheFor(model),
+        promise = cache.getPromise(model);
 
     if(promise) {
       // the cache's promise is not guaranteed to return anything
@@ -277,7 +279,7 @@ export default class Session {
       });
     } else {
       promise = this.adapter.load(model, opts, this);
-      this.cache.addPromise(model, promise);
+      cache.add(model, promise);
     }
 
     return promise;
@@ -329,11 +331,12 @@ export default class Session {
   */
   fetchQuery(type, params) {
     type = this.typeFor(type);
-    var query = this.queryCache.getQuery(type, params);
+    var queryCache = this.queryCacheFor(type),
+        query = queryCache.getQuery(type, params);
     
     if(!query) {
       query = this.buildQuery(type, params);
-      this.queryCache.add(query);
+      queryCache.add(query);
     }
     
     return query;
@@ -350,7 +353,8 @@ export default class Session {
   query(type, params, opts) {
     var type = this.typeFor(type),
         query = this.fetchQuery(type, params),
-        promise = this.queryCache.getPromise(query);
+        queryCache = this.queryCacheFor(type),
+        promise = queryCache.getPromise(query);
         
     if(!promise) {
       promise = this.refreshQuery(query, opts);
@@ -375,7 +379,8 @@ export default class Session {
       query.replace(0, query.length, models);
       return query;
     });
-    this.queryCache.add(query, promise);
+    var queryCache = this.queryCacheFor(query.type);
+    queryCache.add(query, promise);
     
     return promise;
   }
@@ -397,6 +402,7 @@ export default class Session {
       model.clientRev += 1;
     }, this);
     
+    this.emit('willFlush', dirtyModels);
     // the adapter will return a list of models regardless
     // of whether the flush succeeded. it is in the merge
     // logic that the errors property of the model is consumed
@@ -526,6 +532,18 @@ export default class Session {
 
     return this.typeFactory.typeFor(key);
   }
+  
+  modelCacheFor(model) {
+    return this.modelCacheFactory.modelCacheFor(model.typeKey);
+  }
+  
+  queryCacheFor(key) {
+    if (typeof key !== 'string') {
+      key = key.typeKey;
+    }
+
+    return this.queryCacheFactory.queryCacheFor(key);
+  }
 
   getShadow(model) {
     var shadows = this.shadows;
@@ -542,7 +560,8 @@ export default class Session {
     Updates the promise cache
   */
   updateCache(model) {
-    this.cache.addModel(model);
+    var cache = this.modelCacheFor(model);
+    cache.add(model);
   }
 
   /**
@@ -553,7 +572,8 @@ export default class Session {
     @param {Model} model
   */
   invalidate(model) {
-    this.cache.removeModel(model);
+    var cache = this.modelCacheFor(model);
+    cache.remove(model);
   }
   
   /**
@@ -563,7 +583,8 @@ export default class Session {
     @param {Query} query
   */
   invalidateQuery(query) {
-    this.queryCache.remove(query);
+    var queryCache = this.queryCacheFor(query.type);
+    queryCache.remove(query);
   }
   
   /**
@@ -573,8 +594,9 @@ export default class Session {
     @param {Type} type Type to invalidate
   */
   invalidateQueries(type) {
-    var type = this.typeFor(type);
-    this.queryCache.removeAll(type);
+    var type = this.typeFor(type),
+        queryCache = this.queryCacheFor(type);
+    queryCache.removeAll(type);
   }
 
   /**
@@ -711,6 +733,7 @@ export default class Session {
 
     var adapter = this.adapter;
     adapter.willMergeModel(model);
+    this.emit('willMerge', model);
 
     this.updateCache(model);
 
@@ -741,6 +764,7 @@ export default class Session {
     }
 
     adapter.didMergeModel(model);
+    this.emit('didMerge', model);
     return merged;
   }
 
@@ -1026,3 +1050,5 @@ export default class Session {
   }
 
 }
+
+evented(Session.prototype);

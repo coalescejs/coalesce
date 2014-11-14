@@ -37,7 +37,9 @@ export default class SessionSerializer extends Serializer {
 
     session.newModels = modelSetSerializer.deserialize(serializedSessionData.newModels);
     session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);
-    session.queryCache = this.deserializeQueryCache(session, serializedSessionData.queryCache);
+
+    this.deserializeQueryCache(session, serializedSessionData.queryCache);
+
     // We also need to track where to start assigning clientIds since the models
     // we deserialize will already have clientIds assigned.
     session.idManager.uuid = serializedSessionData.uuidStart;
@@ -45,6 +47,7 @@ export default class SessionSerializer extends Serializer {
   }
   
   deserializeQueryCache(session, serialized) {
+    var queryCache = session.queryCacheFor('default');
 
     var queries = {};
     for(var key in serialized) {
@@ -64,7 +67,8 @@ export default class SessionSerializer extends Serializer {
 
       queries[key] = newQuery;
     }
-    return new QueryCache(queries);
+    
+    queryCache._queries = queries;
   }
     
   serialize(session) {
@@ -79,7 +83,7 @@ export default class SessionSerializer extends Serializer {
     serialized.models = modelSetSerializer.serialize(session.models);
     serialized.newModels = modelSetSerializer.serialize(session.newModels);
     serialized.shadows = modelSetSerializer.serialize(session.shadows);
-    serialized.queryCache = this.serializeQueryCache(session.queryCache);
+    serialized.queryCache = this.serializeQueryCache(session.queryCacheFor('default'));
     serialized.uuidStart = session.idManager.uuid;
     
     return serialized;
