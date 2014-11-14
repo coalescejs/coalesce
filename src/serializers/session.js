@@ -15,6 +15,7 @@ export default class SessionSerializer extends Serializer {
   */
   deserialize(session, serializedSessionData) {
     var modelSetSerializer = this.serializerFor('model-set');
+    // var self = this;
     
     if (!serializedSessionData){ return session; }
       
@@ -28,6 +29,11 @@ export default class SessionSerializer extends Serializer {
         session.merge(model);  
       }
     });
+
+    // session.models.mergeFromStorageToSession(session).then(function(){
+    //   console.log("deserializingQueryCache");
+     
+    // });
 
     session.newModels = modelSetSerializer.deserialize(serializedSessionData.newModels);
     session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);

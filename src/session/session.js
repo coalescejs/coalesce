@@ -26,8 +26,15 @@ export default class Session {
     this.container = container;
     this.parent = parent;
 
-    this.models = new ModelSet();    
-    //this.models = new StorageModelSet('models', container);
+    // the main session should use storageModelSet
+    // if(this.parent === undefined){
+    //   this.models = new StorageModelSet('models', container);
+    // }else{
+    //   this.models = new ModelSet();    
+    // }
+  
+    this.models = new ModelSet(); 
+  
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
     this.shadows = new ModelSet();
