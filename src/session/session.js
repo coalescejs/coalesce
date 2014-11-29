@@ -4,6 +4,7 @@ import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
 import Query from './query';
+import Flush from './flush';
 import TypeFactory from '../factories/type';
 import MergeFactory from '../factories/merge';
 import ModelCacheFactory from '../factories/model_cache';
@@ -386,14 +387,14 @@ export default class Session {
     // increment client revisions for all models
     // that could potentially be flushed
     dirtyModels.forEach(function(model) {
+      // TODO inc this on the mode every time it changes
       model.clientRev += 1;
     }, this);
     
     this.emit('willFlush', dirtyModels);
-    // the adapter will return a list of models regardless
-    // of whether the flush succeeded. it is in the merge
-    // logic that the errors property of the model is consumed
-    var promise = this.adapter.flush(this);
+    
+    var flush = new Flush(this, dirtyModels),
+        promise = flush.perform();
 
     // Optimistically assume updates will be
     // successful. Copy shadow models into

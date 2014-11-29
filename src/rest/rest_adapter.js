@@ -2,12 +2,9 @@ import Coalesce from '../namespace';
 import Adapter from '../adapter';
 import EmbeddedManager from './embedded_manager';
 import ModelSet from '../collections/model_set';
-import OperationGraph from './operation_graph';
 import PayloadSerializer from './serializers/payload';
 import RestErrorsSerializer from './serializers/errors';
 import SerializerFactory from '../factories/serializer';
-
-import materializeRelationships from '../utils/materialize_relationships';
 
 import {decamelize, pluralize, camelize} from '../utils/inflector';
 import array_from from '../utils/array_from';
@@ -429,127 +426,6 @@ export default class RestAdapter extends Adapter {
     this._embeddedManager.updateParents(model);
   }
 
-  flush(session) {
-    // take a snapshot of the models and their shadows
-    // (these will be updated by the session before the flush is complete)
-    var models = this.buildDirtySet(session);
-    var shadows = new ModelSet(array_from(models).map(function(model) {
-      // shadows are already frozen copies so no need to re-copy
-      return session.shadows.getModel(model) || model.copy();
-    }));
-
-    this.removeEmbeddedOrphans(models, shadows, session);
-
-    // for embedded serialization purposes we need to materialize
-    // all the lazy relationships in the set
-    // (all of the copies have lazy models in their relationships)
-    materializeRelationships(models);
-
-    var op = new OperationGraph(
-      models,
-      shadows,
-      this,
-      session
-    );
-
-    return this._performFlush(op, session);
-  }
-
-  _performFlush(op, session) {
-    var models = op.models,
-        pending = new Set();
-    // check for any pending operations
-    models.forEach(function(model) {
-      var op = this._pendingOps[model.clientId];
-      if(op) pending.add(op);
-    }, this);
-
-    var adapter = this;
-    if(pending.size > 0) {
-      return Coalesce.Promise.all(array_from(pending)).then(function() {
-        return adapter._performFlush(op, session);
-      });
-    }
-
-    var promise = op.perform();
-
-    // if no pending operations, set this flush
-    // as the pending operation for all models
-    models.forEach(function(model) {
-      this._pendingOps[model.clientId] = promise;
-    }, this);
-
-    return promise.then(function(res) {
-      // remove all pending operations
-      models.forEach(function(model) {
-        delete adapter._pendingOps[model.clientId];
-      });
-      return res.map(function(model) {
-        return session.merge(model);
-      });
-    }, function(err) {
-      // remove all pending operations
-      models.forEach(function(model) {
-        delete adapter._pendingOps[model.clientId];
-      });
-      throw err.map(function(model) {
-        return session.merge(model);
-      });
-    });
-  }
-
-  /**
-    This callback is intendended to resolve the request ordering issue
-    for parent models. For instance, when we have a Post -> Comments
-    relationship, the parent post will be saved first. The request will
-    return and it is likely that the returned JSON will have no comments.
-
-    In this callback we re-evaluate the relationships after the children
-    have been saved, effectively undoing the erroneous relationship results
-    of the parent request.
-
-    TODO: this should utilize the "owner" of the relationship
-    TODO: move this to OperationGraph
-  */
-  rebuildRelationships(children, parent) {
-    parent.suspendRelationshipObservers(function() {
-      // TODO: figure out a way to preserve ordering (or screw ordering and use sets)
-      for(var i = 0; i < children.length; i++) {
-        var child = children[i];
-
-        child.eachLoadedRelationship(function(name, relationship) {
-          // TODO: handle hasMany's for non-relational databases...
-          if(relationship.kind === 'belongsTo') {
-            var value =child[name],
-                inverse = child.constructor.inverseFor(name);
-
-            if(inverse) {
-              if(!(parent instanceof inverse.parentType)) {
-                return;
-              }
-              // if embedded then we are certain the parent has the correct data
-              if(this.embeddedType(inverse.parentType, inverse.name)) {
-                return;
-              }
-
-              if(inverse.kind === 'hasMany' && parent.isFieldLoaded(inverse.name)) {
-                var parentCollection =parent[inverse.name];
-                if(child.isDeleted) {
-                  parentCollection.removeObject(child);
-                } else if(value && value.isEqual(parent)) {
-                  // TODO: make sure it doesn't already exists (or change model arrays to sets)
-                  // TODO: think about 1-1 relationships
-                  parentCollection.addObject(child);
-                }
-              }
-
-            }
-          }
-        }, this);
-      }
-    }, this);
-  }
-
   /**
     Returns whether or not the passed in relationship
     is the "owner" of the relationship. This defaults
@@ -562,11 +438,7 @@ export default class RestAdapter extends Adapter {
     return relationship.kind === 'belongsTo' && owner !== false ||
       relationship.kind === 'hasMany' && owner === true
   }
-
-  embeddedType(type, name) {
-    return this._embeddedManager.embeddedType(type, name);
-  }
-
+  
   isDirtyFromRelationships(model, cached, relDiff) {
     var serializer = this.serializerFactory.serializerForModel(model);
     for(var i = 0; i < relDiff.length; i++) {
@@ -581,61 +453,9 @@ export default class RestAdapter extends Adapter {
   shouldSave(model) {
     return !this.isEmbedded(model);
   }
-
+  
   isEmbedded(model) {
     return this._embeddedManager.isEmbedded(model);
-  }
-
-  /**
-    @private
-    Iterate over the models and remove embedded records
-    that are missing their embedded parents.
-  */
-  removeEmbeddedOrphans(models, shadows, session) {
-    var orphans = [];
-    models.forEach(function(model) {
-      if(!this.isEmbedded(model)) return;
-      var root = this.findEmbeddedRoot(model, models);
-      if(!root || root.isEqual(model)) {
-        orphans.push(model);
-      }
-    }, this);
-    models.removeObjects(orphans);
-    shadows.removeObjects(orphans);
-  }
-
-  /**
-    @private
-    Build the set of dirty models that are part of the flush
-  */
-  buildDirtySet(session) {
-    var result = new ModelSet()
-    session.dirtyModels.forEach(function(model) {
-      var copy = model.copy();
-      copy.errors = null;
-      result.add(copy);
-      // ensure embedded model graphs are part of the set
-      this._embeddedManager.eachEmbeddedRelative(model, function(embeddedModel) {
-        // updated adapter level tracking of embedded parents
-        this._embeddedManager.updateParents(embeddedModel);
-
-        if (result.contains(embeddedModel)) { return; }
-        var copy = embeddedModel.copy();
-        copy.errors = null;
-        result.add(copy);
-      }, this);
-    }, this);
-    return result;
-  }
-
-  findEmbeddedRoot(model, models) {
-    var parent = model;
-    while(parent) {
-      model = parent;
-      parent = this._embeddedManager.findParent(model);
-    }
-    // we want the version in the current session
-    return models.getModel(model);
   }
 
   /**

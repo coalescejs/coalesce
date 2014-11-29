@@ -38,7 +38,7 @@ describe "rest", ->
         expect(post.title).to.eq('update2')
 
 
-    it 'second flush waits for first to complete', ->
+    xit 'second flush waits for first to complete', ->
       calls = 0
       # make first request take longer than the second
       adapter.runLater = (callback) ->

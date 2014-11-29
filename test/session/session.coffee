@@ -234,6 +234,7 @@ describe "Session", ->
   describe 'flushing', ->
 
     beforeEach ->
+      adapter._update = (model) -> Promise.resolve(model)
       adapter.flush = (session) ->
         models = session.dirtyModels
         Coalesce.Promise.resolve(models.copy(true)).then (models) ->
