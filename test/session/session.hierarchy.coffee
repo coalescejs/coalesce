@@ -15,6 +15,7 @@ describe "Session", ->
     @container = @adapter.container
 
     @adapter.load = (model) -> Coalesce.Promise.resolve(model)
+    @adapter._update = (model) -> Promise.resolve(model) 
     @adapter.flush = (session) ->
       models = session.dirtyModels
       Coalesce.Promise.resolve(models.copy(true)).then (models) ->

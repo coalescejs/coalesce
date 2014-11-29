@@ -1,42 +1,52 @@
 import Coalesce from '../namespace';
+import array_from from '../utils/array_from';
 
 /**
-  @private
-  An operation that is part of a flush
+@private
+An operation that is part of a flush
 
-  @namespace rest
-  @class Operation
+@namespace rest
+@class Operation
 */
 export default class Operation {
-  constructor(model, graph, adapter, session) {
+  constructor(flush, model, shadow) {
     this.model = model;
-    this.graph = graph;
-    this.adapter = adapter;
-    this.session = session;
+    this.shadow = shadow;
+    this.flush = flush;
+    this.adapter = this.flush.adapter;
+    this.session = this.flush.session;
     // forces the operation to be performed
     this.force = false
     this.children = new Set();
     this.parents = new Set();
-    var op = this;
-    this.promise = new Coalesce.Promise(function(resolve, reject) {
-      op.resolve = resolve;
-      op.reject = reject;
+    this.promise = new Coalesce.Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
     });
   }
-
+  
+  get diff() {
+    return this.model.diff(this.shadow);
+  }
+  
   then(...args) {
     var promise = this.promise;
     return promise.then.apply(promise, args);
   }
-
+  
+  addChild(child) {
+    this.children.add(child);
+    child.parents.add(this);
+  }
+  
   // determine which relationships are affected by this operation
   // TODO: we should unify this with dirty checking
   get dirtyRelationships() {
     var adapter = this.adapter,
-        model = this.model,
-        rels = [],
-        shadow = this.shadow;
-
+    model = this.model,
+    rels = [],
+    shadow = this.shadow;
+    
     if(model.isNew) {
       // if the model is new, all relationships are considered dirty
       model.eachRelationship(function(name, relationship) {
@@ -48,7 +58,7 @@ export default class Operation {
       // otherwise we check the diff to see if the relationship has changed,
       // in the case of a delete this won't really matter since it will
       // definitely be dirty
-      var diff = model.diff(shadow);
+      var diff = this.diff;
       for(var i = 0; i < diff.length; i++) {
         var d = diff[i];
         if(d.relationship && adapter.isRelationshipOwner(d.relationship)) {
@@ -56,24 +66,24 @@ export default class Operation {
         }
       }
     }
-
+    
     return rels;
   }
-
+  
   get isDirty() {
     return !!this.dirtyType;
   }
-
+  
   get isDirtyFromUpdates() {
     var model = this.model,
-        shadow = this.shadow,
-        adapter = this.adapter;
-
+    shadow = this.shadow,
+    adapter = this.adapter;
+    
     // this case could happen via a dirty relationship where the other side does
     // not have an inverse (in which case the model will not be dirty and hence no shadow)
     if(!shadow) return false;
-
-    var diff = model.diff(shadow);
+    
+    var diff = this.diff;
     var dirty = false;
     var relDiff = [];
     for(var i = 0; i < diff.length; i++) {
@@ -86,7 +96,7 @@ export default class Operation {
     }
     return dirty || adapter.isDirtyFromRelationships(model, shadow, relDiff);
   }
-
+  
   get dirtyType() {
     var model = this.model;
     if(model.isNew) {
@@ -97,17 +107,47 @@ export default class Operation {
       return "updated";
     }
   }
-
+  
   perform() {
-    var adapter = this.adapter,
+    var promise,
+        adapter = this.adapter,
+        flush = this.flush;
+    
+    // perform after all parents have performed
+    if(this.parents.size > 0) {
+      promise = Coalesce.Promise.all(array_from(this.parents)).then( () => {
+        return this._perform();
+      });
+    } else {
+      promise = this._perform();
+    }
+    
+    if(this.children.size > 0) {
+      promise = promise.then(function(model) {
+        return Coalesce.Promise.all(array_from(this.children)).then(function(models) {
+          flush.rebuildRelationships(models, model);
+          return model;
+        }, function(models) {
+          // XXX: should we still rebuild relationships since this request succeeded?
+          throw model;
+        });
+      });
+    }
+    
+    return promise;
+  }
+  
+  _perform() {
+    var flush = this.flush,
+        adapter = this.adapter,
         session = this.session,
         dirtyType = this.dirtyType,
         model = this.model,
         shadow = this.shadow,
         promise;
-
+    
     if(!dirtyType || !adapter.shouldSave(model)) {
-      if(adapter.isEmbedded(model)) {
+      if(flush.isEmbedded(model)) {
         // if embedded we want to extract the model from the result
         // of the parent operation
         promise = this._promiseFromEmbeddedParent();
@@ -122,7 +162,7 @@ export default class Operation {
     } else if(dirtyType === "deleted") {
       promise = adapter._contextualizePromise(adapter._deleteModel(model), model);
     }
-
+    
     promise = promise.then(function(serverModel) {
       // in the case of new records we need to assign the id
       // of the model so dependent operations can use it
@@ -150,7 +190,7 @@ export default class Operation {
       // model with the shadow if no other model returned
       // TODO: could be more intuitive to move this logic
       // into adapter._contextualizePromise
-
+      
       // there won't be a shadow if the model is new
       if(shadow && serverModel === model) {
         shadow.errors = serverModel.errors;
@@ -172,21 +212,21 @@ export default class Operation {
     this.model.errors = errors;
     return this.model;
   }
-
+  
   get _embeddedParent() {
     var model = this.model,
-        parentModel = this.adapter._embeddedManager.findParent(model),
-        graph = this.graph;
-
+    parentModel = this.adapter._embeddedManager.findParent(model),
+    flush = this.flush;
+    
     console.assert(parentModel, "Embedded parent does not exist!");
-
-    return graph.getOp(parentModel);
+    
+    return flush.getOp(parentModel);
   }
-
+  
   _promiseFromEmbeddedParent() {
     var model = this.model,
-        adapter = this.adapter;
-
+    adapter = this.adapter;
+    
     function findInParent(parentModel) {
       var res = null;
       adapter._embeddedManager.eachEmbeddedRecord(parentModel, function(child, embeddedType) {
@@ -195,17 +235,12 @@ export default class Operation {
       });
       return res;
     }
-
+    
     return this._embeddedParent.then(function(parent) {
       return findInParent(parent);
     }, function(parent) {
       throw findInParent(parent);
     });
   }
-
-  addChild(child) {
-    this.children.add(child);
-    child.parents.add(this);
-  }
-
+  
 }
