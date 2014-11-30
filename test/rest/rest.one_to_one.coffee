@@ -121,15 +121,12 @@ describe "rest", ->
     beforeEach ->
       userWithPost.apply(this)
 
-      PostSerializer = ModelSerializer.extend
-        properties:
-          user:
-            embedded: 'always'
+      @Post.defineSchema
+        relationships:
+          user: {kind: 'belongsTo', type: 'user', embedded: 'always'}
 
       adapter = @adapter
       session = @session
-
-      @container.register 'serializer:post', PostSerializer
 
 
     it 'creates child', ->

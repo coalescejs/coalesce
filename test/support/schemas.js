@@ -1,5 +1,4 @@
 import Model from 'coalesce/model/model';
-import ModelSerializer from 'coalesce/serializers/model';
 // Common model setups for tests
 
 function postWithComments() {
@@ -33,14 +32,11 @@ function postWithComments() {
 
 function postWithEmbeddedComments() {
   postWithComments.apply(this);
-  this.PostSerializer = ModelSerializer.extend({
-    properties: {
-      comments: {
-        embedded: 'always'
-      }
+  this.Post.defineSchema({
+    relationships: {
+      comments: {kind: 'hasMany', type: 'comment', embedded: 'always'}
     }
   });
-  this.container.register('serializer:post', this.PostSerializer);
 }
 
 function userWithPost() {

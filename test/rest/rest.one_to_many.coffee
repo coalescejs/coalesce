@@ -229,12 +229,9 @@ describe "rest", ->
     context 'embedded', ->
 
       beforeEach ->
-        PostSerializer = ModelSerializer.extend
-          properties:
-            comments:
-              embedded: 'always'
-
-        @container.register 'serializer:post', PostSerializer
+        @Post.defineSchema
+          relationships:
+            comments: {kind: 'hasMany', type: 'comment', embedded: 'always'}
 
 
       it 'loads', ->

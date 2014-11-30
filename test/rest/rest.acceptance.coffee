@@ -1,7 +1,6 @@
 `import setup from './_shared'`
 `import {postWithComments, groupWithMembersWithUsers} from '../support/schemas'`
 `import Model from 'coalesce/model/model'`
-`import ModelSerializer from 'coalesce/serializers/model'`
 `import Coalesce from 'coalesce'`
 
 describe "rest", ->
@@ -23,12 +22,12 @@ describe "rest", ->
     beforeEach ->
       groupWithMembersWithUsers.apply(this)
 
-      GroupSerializer = ModelSerializer.extend
-        properties:
+      @Group.defineSchema
+        relationships:
           members:
+            kind: 'hasMany'
+            type: 'member'
             embedded: 'always'
-
-      @container.register 'serializer:group', GroupSerializer
 
     it 'creates new group and then deletes a member', ->
       adapter.r['POST:/users'] = -> users: {client_id: user.clientId, id: 1, name: "wes"}
@@ -151,7 +150,7 @@ describe "rest", ->
         attributes:
           name: {type: 'string'}
         relationships:
-          profile: {kind: 'belongsTo', type: 'profile'}
+          profile: {kind: 'belongsTo', type: 'profile', embedded: 'always'}
       @App.User = @User = User
 
       `class Profile extends Model {}`
@@ -161,7 +160,7 @@ describe "rest", ->
           bio: {type: 'string'}
         relationships:
           user: {kind: 'belongsTo', type: 'user'}
-          tags: {kind: 'hasMany', type: 'tag'}
+          tags: {kind: 'hasMany', type: 'tag', embedded: 'always'}
       @App.Profile = @Profile = Profile
 
       `class Tag extends Model {}`
@@ -177,20 +176,6 @@ describe "rest", ->
       @container.register 'model:user', @User
       @container.register 'model:profile', @Profile
       @container.register 'model:tag', @Tag
-
-      UserSerializer = ModelSerializer.extend
-        properties:
-          profile:
-            embedded: 'always'
-
-      @container.register 'serializer:user', UserSerializer
-
-      ProfileSerializer = ModelSerializer.extend
-        properties:
-          tags:
-            embedded: 'always'
-
-      @container.register 'serializer:profile', ProfileSerializer
 
     it 'deletes root', ->
       adapter.r['DELETE:/users/1'] = {}
@@ -281,7 +266,7 @@ describe "rest", ->
         attributes:
           name: {type: 'string'}
         relationships:
-          campaignSteps: {kind: 'hasMany', type: 'campaign_step'}
+          campaignSteps: {kind: 'hasMany', type: 'campaign_step', embedded: 'always'}
       @App.Campaign = @Campaign = Campaign
 
       `class CampaignStep extends Model {}`
@@ -289,7 +274,7 @@ describe "rest", ->
         typeKey: 'campaign_step'
         relationships:
           campaign: {kind: 'belongsTo', type: 'campaign'}
-          campaignTemplates: {kind: 'hasMany', type: 'campaign_template'}
+          campaignTemplates: {kind: 'hasMany', type: 'campaign_template', embedded: 'always'}
       @App.CampaignStep = @CampaignStep = CampaignStep
 
       `class CampaignTemplate extends Model {}`
@@ -304,19 +289,6 @@ describe "rest", ->
       @container.register 'model:campaign', @Campaign
       @container.register 'model:campaign_template', @CampaignTemplate
       @container.register 'model:campaign_step', @CampaignStep
-
-      CampaignSerializer = ModelSerializer.extend
-        properties:
-          campaignSteps:
-            embedded: 'always'
-
-      CampaignStepSerializer = ModelSerializer.extend
-        properties:
-          campaignTemplates:
-            embedded: 'always'
-
-      @container.register 'serializer:campaign', CampaignSerializer
-      @container.register 'serializer:campaign_step', CampaignStepSerializer
 
 
     it 'creates new embedded children with reference to new hasMany', ->
