@@ -91,10 +91,6 @@ function mustImplement(name) {
 Adapter.reopen({
 
   mergeError: Adapter.mergeData,
-  
-  willMergeModel: function() {},
-  
-  didMergeModel: function() {},
 
   load: mustImplement("load"),
 

@@ -61,7 +61,7 @@ export default class Flush {
         }
       }
       
-      var isEmbedded = this.isEmbedded(model);
+      var isEmbedded = model.isEmbedded;
       
       if(op.isDirty && isEmbedded) {
         // walk up the embedded tree and mark root as dirty
@@ -70,7 +70,7 @@ export default class Flush {
         rootOp.force = true;
         
         // ensure the embedded parent is a parent of the operation
-        var parentModel = this._embeddedManager.findParent(model);
+        var parentModel = model._parent;
         var parentOp = this.getOp(parentModel);
         
         // if the child already has some parents, they need to become
@@ -95,7 +95,7 @@ export default class Flush {
   removeEmbeddedOrphans(models, shadows, session) {
     var orphans = [];
     models.forEach(function(model) {
-      if(!this.isEmbedded(model)) return;
+      if(!model.isEmbedded) return;
       var root = this.findEmbeddedRoot(model, models);
       if(!root || root.isEqual(model)) {
         orphans.push(model);
@@ -109,18 +109,14 @@ export default class Flush {
     var parent = model;
     while(parent) {
       model = parent;
-      parent = this._embeddedManager.findParent(model);
+      parent = model._parent;
     }
     // we want the version in the current session
     return models.getModel(model);
   }
   
-  isEmbedded(model) {
-    return this._embeddedManager.isEmbedded(model);
-  }
-  
   embeddedType(type, name) {
-    return this._embeddedManager.embeddedType(type, name);
+    return type.fields.get(name).embedded;
   }
   
   /**
@@ -136,13 +132,10 @@ export default class Flush {
       result.add(copy);
       // ensure embedded model graphs are part of the set
       this._embeddedManager.eachEmbeddedRelative(model, function(embeddedModel) {
-        // updated adapter level tracking of embedded parents
-        this._embeddedManager.updateParents(embeddedModel);
-        
         if (result.contains(embeddedModel)) { return; }
-          var copy = embeddedModel.copy();
-          copy.errors = null;
-          result.add(copy);
+        var copy = embeddedModel.copy();
+        copy.errors = null;
+        result.add(copy);
       }, this);
     }, this);
     return result;

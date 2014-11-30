@@ -19,7 +19,7 @@ export default class TestRestAdapter extends RestAdapter {
           hash.data = JSON.parse(hash.data);
         }
         if(!json) {
-          throw "No data for #{key}";
+          throw `No data for ${key}`;
         }
         if(typeof json === 'function') {
           try {

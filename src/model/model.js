@@ -89,6 +89,13 @@ export default class Model extends BaseClass {
   }
   
   /**
+    Increase the client rev number
+  */
+  bump() {
+    return ++this.clientRev;
+  }
+  
+  /**
     Two models are "equal" when they correspond to the same
     key. This does not mean they necessarily have the same data.
   */
@@ -144,6 +151,10 @@ export default class Model extends BaseClass {
   get isNew() {
     return !this.id;
   }
+  
+  get isEmbedded() {
+    return !!this._parent;
+  }
 
   get isDirty() {
     if(this.session) {
@@ -182,6 +193,8 @@ export default class Model extends BaseClass {
   }
   
   copyMeta(dest) {
+    // TODO _parent should just use clientId
+    dest._parent = this._parent;
     dest._meta = copy(this._meta);
   }
   
@@ -598,6 +611,12 @@ export default class Model extends BaseClass {
     return possibleRelationships[0];
   }
 }
+
+/**
+  The embedded parent of this model.
+  @private
+*/
+Model.prototype._parent = null;
 
 function reifyRelationshipType(relationship) {
   if(!relationship.type) {
