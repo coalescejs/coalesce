@@ -6,56 +6,10 @@ import {singularize, camelize, underscore, dasherize} from '../utils/inflector';
   @class ModelSerializer
 */
 export default class ModelSerializer extends Serializer {
-  /**
-    Specifies configurations for individual properties.
 
-    For example:
-
-    ```
-    App.PostSerializer = Coalesce.JsonSerializer.extend({
-      properties: {
-        title: {
-          key: 'TITLE1'
-        }
-      }
-    });
-    ```
-
-    @property properties
-  */
   constructor(...args) {
     super(args);
     this._keyCache = {};
-    this._nameCache = {};
-  }
-
-  /**
-    @private
-
-    Looks up the property name corresponding to the
-    given key.
-  */
-  nameFor(key) {
-    var name;
-    if(name = this._nameCache[key]) {
-      return name;
-    }
-    var configs = this.properties;
-    for(var currentName in configs) {
-      var current = configs[name];
-      var keyName = current.key;
-      if(keyName && key === keyName) {
-        name = currentName;
-      }
-    }
-    name = name || camelize(key);
-    this._nameCache[key] = name;
-    return name;
-  }
-
-  configFor(name) {
-    var properties = this.properties;
-    return properties && properties[name] || {};
   }
 
   keyFor(name, type, opts) {
@@ -64,8 +18,7 @@ export default class ModelSerializer extends Serializer {
       return key;
     }
 
-    var config = this.configFor(name);
-    key = config.key || this.keyForType(name, type, opts);
+    key = opts && opts.key || this.keyForType(name, type, opts);
     this._keyCache[name] = key;
     return key;
   }
@@ -101,33 +54,31 @@ export default class ModelSerializer extends Serializer {
   }
 
   addMeta(serialized, model) {
-    this.addProperty(serialized, model, 'id', 'id');
-    this.addProperty(serialized, model, 'clientId', 'string');
-    this.addProperty(serialized, model, 'rev', 'revision');
-    this.addProperty(serialized, model, 'clientRev', 'revision');
+    this.addField(serialized, model, 'id', 'id');
+    this.addField(serialized, model, 'clientId', 'string');
+    this.addField(serialized, model, 'rev', 'revision');
+    this.addField(serialized, model, 'clientRev', 'revision');
   }
 
   addAttributes(serialized, model) {
     model.eachLoadedAttribute(function(name, attribute) {
       // do not include transient properties
       if(attribute.transient) return;
-      this.addProperty(serialized, model, name, attribute.type);
+      this.addField(serialized, model, name, attribute.type, attribute);
     }, this);
   }
 
   addRelationships(serialized, model) {
     model.eachLoadedRelationship(function(name, relationship) {
-      var config = this.configFor(name),
-          opts = {typeKey: relationship.typeKey, embedded: config.embedded},
-          // we dasherize the kind for lookups for consistency
-          kindKey = dasherize(relationship.kind);
-      this.addProperty(serialized, model, name, kindKey, opts);
+      // we dasherize the kind for lookups for consistency
+      var kindKey = dasherize(relationship.kind);
+      this.addField(serialized, model, name, kindKey, relationship);
     }, this);
   }
 
-  addProperty(serialized, model, name, type, opts) {
+  addField(serialized, model, name, type, opts) {
     var key = this.keyFor(name, type, opts),
-        value =model[name],
+        value = model[name],
         serializer;
 
     if(type) {
@@ -152,11 +103,11 @@ export default class ModelSerializer extends Serializer {
   }
 
   extractMeta(model, hash, opts) {
-    this.extractProperty(model, hash, 'id', 'id');
-    this.extractProperty(model, hash, 'clientId', 'string');
-    this.extractProperty(model, hash, 'rev', 'revision');
-    this.extractProperty(model, hash, 'clientRev', 'revision');
-    this.extractProperty(model, hash, 'errors', 'errors');
+    this.extractField(model, hash, 'id', 'id');
+    this.extractField(model, hash, 'clientId', 'string');
+    this.extractField(model, hash, 'rev', 'revision');
+    this.extractField(model, hash, 'clientRev', 'revision');
+    this.extractField(model, hash, 'errors', 'errors');
     if(!opts || opts.reifyClientId !== false) {
       this.idManager.reifyClientId(model);
     }
@@ -164,21 +115,19 @@ export default class ModelSerializer extends Serializer {
 
   extractAttributes(model, hash) {
     model.eachAttribute(function(name, attribute) {
-      this.extractProperty(model, hash, name, attribute.type);
+      this.extractField(model, hash, name, attribute.type, attribute);
     }, this);
   }
 
   extractRelationships(model, hash) {
     model.eachRelationship(function(name, relationship) {
-      var config = this.configFor(name),
-          opts = {typeKey: relationship.typeKey, embedded: config.embedded},
-          // we dasherize the kind for lookups for consistency
-          kindKey = dasherize(relationship.kind);
-      this.extractProperty(model, hash, name, kindKey, opts);
+      // we dasherize the kind for lookups for consistency
+      var kindKey = dasherize(relationship.kind);
+      this.extractField(model, hash, name, kindKey, relationship);
     }, this);
   }
 
-  extractProperty(model, hash, name, type, opts) {
+  extractField(model, hash, name, type, opts) {
     var key = this.keyFor(name, type, opts),
         value = hash[key],
         serializer;
@@ -206,11 +155,6 @@ export default class ModelSerializer extends Serializer {
 
   serializerFor(typeKey) {
     return this.serializerFactory.serializerFor(typeKey);
-  }
-
-  embeddedType(type, name) {
-    var config = this.configFor(name);
-    return config.embedded;
   }
 
 }

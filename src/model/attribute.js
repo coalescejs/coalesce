@@ -11,6 +11,7 @@ export default class Attribute extends Field {
     var name = this.name;
     Object.defineProperty(prototype, name, {
       enumerable: true,
+      configurable: true,
       get: function() {
         return this._attributes[name];
       },

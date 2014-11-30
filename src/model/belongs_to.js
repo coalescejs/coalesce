@@ -7,6 +7,7 @@ export default class BelongsTo extends Relationship {
     var name = this.name;
     Object.defineProperty(prototype, name, {
       enumerable: true,
+      configurable: true,
       get: function() {
         var value = this._relationships[name],
             session = this.session;

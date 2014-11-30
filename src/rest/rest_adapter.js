@@ -443,7 +443,7 @@ export default class RestAdapter extends Adapter {
     var serializer = this.serializerFactory.serializerForModel(model);
     for(var i = 0; i < relDiff.length; i++) {
       var diff = relDiff[i];
-      if(this.isRelationshipOwner(diff.relationship) || serializer.embeddedType(model.constructor, diff.name) === 'always') {
+      if(this.isRelationshipOwner(diff.relationship) || this._embeddedManager.embeddedType(model.constructor, diff.name) === 'always') {
         return true;
       }
     }

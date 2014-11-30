@@ -66,11 +66,9 @@ describe 'rest serialization', ->
 
 
       it 'obeys custom keys', ->
-        PostSerializer = ModelSerializer.extend
-          properties:
-            title:
-              key: 'POST_TITLE'
-        @container.register 'serializer:post', PostSerializer
+        @Post.defineSchema
+          attributes:
+            title: {type: 'string', key: 'POST_TITLE'}
         data = {post: {id: 1, POST_TITLE: 'wat', long_title: 'wat omgawd'}}
         models = @serializer.deserialize(data)
         post = models[0]
@@ -126,10 +124,9 @@ describe 'rest serialization', ->
         expect(data).to.eql(client_id: "2", id: 1, title: 'wat', long_title: 'wat omgawd', rev: 123, client_rev: 321)
 
       it 'obeys custom keys', ->
-        @serializer.constructor.reopen
-          properties:
-            title:
-              key: 'POST_TITLE'
+        @Post.defineSchema
+          attributes:
+            title: {type: 'string', key: 'POST_TITLE'}
         post = @Post.create()
         post.id = 1
         post.clientId = "2"
@@ -242,12 +239,9 @@ describe 'rest serialization', ->
     beforeEach ->
       userWithPost.apply(this)
 
-      PostSerializer = ModelSerializer.extend
-        properties:
-          user: { embedded: 'always' }
-
-      @container.register 'serializer:post', PostSerializer
-
+      @User.defineSchema
+        relationships:
+          user: { kind: 'belongsTo', type: 'user', embedded: 'always' }
 
     it 'deserializes null belongsTo', ->
       data = {posts: [{id: 1, title: 'wat', user: null}] }

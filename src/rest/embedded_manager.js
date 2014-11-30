@@ -49,9 +49,7 @@ export default class EmbeddedManager extends BaseClass {
       // that don't have an inverse
       if(!inverse) return;
 
-      var config = serializer.configFor(inverse.name);
-
-      result = result || config.embedded === 'always';
+      result = result || inverse.embedded === 'always';
     }, this);
 
     this._cachedIsEmbedded.set(type, result);
@@ -59,8 +57,7 @@ export default class EmbeddedManager extends BaseClass {
   }
 
   embeddedType(type, name) {
-    var serializer = this.adapter.serializerFactory.serializerForType(type);
-    return serializer.embeddedType(type, name);
+    return type.relationships.get(name).embedded;
   }
 
   eachEmbeddedRecord(model, callback, binding) {

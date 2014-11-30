@@ -18,6 +18,7 @@ export default class HasMany extends Relationship {
     var field = this;
     Object.defineProperty(prototype, name, {
       enumerable: true,
+      configurable: true,
       get: function() {
         var value = this._relationships[name];
         if(this.isNew && !value) {
