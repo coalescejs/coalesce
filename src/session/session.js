@@ -383,13 +383,6 @@ export default class Session {
         dirtyModels = this.dirtyModels,
         newModels = this.newModels,
         shadows = this.shadows;
-
-    // increment client revisions for all models
-    // that could potentially be flushed
-    dirtyModels.forEach(function(model) {
-      // TODO inc this on the mode every time it changes
-      model.clientRev += 1;
-    }, this);
     
     this.emit('willFlush', dirtyModels);
     
@@ -462,6 +455,10 @@ export default class Session {
   modelWillBecomeDirty(model) {
     if(this._dirtyCheckingSuspended) {
       return;
+    }
+    // Embedded models dirty their parents as well
+    if(model._parent) {
+      this.modelWillBecomeDirty(model._parent);
     }
     this.touch(model);
   }
@@ -615,6 +612,7 @@ export default class Session {
         this.shadows.addObject(model.copy())
       }
     }
+    model.bump();
   }
 
 
@@ -686,8 +684,7 @@ export default class Session {
     this.updateParent();
     return this.flush();
   }
-
-
+  
   /**
     Merges new data for a model into this session.
 
@@ -719,8 +716,6 @@ export default class Session {
     }
     visited.add(model);
 
-    var adapter = this.adapter;
-    adapter.willMergeModel(model);
     this.emit('willMerge', model);
 
     this.updateCache(model);
@@ -751,7 +746,6 @@ export default class Session {
       this.merge(child, visited);
     }
 
-    adapter.didMergeModel(model);
     this.emit('didMerge', model);
     return merged;
   }
@@ -775,17 +769,18 @@ export default class Session {
         originals = this.originals,
         merged,
         ancestor,
-        existing = models.getModel(model);
+        existing = models.getModel(model),
+        shadow = shadows.getModel(model);
 
     if(existing && this._containsRev(existing, model)) {
       return existing;
     }
 
-    var hasClientChanges = !existing || this._containsClientRev(model, existing);
+    var hasClientChanges = !shadow || this._containsClientRev(model, shadow);
 
     if(hasClientChanges) {
       // If has latest client rev, merge against the shadow
-      ancestor = shadows.getModel(model);
+      ancestor = shadow;
     } else {
       // If doesn't have the latest client rev, merge against original
       ancestor = originals.getModel(model);
@@ -837,7 +832,13 @@ export default class Session {
         originals = this.originals,
         merged,
         ancestor,
-        existing = models.getModel(model);
+        existing = models.getModel(model),
+        // If a shadow does not exist this could be an error during
+        // a create operation. In this case, if the server has seen
+        // the client's changes we should merge using the new model
+        // as the ancestor. This case could happen if the server manipulates
+        // the response to return valid values without saving.
+        shadow = shadows.getModel(model) || existing;
         
     if(!existing) {
       // This case could happen on error during create inside child session
@@ -846,16 +847,10 @@ export default class Session {
     
     var original = originals.getModel(model);
 
-    var hasClientChanges = this._containsClientRev(model, existing);
+    var hasClientChanges = this._containsClientRev(model, shadow);
     if(hasClientChanges) {
       // If has latest client rev, merge against the shadow.
-
-      // If a shadow does not exist this could be an error during
-      // a create operation. In this case, if the server has seen
-      // the client's changes we should merge using the new model
-      // as the ancestor. This case could happen if the server manipulates
-      // the response to return valid values without saving.
-      ancestor = shadows.getModel(model) || existing;
+      ancestor = shadow;
     } else {
       // If doesn't have the latest client rev, merge against original
       ancestor = original;

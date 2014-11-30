@@ -13,6 +13,10 @@ export default function materializeRelationships(models, idManager) {
 
   models.forEach(function(model) {
 
+    if(model._parent) {
+      model._parent = models.getModel(model._parent);
+    }
+    
     // TODO: does this overwrite non-lazy embedded children?
     model.eachLoadedRelationship(function(name, relationship) {
       if(relationship.kind === 'belongsTo') {

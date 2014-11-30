@@ -14,8 +14,9 @@ export default class HasMany extends Relationship {
   }
   
   defineProperty(prototype) {
-    var name = this.name;
-    var field = this;
+    var name = this.name,
+        CollectionType = this.collectionType,
+        embedded = this.embedded;
     Object.defineProperty(prototype, name, {
       enumerable: true,
       configurable: true,
@@ -23,9 +24,10 @@ export default class HasMany extends Relationship {
         var value = this._relationships[name];
         if(this.isNew && !value) {
           var content = value;
-          value = this._relationships[name] = new field.collectionType();
+          value = this._relationships[name] = new CollectionType();
           value.owner = this;
           value.name = name;
+          value.embedded = embedded;
           if(content) {
             value.addObjects(content);
           }
@@ -35,12 +37,12 @@ export default class HasMany extends Relationship {
       set: function(value) {
         var oldValue = this._relationships[name];
         if(oldValue === value) return;
-        if(value && value instanceof field.collectionType) {
+        if(value && value instanceof CollectionType) {
           // XXX: this logic might not be necessary without Ember
           // need to copy since this content is being listened to
           value = copy(value);
         }
-        if(oldValue && oldValue instanceof field.collectionType) {
+        if(oldValue && oldValue instanceof CollectionType) {
           oldValue.clear();
           if(value) {
             oldValue.addObjects(value);
@@ -49,9 +51,10 @@ export default class HasMany extends Relationship {
           this.hasManyWillChange(name);
           
           var content = value;
-          value = this._relationships[name] = new field.collectionType();
+          value = this._relationships[name] = new CollectionType();
           value.owner = this;
           value.name = name;
+          value.embedded = embedded;
           if(content) {
             value.addObjects(content);
           }

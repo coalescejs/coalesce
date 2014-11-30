@@ -39,11 +39,15 @@ export default class HasManyArray extends ModelArray {
     var model = this.owner,
         name = this.name,
         session = this.session;
-
-    if (session && !model._suspendedRelationships) {
-      for (var i=index; i<index+added; i++) {
-        var inverseModel = this.objectAt(i);
+        
+    for (var i=index; i<index+added; i++) {
+      var inverseModel = this.objectAt(i);
+      if (session && !model._suspendedRelationships) {
         session.inverseManager.registerRelationship(model, name, inverseModel);
+      }
+      
+      if(this.embedded) {
+        inverseModel._parent = model;
       }
     }
   }

@@ -123,7 +123,7 @@ export default class Operation {
     }
     
     if(this.children.size > 0) {
-      promise = promise.then(function(model) {
+      promise = promise.then((model) => {
         return Coalesce.Promise.all(array_from(this.children)).then(function(models) {
           flush.rebuildRelationships(models, model);
           return model;
@@ -147,7 +147,7 @@ export default class Operation {
         promise;
     
     if(!dirtyType || !adapter.shouldSave(model)) {
-      if(flush.isEmbedded(model)) {
+      if(model.isEmbedded) {
         // if embedded we want to extract the model from the result
         // of the parent operation
         promise = this._promiseFromEmbeddedParent();
@@ -166,7 +166,8 @@ export default class Operation {
     promise = promise.then(function(serverModel) {
       // in the case of new records we need to assign the id
       // of the model so dependent operations can use it
-      if(!model.id) {
+      // serverModel could be null (e.g. an embedded record removed from its parent)
+      if(serverModel && !model.id) {
         model.id = serverModel.id;
       }
       if(!serverModel) {
@@ -215,8 +216,8 @@ export default class Operation {
   
   get _embeddedParent() {
     var model = this.model,
-    parentModel = this.adapter._embeddedManager.findParent(model),
-    flush = this.flush;
+        parentModel = model._parent,
+        flush = this.flush;
     
     console.assert(parentModel, "Embedded parent does not exist!");
     

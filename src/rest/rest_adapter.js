@@ -419,14 +419,6 @@ export default class RestAdapter extends Adapter {
   }
 
   /**
-    Book-keeping for embedded models is done on the adapter.
-    The logic inside this hook is for this purpose.
-  */
-  willMergeModel(model) {
-    this._embeddedManager.updateParents(model);
-  }
-
-  /**
     Returns whether or not the passed in relationship
     is the "owner" of the relationship. This defaults
     to true for belongsTo and false for hasMany
@@ -451,11 +443,7 @@ export default class RestAdapter extends Adapter {
   }
 
   shouldSave(model) {
-    return !this.isEmbedded(model);
-  }
-  
-  isEmbedded(model) {
-    return this._embeddedManager.isEmbedded(model);
+    return !model.isEmbedded;
   }
 
   /**

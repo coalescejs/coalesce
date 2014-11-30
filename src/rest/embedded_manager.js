@@ -10,52 +10,8 @@ export default class EmbeddedManager extends BaseClass {
 
   constructor(adapter) {
     this.adapter = adapter;
-    // bookkeep all the parents of embedded records
-    this._parentMap = {};
-    this._cachedIsEmbedded = new Map();
   }
-
-  updateParents(model) {
-    var type = model.constructor,
-        adapter = this.adapter,
-        typeKey = type.typeKey,
-        serializer = adapter.serializerFor(typeKey);
-
-    this.eachEmbeddedRecord(model, function(embedded, kind) {
-      this.adapter.reifyClientId(embedded);
-      this._parentMap[embedded.clientId] = model;
-    }, this);
-  }
-
-  findParent(model) {
-    var parent = this._parentMap[model.clientId];
-    return parent;
-  }
-
-  isEmbedded(model) {
-    var type = model.constructor,
-        result = this._cachedIsEmbedded.get(type);
-
-    if(result !== undefined) return result;
-
-    var adapter = this.adapter,
-        result = false;
-
-    type.eachRelationship(function(name, relationship) {
-      var serializer = adapter.serializerFor(relationship.typeKey),
-          inverse = type.inverseFor(relationship.name);
-      
-      // TODO: this currently won't support embedded relationships
-      // that don't have an inverse
-      if(!inverse) return;
-
-      result = result || inverse.embedded === 'always';
-    }, this);
-
-    this._cachedIsEmbedded.set(type, result);
-    return result;
-  }
-
+  
   embeddedType(type, name) {
     return type.relationships.get(name).embedded;
   }
@@ -122,7 +78,7 @@ export default class EmbeddedManager extends BaseClass {
       this.eachEmbeddedRelative(embeddedRecord, callback, binding, visited);
     }, this);
 
-    var parent = this.findParent(model);
+    var parent = model._parent;
     if(parent) {
       this.eachEmbeddedRelative(parent, callback, binding, visited);
     }

@@ -4,7 +4,8 @@ import isEqual from '../utils/is_equal';
 export default class BelongsTo extends Relationship {
   
   defineProperty(prototype) {
-    var name = this.name;
+    var name = this.name,
+        embedded = this.embedded;
     Object.defineProperty(prototype, name, {
       enumerable: true,
       configurable: true,
@@ -26,6 +27,9 @@ export default class BelongsTo extends Relationship {
           if(value) {
             value = session.add(value);
           }
+        }
+        if(value && embedded) {
+          value._parent = this;
         }
         this._relationships[name] = value;
         this.belongsToDidChange(name);
