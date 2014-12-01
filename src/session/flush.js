@@ -11,7 +11,6 @@ export default class Flush {
   constructor(session, models) {
     this.session = session;
     this.adapter = session.adapter; // TODO make per-type
-    this._embeddedManager = this.adapter._embeddedManager; // TODO move as much as possible to adapter
     this.models = this.buildDirtySet(models);
     this.shadows = new ModelSet(array_from(this.models).map(function(model) {
       // shadows are already frozen copies so no need to re-copy
@@ -130,13 +129,6 @@ export default class Flush {
       var copy = model.copy();
       copy.errors = null;
       result.add(copy);
-      // ensure embedded model graphs are part of the set
-      this._embeddedManager.eachEmbeddedRelative(model, function(embeddedModel) {
-        if (result.contains(embeddedModel)) { return; }
-        var copy = embeddedModel.copy();
-        copy.errors = null;
-        result.add(copy);
-      }, this);
     }, this);
     return result;
   }

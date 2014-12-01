@@ -1,6 +1,5 @@
 import Coalesce from '../namespace';
 import Adapter from '../adapter';
-import EmbeddedManager from './embedded_manager';
 import ModelSet from '../collections/model_set';
 import PayloadSerializer from './serializers/payload';
 import RestErrorsSerializer from './serializers/errors';
@@ -110,7 +109,6 @@ import array_from from '../utils/array_from';
 export default class RestAdapter extends Adapter {
   constructor() {
     super();
-    this._embeddedManager = new EmbeddedManager(this);
     this.serializerFactory = new SerializerFactory(this.container);
     this._pendingOps = {};
   }
@@ -435,7 +433,7 @@ export default class RestAdapter extends Adapter {
     var serializer = this.serializerFactory.serializerForModel(model);
     for(var i = 0; i < relDiff.length; i++) {
       var diff = relDiff[i];
-      if(this.isRelationshipOwner(diff.relationship) || this._embeddedManager.embeddedType(model.constructor, diff.name) === 'always') {
+      if(this.isRelationshipOwner(diff.relationship) || model.isEmbedded) {
         return true;
       }
     }
