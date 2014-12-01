@@ -230,7 +230,7 @@ export default class Operation {
     
     function findInParent(parentModel) {
       var res = null;
-      adapter._embeddedManager.eachEmbeddedRecord(parentModel, function(child, embeddedType) {
+      parentModel.eachRelatedModel(function(child, embeddedType) {
         if(res) return;
         if(child.isEqual(model)) res = child;
       });

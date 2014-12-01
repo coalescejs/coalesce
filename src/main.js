@@ -20,7 +20,6 @@ import Errors from './model/errors';
 
 import RestErrorsSerializer from './rest/serializers/errors';
 import PayloadSerializer from './rest/serializers/payload';
-import EmbeddedManager from './rest/embedded_manager';
 import Payload from './rest/payload';
 import RestAdapter from './rest/rest_adapter';
 
@@ -66,7 +65,6 @@ Coalesce.Errors = Errors;
 
 Coalesce.RestErrorsSerializer = RestErrorsSerializer;
 Coalesce.PayloadSerializer = PayloadSerializer;
-Coalesce.EmbeddedManager = EmbeddedManager;
 Coalesce.Payload = Payload;
 Coalesce.RestAdapter = RestAdapter;
 
