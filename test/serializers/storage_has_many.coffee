@@ -46,5 +46,7 @@ describe 'StorageHasManySerializer', ->
 
       data = storageHasManySerializer.serialize(post.comments)
 
-      expect(data).to.eql([{client_id: "comment1", type_key: "comment"}])
+      expectedData = [{ id: 1, client_id: "comment1", type_key: "comment"}]
+      
+      expect(data).to.eql(expectedData)
 

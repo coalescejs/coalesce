@@ -171,14 +171,17 @@ describe 'SessionSerializer', ->
 
           serializedSession = sessionSerializer.serialize(session)
 
-          newSession = sessionSerializer.deserialize(session.newSession(), serializedSession)
+          newSession = sessionSerializer.deserialize(adapter.newSession(), serializedSession)
           
           user = newSession.fetch('user', 1)
           post = newSession.fetch('post', 2)
 
           # check has many
           expect(user.posts.length).to.eq(2)
-          expect(user.posts[0]).to.eq(post)
+
+          # TODO: order may be different in future here, maybe a better way to grab
+          # the object we want.  Or just have 1 assocaiation?
+          expect(user.posts[1]).to.eq(post)
 
           # check belongs to
           expect(post.user).to.eq(user)

@@ -43,6 +43,7 @@ export default class StorageHasManySerializer extends Serializer {
   serialize (models, opts = {}) {
     return models.map(function(model) {
       return {
+        id: model.id,
         client_id: model.clientId,
         type_key: model.typeKey
       };
