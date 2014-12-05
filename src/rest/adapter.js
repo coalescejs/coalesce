@@ -1,12 +1,11 @@
 import Coalesce from '../namespace';
 import Adapter from '../adapter';
 import ModelSet from '../collections/model_set';
-import PayloadSerializer from './serializers/payload';
-import RestErrorsSerializer from './serializers/errors';
-import SerializerFactory from '../factories/serializer';
 
 import {decamelize, pluralize, camelize} from '../utils/inflector';
 import array_from from '../utils/array_from';
+
+var defaults = _.defaults;
 
 /**
   The REST adapter allows your store to communicate with an HTTP server by
@@ -108,16 +107,8 @@ import array_from from '../utils/array_from';
 */
 export default class RestAdapter extends Adapter {
   constructor() {
-    super();
-    this.serializerFactory = new SerializerFactory(this.container);
+    super(...arguments);
     this._pendingOps = {};
-  }
-
-  setupContainer(parent) {
-    var container = parent.child();
-    container.register('serializer:errors', RestErrorsSerializer);
-    container.register('serializer:payload', PayloadSerializer);
-    return container;
   }
 
   load(model, opts, session) {
@@ -230,7 +221,7 @@ export default class RestAdapter extends Adapter {
       }
       
       if(serializer && data) {
-        serializer = this.serializerFor(serializer);
+        serializer = this._serializerFor(serializer);
         serializerOptions = _.defaults(serializerOptions, {context: context});
         data = serializer.serialize(data, serializerOptions);
       }
@@ -252,10 +243,6 @@ export default class RestAdapter extends Adapter {
     }
     return opts;
   }
-  
-  serializerForContext(context) {
-    return this.defaultSerializer;
-  }
 
   /**
     @private
@@ -271,7 +258,7 @@ export default class RestAdapter extends Adapter {
     }
     
     if(serializer) {
-      serializer = this.serializerFor(serializer);
+      serializer = this._serializerFor(serializer);
       _.defaults(serializerOptions, {context: context});
     }
 
@@ -291,7 +278,7 @@ export default class RestAdapter extends Adapter {
           data = {};
         }
         
-        serializerOptions = _.defaults(serializerOptions, {context: context, xhr: xhr});
+        serializerOptions = defaults(serializerOptions, {context: context, xhr: xhr});
         
         // TODO: handle other errors codes such as 409
         // determine serializer behavior off of xhr response code
@@ -302,7 +289,7 @@ export default class RestAdapter extends Adapter {
           throw serializer.deserialize(data, serializerOptions);
         } else {
           // treat other errors generically
-          serializer = adapter.serializerFor(opts.errorSerializer || 'errors');
+          serializer = adapter._serializerFor(opts.errorSerializer || 'errors');
           var errors = serializer.deserialize(data, serializerOptions);
           if(context.isModel) {
             // if the context is a model we want to return a model with errors
@@ -422,15 +409,13 @@ export default class RestAdapter extends Adapter {
     to true for belongsTo and false for hasMany
   */
   isRelationshipOwner(relationship) {
-    var config = this.configFor(relationship.parentType);
-    var owner = config[relationship.name] && config[relationship.name].owner;
+    var owner = relationship.owner;
     // TODO: use lack of an inverse to determine this value as well
     return relationship.kind === 'belongsTo' && owner !== false ||
       relationship.kind === 'hasMany' && owner === true
   }
   
   isDirtyFromRelationships(model, cached, relDiff) {
-    var serializer = this.serializerFactory.serializerForModel(model);
     for(var i = 0; i < relDiff.length; i++) {
       var diff = relDiff[i];
       if(this.isRelationshipOwner(diff.relationship) || model.isEmbedded) {
@@ -682,6 +667,10 @@ export default class RestAdapter extends Adapter {
     }
 
     return hash;
+  }
+  
+  serializerForContext(context) {
+    return 'payload';
   }
 
 }

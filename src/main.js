@@ -1,8 +1,9 @@
 
 import Coalesce from './namespace';
 
-import {setupContainer} from './container';
-import Container from './container';
+import Context from './context/default';
+import ActiveModelContext from './active_model/context';
+import RestContext from './rest/context';
 
 import Adapter from './adapter';
 import IdManager from './id_manager';
@@ -21,9 +22,9 @@ import Errors from './model/errors';
 import RestErrorsSerializer from './rest/serializers/errors';
 import PayloadSerializer from './rest/serializers/payload';
 import Payload from './rest/payload';
-import RestAdapter from './rest/rest_adapter';
+import RestAdapter from './rest/adapter';
 
-import ActiveModelAdapter from './active_model/active_model_adapter';
+import ActiveModelAdapter from './active_model/adapter';
 import ActiveModelSerializer from './active_model/serializers/model';
 
 import Serializer from './serializers/base';
@@ -47,8 +48,7 @@ import isEqual from './utils/is_equal';
 
 import {pluralize, singularize} from './utils/inflector';
 
-Coalesce.Container = Container;
-Coalesce.setupContainer = setupContainer;
+Coalesce.Context = Context;
 
 Coalesce.Adapter = Adapter;
 Coalesce.IdManager = IdManager;
@@ -63,11 +63,13 @@ Coalesce.PerField = PerField;
 Coalesce.Model = Model;
 Coalesce.Errors = Errors;
 
+Coalesce.RestContext = RestContext;
 Coalesce.RestErrorsSerializer = RestErrorsSerializer;
 Coalesce.PayloadSerializer = PayloadSerializer;
 Coalesce.Payload = Payload;
 Coalesce.RestAdapter = RestAdapter;
 
+Coalesce.ActiveModelContext = ActiveModelContext;
 Coalesce.ActiveModelAdapter = ActiveModelAdapter;
 Coalesce.ActiveModelSerializer = ActiveModelSerializer;
 

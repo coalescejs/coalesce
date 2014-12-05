@@ -1,49 +1,42 @@
-`import {userWithPost, groupWithMembersWithUsers} from '../support/schemas'`
+`import {userWithProfile, groupWithMembersWithUsers} from '../support/configs'`
 `import Model from 'coalesce/model/model'`
-`import Container from 'coalesce/container'`
+`import Context from 'coalesce/context/default'`
 
 describe "relationships", ->
-  beforeEach ->
-    @App = {}
-    @container = new Container()
-    Coalesce.__container__ = @container
-    @adapter = @container.lookup('adapter:main')
-    @session = @adapter.newSession()
+  
+  lazy 'context', ->
+    `class User extends Model {}`
+    User.defineSchema
+      attributes:
+        name: {type: 'string'}
 
+    `class Post extends Model {}`
+    Post.defineSchema
+      attributes:
+        title: {type: 'string'}
+      relationships:
+        user: {kind: 'belongsTo', type: 'user'}
+        comments: {kind: 'hasMany', type: 'comment'}
+
+    `class Comment extends Model {}`
+    Comment.defineSchema
+      attributes:
+        text: {type: 'string'}
+      relationships:
+        post: {kind: 'belongsTo', type: 'post'}
+
+    new Context
+      types:
+        user: User
+        post: Post
+        comment: Comment
+        
+  lazy 'session', -> @context.newSession()
+  lazy 'Post', -> @context.typeFor('post')
+  lazy 'User', -> @context.typeFor('user')
+  lazy 'Comment', -> @context.typeFor('comment')
 
   context 'one->many', ->
-
-    beforeEach ->
-      `class User extends Model {}`
-      User.defineSchema
-        typeKey: 'user'
-        attributes:
-          name: {type: 'string'}
-      @App.User = @User = User
-
-      `class Post extends Model {}`
-      Post.defineSchema
-        typeKey: 'post'
-        attributes:
-          title: {type: 'string'}
-        relationships:
-          user: {kind: 'belongsTo', type: 'user'}
-          comments: {kind: 'hasMany', type: 'comment'}
-      @App.Post = @Post = Post
-
-      `class Comment extends Model {}`
-      Comment.defineSchema
-        typeKey: 'comment'
-        attributes:
-          text: {type: 'string'}
-        relationships:
-          post: {kind: 'belongsTo', type: 'post'}
-      @App.Comment = @Comment = Comment
-
-      @container.register 'model:post', Post
-      @container.register 'model:comment', Comment
-      @container.register 'model:user', User
-
 
     it 'belongsTo updates inverse', ->
       post = @session.create('post')
@@ -131,31 +124,30 @@ describe "relationships", ->
 
 
   context 'one->one', ->
-    beforeEach ->
-      userWithPost.apply(this)
+      
+    lazy 'context', -> new Context(userWithProfile())
 
     it 'updates inverse', ->
-      post = @session.create('post')
+      profile = @session.create('profile')
       user = @session.create('user')
-      post.user = user
-      expect(user.post).to.eq(post)
-      post.user = null
-      expect(user.post).to.be.null
+      profile.user = user
+      expect(user.profile).to.eq(profile)
+      profile.user = null
+      expect(user.profile).to.be.null
 
 
     it 'updates inverse on delete', ->
-      post = @session.create('post')
+      profile = @session.create('profile')
       user = @session.create('user')
-      post.user = user
-      expect(user.post).to.eq(post)
-      @session.deleteModel post
-      expect(user.post).to.be.null
+      profile.user = user
+      expect(user.profile).to.eq(profile)
+      @session.deleteModel profile
+      expect(user.profile).to.be.null
 
 
   context 'multiple one->many', ->
-    beforeEach ->
-      groupWithMembersWithUsers.apply(this)
-
+    
+    lazy 'context', -> new Context(groupWithMembersWithUsers())
 
     it 'updates inverse on delete', ->
 

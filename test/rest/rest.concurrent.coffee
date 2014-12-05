@@ -1,135 +1,121 @@
-`import setup from './_shared'`
-`import Coalesce from 'coalesce'`
+`import Context from 'coalesce/rest/context'`
 
-describe "rest", ->
+`import {post} from '../support/configs'`
+`import {delay} from '../support/async'`
 
-  adapter = null
-  session = null
+respond = (xhr, error, status=422) ->
+  xhr.respond status, { "Content-Type": "application/json" }, JSON.stringify(error)
 
-  beforeEach ->
-    setup.apply(this)
-    adapter = @adapter
-    session = @session
+describe "rest concurrent flushes", ->
+  
+  lazy 'context', -> new Context(post())
+  lazy 'Post', -> @context.typeFor('post')
+  lazy 'session', -> @context.newSession()
 
-  context 'concurrent updates with simple model', ->
-
-    beforeEach ->
-      `class Post extends Coalesce.Model {}`
-      Post.defineSchema
-        typeKey: 'post'
-        attributes:
-          title: {type: 'string'}
-          submitted: {type: 'boolean'}
-      @App.Post = @Post = Post
-
-      @container.register 'model:post', @Post
-      
-      
-    it 'all flushes resolve', ->
-      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-        posts: {id: 1, title: hash.data.post.title, submitted: "true"}
-      post = session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
-      post.title = 'update1'
-      f1 = session.flush()
-      post.title = 'update2'
-      f2 = session.flush()
-      Coalesce.Promise.all([f1, f2]).then ->
-        expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
-        expect(post.title).to.eq('update2')
+  it 'all flushes resolve', ->
+    @server.r 'PUT:/posts/1', (xhr) ->
+      data = JSON.parse(xhr.requestBody)
+      posts: {id: 1, title: data.post.title, submitted: "true"}
+    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post.title = 'update1'
+    f1 = @session.flush()
+    post.title = 'update2'
+    f2 = @session.flush()
+    Coalesce.Promise.all([f1, f2]).then =>
+      expect(@server.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
+      expect(post.title).to.eq('update2')
 
 
-    xit 'second flush waits for first to complete', ->
-      calls = 0
-      # make first request take longer than the second
-      adapter.runLater = (callback) ->
-        delay = if calls > 0
-          0
-        else
-          10
-        calls++
-        Coalesce.run.later callback, delay
+  xit 'second flush waits for first to complete', ->
+    calls = 0
+    # make first request take longer than the second
+    adapter.runLater = (callback) ->
+      delay = if calls > 0
+        0
+      else
+        10
+      calls++
+      Coalesce.run.later callback, delay
 
-      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-        posts: {id: 1, title: hash.data.post.title, submitted: "true"}
-      post = session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
-      post.title = 'update1'
-      f1 = session.flush()
-      post.title = 'update2'
-      f2 = session.flush()
-      Coalesce.Promise.all([f1, f2]).then ->
-        expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
-        expect(post.title).to.eq('update2')
-
-
-    it 'three concurrent flushes', ->
-      calls = 0
-      # interleave requests
-      adapter.runLater = (callback) ->
-        delay = if calls % 2 == 1
-          0
-        else
-          10
-        calls++
-        Coalesce.run.later callback, delay
-
-      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-        posts: {id: 1, title: hash.data.post.title, submitted: "true"}
-      post = session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
-      post.title = 'update1'
-      f1 = session.flush()
-      post.title = 'update2'
-      f2 = session.flush()
-      post.title = 'update3'
-      f3 = session.flush()
-      Coalesce.Promise.all([f1, f2, f3]).then ->
-        expect(adapter.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1', 'PUT:/posts/1'])
-        expect(post.title).to.eq('update3')
+    @server.r 'PUT:/posts/1', (xhr) ->
+      data = JSON.parse(xhr.requestBody)
+      posts: {id: 1, title: data.post.title, submitted: "true"}
+    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post.title = 'update1'
+    f1 = @session.flush()
+    post.title = 'update2'
+    f2 = @session.flush()
+    Coalesce.Promise.all([f1, f2]).then =>
+      expect(@server.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1'])
+      expect(post.title).to.eq('update2')
 
 
-    it 'cascades failures', ->
-      calls = 0
-      # interleave requests
-      adapter.runLater = (callback) ->
-        delay = if calls % 2 == 1
-          0
-        else
-          10
-        calls++
-        Coalesce.run.later callback, delay
-
-      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-        if hash.data.post.title == 'update1'
-          throw "twerkin too hard"
-        rev = parseInt(hash.data.post.title.split("update")[1])+1
-        posts: {id: 1, title: hash.data.post.title, submitted: "true", rev: rev}
-      post = session.merge @Post.create(id: "1", title: 'twerkin', submitted: false, rev: 1)
-      post.title = 'update1'
-      f1 = session.flush()
-      post.title = 'update2'
-      f2 = session.flush()
-      post.title = 'update3'
-      f3 = session.flush()
-      f3.then null, ->
-        expect(adapter.h).to.eql(['PUT:/posts/1'])
-        expect(post.title).to.eq('update3')
-        shadow = session.getShadow(post)
-        expect(shadow.title).to.eq('twerkin')
+  it 'three concurrent flushes', ->
+    calls = 0
+    @server.r 'PUT:/posts/1', (xhr) ->
+      delayAmount = if calls % 2 == 1
+        0
+      else
+        10
+      calls++
+      delay delayAmount, ->
+        data = JSON.parse(xhr.requestBody)
+        posts: {id: 1, title: data.post.title, submitted: "true"}
+    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post.title = 'update1'
+    f1 = @session.flush()
+    post.title = 'update2'
+    f2 = @session.flush()
+    post.title = 'update3'
+    f3 = @session.flush()
+    Coalesce.Promise.all([f1, f2, f3]).then =>
+      expect(@server.h).to.eql(['PUT:/posts/1', 'PUT:/posts/1', 'PUT:/posts/1'])
+      expect(post.title).to.eq('update3')
 
 
-    it 'can retry after failure', ->
-      count = 0
-      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
-        if count++ == 0
-          throw "plz twerk again"
-        posts: {id: 1, title: hash.data.post.title, submitted: "true"}
-      post = session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
-      post.title = 'update1'
-      session.flush().then null, ->
+  it 'cascades failures', ->
+    calls=0
+    @server.r 'PUT:/posts/1', (xhr) ->
+      delayAmount = if calls % 2 == 1
+        0
+      else
+        10
+      calls++
+      delay delayAmount, =>
+        data = JSON.parse(xhr.requestBody)
+        if data.post.title == 'update1'
+          respond xhr, {error: "twerkin too hard"}, 500
+        rev = parseInt(data.post.title.split("update")[1])+1
+        posts: {id: 1, title: data.post.title, submitted: "true", rev: rev}
+    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false, rev: 1)
+    post.title = 'update1'
+    f1 = @session.flush()
+    post.title = 'update2'
+    f2 = @session.flush()
+    post.title = 'update3'
+    f3 = @session.flush()
+    f3.then null, =>
+      expect(@server.h).to.eql(['PUT:/posts/1'])
+      expect(post.title).to.eq('update3')
+      shadow = @session.getShadow(post)
+      expect(shadow.title).to.eq('twerkin')
+
+
+  it 'can retry after failure', ->
+    count = 0
+    @server.r 'PUT:/posts/1', (xhr) ->
+      data = JSON.parse(xhr.requestBody)
+      if count++ == 0
+        respond xhr, {error: "plz twerk again"}, 500
+      posts: {id: 1, title: data.post.title, submitted: "true"}
+    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post.title = 'update1'
+    @session.flush().then null, =>
+      expect(post.title).to.eq('update1')
+      shadow = @session.getShadow(post)
+      expect(shadow.title).to.eq('twerkin')
+
+      @session.flush().then =>
         expect(post.title).to.eq('update1')
-        shadow = session.getShadow(post)
-        expect(shadow.title).to.eq('twerkin')
-
-        session.flush().then ->
-          expect(post.title).to.eq('update1')
-          shadow = session.getShadow(post)
-          expect(shadow.title).to.eq('update1')
+        shadow = @session.getShadow(post)
+        expect(shadow.title).to.eq('update1')

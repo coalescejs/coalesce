@@ -1,6 +1,6 @@
 `import ModelSet from 'coalesce/collections/model_set'`
 `import Model from 'coalesce/model/model'`
-`import Container from 'coalesce/container'`
+`import Context from 'coalesce/context/default'`
 
 describe 'Model', ->
 
@@ -16,14 +16,10 @@ describe 'Model', ->
     User.typeKey = 'user'
     @User = User
     
-    @container = new Container()
-    @container.register 'model:user', User
-    session = @container.lookup('session:main')
-
-    Coalesce.__container__ = @container
-
-  afterEach ->
-    delete Coalesce.__container__
+    @context = new Context
+      types:
+        user: User
+    session = @context.newSession()
 
   describe '.id', ->
     
@@ -75,28 +71,6 @@ describe 'Model', ->
       user.session = session
       expect(user.isDirty).to.be.false
 
-
-  it 'can use .find', ->
-    User = @User
-    session.find = (type, id) ->
-      expect(type).to.eq(User)
-      expect(id).to.eq(1)
-      Coalesce.Promise.resolve(new type(id: id.toString()))
-
-    @User.find(1).then (user) ->
-      expect(user.id).to.eq("1")
-
-  describe 'typeKey class var', ->
-    xit 'works with global Ember', ->
-      class App.SomeThing extends Coalesce.Model
-      typeKey = App.SomeThing.typeKey
-      expect(typeKey).to.eq('some_thing')
-
-    xit 'works with modular Ember', ->
-      class SomeThing extends Coalesce.Model
-      SomeThing._toString = "my-app@model:some-thing:"
-      typeKey = Something.typeKey
-      expect(typeKey).to.eq('some_thing')
 
   describe '.diff', ->
 
@@ -151,6 +125,11 @@ describe 'Model', ->
       expect(user.raw).to.not.eq(copy.raw)
       expect(user.raw).to.eql(copy.raw)
       
+  describe '.attributes', ->
+    
+    it 'returns map of attributes', ->
+      attrs = @User.attributes
+      expect(attrs.size).to.eq(3)
       
   describe 'subclassing', ->
     

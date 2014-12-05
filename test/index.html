@@ -12,10 +12,10 @@
     <script src="coalesce.amd.js"></script>
     <script src="coalesce-test.amd.js"></script>
     <script>
-        mocha.setup('bdd');
-        var expect = chai.expect
+        mocha.setup('lazy-bdd');
+        var expect = chai.expect;
         this.Coalesce = requireModule('coalesce')['default'];
-        requireModule('coalesce-test/_setup');
+        requireModule('coalesce-test/support/server'); // setup for all tests
         Object.keys(requirejs.entries).forEach(function(entry) {
           if ((/coalesce\-test/).test(entry)) {
             require(entry, null, null, true);

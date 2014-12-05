@@ -7,8 +7,7 @@ import Coalesce from '../namespace';
 */
 export default class QueryCache {
 
-  constructor({session}) {
-    this.session = session;
+  constructor() {
     this._queries = {};
     this._promises = {};
   }

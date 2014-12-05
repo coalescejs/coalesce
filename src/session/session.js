@@ -5,10 +5,6 @@ import InverseManager from './inverse_manager';
 import Model from '../model/model';
 import Query from './query';
 import Flush from './flush';
-import TypeFactory from '../factories/type';
-import MergeFactory from '../factories/merge';
-import ModelCacheFactory from '../factories/model_cache';
-import QueryCacheFactory from '../factories/query_cache';
 import copy from '../utils/copy';
 import Error from '../error';
 import array_from from '../utils/array_from';
@@ -18,10 +14,9 @@ var uuid = 1;
 
 export default class Session {
 
-  constructor({adapter, idManager, container, parent}) {
-    this.adapter = adapter;
+  constructor({context, idManager, parent}) {
+    this.context = context;
     this.idManager = idManager;
-    this.container = container;
     this.parent = parent;
     this.models = new ModelSet();
     this.collectionManager = new CollectionManager();
@@ -29,10 +24,6 @@ export default class Session {
     this.shadows = new ModelSet();
     this.originals = new ModelSet();
     this.newModels = new ModelSet();
-    this.typeFactory = new TypeFactory(container);
-    this.mergeFactory = new MergeFactory(container);
-    this.queryCacheFactory = new QueryCacheFactory(container);
-    this.modelCacheFactory = new ModelCacheFactory(container);
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
   }
@@ -47,7 +38,7 @@ export default class Session {
     @return {Model} the instantiated model
   */
   build(type, hash) {
-    type = this.typeFor(type);
+    type = this._typeFor(type);
     var model = type.create(hash || {});
     return model;
   }
@@ -225,7 +216,7 @@ export default class Session {
     @returns {Model}
   */
   fetch(type, id) {
-    type = this.typeFor(type);
+    type = this._typeFor(type);
     var typeKey = type.typeKey;
     // Always coerce to string
     id = id+'';
@@ -257,8 +248,9 @@ export default class Session {
   loadModel(model, opts) {
     console.assert(model.id, "Cannot load a model with an id");
     // TODO: this should be done on a per-attribute bases
-    var cache = this.modelCacheFor(model),
-        promise = cache.getPromise(model);
+    var cache = this._modelCacheFor(model),
+        promise = cache.getPromise(model),
+        adapter = this._adapterFor(model);
 
     if(promise) {
       // the cache's promise is not guaranteed to return anything
@@ -266,7 +258,7 @@ export default class Session {
         return model;
       });
     } else {
-      promise = this.adapter.load(model, opts, this);
+      promise = adapter.load(model, opts, this);
       cache.add(model, promise);
     }
 
@@ -281,8 +273,9 @@ export default class Session {
     @return {Promise}
   */
   refresh(model, opts) {
-    var session = this;
-    return this.adapter.load(model, opts, this);
+    var session = this,
+        adapter = this._adapterFor(model);
+    return adapter.load(model, opts, this);
   }
 
   /**
@@ -305,7 +298,7 @@ export default class Session {
     Build a query instance
   */
   buildQuery(type, params) {
-    type = this.typeFor(type);
+    type = this._typeFor(type);
     return new Query(this, type, params);
   }
   
@@ -318,8 +311,8 @@ export default class Session {
     @return {Query}
   */
   fetchQuery(type, params) {
-    type = this.typeFor(type);
-    var queryCache = this.queryCacheFor(type),
+    type = this._typeFor(type);
+    var queryCache = this._queryCacheFor(type),
         query = queryCache.getQuery(type, params);
     
     if(!query) {
@@ -339,9 +332,9 @@ export default class Session {
     @return {Promise}
   */
   query(type, params, opts) {
-    var type = this.typeFor(type),
+    var type = this._typeFor(type),
         query = this.fetchQuery(type, params),
-        queryCache = this.queryCacheFor(type),
+        queryCache = this._queryCacheFor(type),
         promise = queryCache.getPromise(query);
         
     if(!promise) {
@@ -362,12 +355,13 @@ export default class Session {
   refreshQuery(query, opts) {
     // TODO: for now we populate the query in the session, eventually this
     // should be done in the adapter layer a la models
-    var promise = this.adapter.query(query.type.typeKey, query.params, opts, this).then(function(models) {
+    var adapter = this._adapterFor(query.type),
+      promise = adapter.query(query.type.typeKey, query.params, opts, this).then(function(models) {
       query.meta = models.meta;
       query.replace(0, query.length, models);
       return query;
     });
-    var queryCache = this.queryCacheFor(query.type);
+    var queryCache = this._queryCacheFor(query.type);
     queryCache.add(query, promise);
     
     return promise;
@@ -443,13 +437,14 @@ export default class Session {
   }
 
   remoteCall(context, name, params, opts) {
-    var session = this;
+    var session = this,
+        adapter = this._adapterFor(context)
 
     if(opts && opts.deserializationContext && typeof opts.deserializationContext !== 'string') {
       opts.deserializationContext = opts.deserializationContext.typeKey;
     }
 
-    return this.adapter.remoteCall(context, name, params, opts, this);
+    return adapter.remoteCall(context, name, params, opts, this);
   }
 
   modelWillBecomeDirty(model) {
@@ -494,40 +489,10 @@ export default class Session {
   newSession() {
     var child = this.constructor.create({
       parent: this,
-      adapter: this.adapter,
-      container: this.container,
+      context: this.context,
       idManager: this.idManager
     });
     return child;
-  }
-
-  /**
-    Returns a model class for a particular key. Used by
-    methods that take a type key (like `create`, `load`,
-    etc.)
-
-    @method typeFor
-    @param {String} key
-    @returns {subclass of DS.Model}
-  */
-  typeFor(key) {
-    if (typeof key !== 'string') {
-      return key;
-    }
-
-    return this.typeFactory.typeFor(key);
-  }
-  
-  modelCacheFor(model) {
-    return this.modelCacheFactory.modelCacheFor(model.typeKey);
-  }
-  
-  queryCacheFor(key) {
-    if (typeof key !== 'string') {
-      key = key.typeKey;
-    }
-
-    return this.queryCacheFactory.queryCacheFor(key);
   }
 
   getShadow(model) {
@@ -545,7 +510,7 @@ export default class Session {
     Updates the promise cache
   */
   updateCache(model) {
-    var cache = this.modelCacheFor(model);
+    var cache = this._modelCacheFor(model);
     cache.add(model);
   }
 
@@ -557,7 +522,7 @@ export default class Session {
     @param {Model} model
   */
   invalidate(model) {
-    var cache = this.modelCacheFor(model);
+    var cache = this._modelCacheFor(model);
     cache.remove(model);
   }
   
@@ -568,7 +533,7 @@ export default class Session {
     @param {Query} query
   */
   invalidateQuery(query) {
-    var queryCache = this.queryCacheFor(query.type);
+    var queryCache = this._queryCacheFor(query.type);
     queryCache.remove(query);
   }
   
@@ -579,8 +544,8 @@ export default class Session {
     @param {Type} type Type to invalidate
   */
   invalidateQueries(type) {
-    var type = this.typeFor(type),
-        queryCache = this.queryCacheFor(type);
+    var type = this._typeFor(type),
+        queryCache = this._queryCacheFor(type);
     queryCache.removeAll(type);
   }
 
@@ -636,7 +601,7 @@ export default class Session {
     @returns {any} the deserialized models that were merged in
   */
   mergeData(data, typeKey) {
-    return this.adapter.mergeData(data, typeKey, this);
+    return this._adapterFor(typeKey).mergeData(data, typeKey, this);
   }
 
   /**
@@ -929,7 +894,7 @@ export default class Session {
       this.reifyClientId(child);
     }, this);
 
-    var strategy = this.mergeFactory.mergeFor(model.typeKey);
+    var strategy = this._mergeStrategyFor(model.typeKey);
     strategy.merge(dest, ancestor, model);
 
     return dest;
@@ -945,6 +910,26 @@ export default class Session {
     return modelA.clientRev >= modelB.clientRev;
   }
   
+  _typeFor(key) {
+    return this.context.typeFor(key);
+  }
+  
+  _adapterFor(key) {
+    return this.context.configFor(key).get('adapter');
+  }
+  
+  _modelCacheFor(key) {
+    return this.context.configFor(key).get('modelCache');
+  }
+  
+  _queryCacheFor(key) {
+    return this.context.configFor(key).get('queryCache');
+  }
+  
+  _mergeStrategyFor(key) {
+    return this.context.configFor(key).get('mergeStrategy');
+  }
+
   toString() {
     var res = this.name;
     if(this.parent) {

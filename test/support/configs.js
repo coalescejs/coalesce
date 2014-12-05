@@ -1,11 +1,29 @@
 import Model from 'coalesce/model/model';
-// Common model setups for tests
+
+function post() {
+  class Post extends Model {};
+  Post.defineSchema({
+    attributes: {
+      title: {type: 'string'},
+      submitted: {type: 'boolean'}
+    }
+  });
+  
+  return {
+    types: {
+      post: Post
+    }
+  };
+}
+
+export {post};
+
+//
+// Common context configurations for tests
 
 function postWithComments() {
-  this.App = {};
-  class Post extends Coalesce.Model {}
+  class Post extends Model {}
   Post.defineSchema({
-    typeKey: 'post',
     attributes: {
       title: {type: 'string'}
     },
@@ -13,12 +31,9 @@ function postWithComments() {
       comments: {kind: 'hasMany', type: 'comment'}
     }
   });
-  this.App.Post = this.Post = Post;
-  this.container.register('model:post', Post);
 
-  class Comment extends Coalesce.Model {}
+  class Comment extends Model {}
   Comment.defineSchema({
-    typeKey: 'comment',
     attributes: {
       body: {type: 'string'}
     },
@@ -26,24 +41,34 @@ function postWithComments() {
       post: {kind: 'belongsTo', type: 'post'}
     }
   });
-  this.App.Comment = this.Comment = Comment;
-  this.container.register('model:comment', Comment);
+  
+  return {
+    types: {
+      post: Post,
+      comment: Comment
+    }
+  };
 }
 
+export {postWithComments};
+
 function postWithEmbeddedComments() {
-  postWithComments.apply(this);
-  this.Post.defineSchema({
+  var c = postWithComments();
+  c.types.post.defineSchema({
     relationships: {
       comments: {kind: 'hasMany', type: 'comment', embedded: 'always'}
     }
   });
+  return c;
 }
 
-function userWithPost() {
-  this.App = {};
-  class Post extends Model {}
-  Post.defineSchema({
-    typeKey: 'post',
+export {postWithEmbeddedComments};
+
+
+function userWithProfile() {
+
+  class Profile extends Model {}
+  Profile.defineSchema({
     attributes: {
       title: {
         type: 'string'
@@ -52,36 +77,52 @@ function userWithPost() {
     relationships: {
       user: {
         kind: 'belongsTo',
-        type: 'user'
+        type: 'user',
+        owner: false
       }
     }
   });
 
-  this.App.Post = this.Post = Post;
-
   class User extends Model {};
   User.defineSchema({
-    typeKey: 'user',
     attributes: {
       name: {
         type: 'string'
       }
     },
     relationships: {
-      post: {
+      profile: {
         kind: 'belongsTo',
-        type: 'post'
+        type: 'profile'
       }
     }
   });
-
-  this.App.User = this.User = User;
-
-  this.container.register('model:post', this.Post);
-  this.container.register('model:user', this.User);
+  
+  return {
+    types: {
+      profile: Profile,
+      user: User
+    }
+  };
+  
 }
 
+export {userWithProfile};
+
+function userWithEmbeddedProfile() {
+  var c = userWithProfile();
+  c.types.profile.defineSchema({
+    relationships: {
+      user: {kind: 'belongsTo', type: 'user', embedded: 'always'}
+    }
+  });
+  return c;
+}
+
+export {userWithEmbeddedProfile};
+
 function groupWithMembersWithUsers() {
+
   class Group extends Model {};
   Group.defineSchema({
     typeKey: 'group',
@@ -93,7 +134,8 @@ function groupWithMembersWithUsers() {
     relationships: {
       members: {
         kind: 'hasMany',
-        type: 'member'
+        type: 'member',
+        embedded: 'always'
       },
       user: {
         kind: 'belongsTo',
@@ -101,8 +143,6 @@ function groupWithMembersWithUsers() {
       }
     }
   });
-
-  this.App.Group = this.Group = Group;
 
   class Member extends Model {};
   Member.defineSchema({
@@ -124,8 +164,6 @@ function groupWithMembersWithUsers() {
     }
   });
 
-  this.App.Member = this.Member = Member;
-
   class User extends Model {};
   User.defineSchema({
     typeKey: 'user',
@@ -146,11 +184,14 @@ function groupWithMembersWithUsers() {
     }
   });
 
-  this.App.User = this.User = User;
-
-  this.container.register('model:group', this.Group);
-  this.container.register('model:member', this.Member);
-  this.container.register('model:user', this.User);
+  return {
+    types: {
+      group: Group,
+      member: Member,
+      user: User
+    }
+  }
+  
 }
 
-export {postWithComments, postWithEmbeddedComments, userWithPost, groupWithMembersWithUsers};
+export {groupWithMembersWithUsers};

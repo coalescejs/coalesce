@@ -1,6 +1,6 @@
 `import Model from 'coalesce/model/model'`
 `import HasManyArray from 'coalesce/collections/has_many_array'`
-`import Container from 'coalesce/container'`
+`import Container from 'coalesce/context/container'`
 
 describe 'hasMany', ->
   

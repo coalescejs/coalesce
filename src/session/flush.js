@@ -10,7 +10,6 @@ export default class Flush {
   
   constructor(session, models) {
     this.session = session;
-    this.adapter = session.adapter; // TODO make per-type
     this.models = this.buildDirtySet(models);
     this.shadows = new ModelSet(array_from(this.models).map(function(model) {
       // shadows are already frozen copies so no need to re-copy
@@ -26,8 +25,7 @@ export default class Flush {
     var models = this.models,
         shadows = this.shadows,
         ops = this.ops,
-        session = this.session,
-        adapter = this.adapter;
+        session = this.session;
         
     this.removeEmbeddedOrphans(models, shadows, session);
     
@@ -186,8 +184,7 @@ export default class Flush {
   }
   
   perform() {
-    var adapter = this.session.adapter,
-        results = this.results,
+    var results = this.results,
         pending = this.pending,
         session = this.session;
     

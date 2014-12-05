@@ -371,7 +371,6 @@ export default class Model extends BaseClass {
     var res = new Map();
     this.fields.forEach(function(options, name) {
       if(options.kind === 'belongsTo' || options.kind === 'hasMany') {
-        reifyRelationshipType(options);
         res.set(name, options);
       }
     });
@@ -618,21 +617,6 @@ export default class Model extends BaseClass {
 */
 Model.prototype._parent = null;
 
-function reifyRelationshipType(relationship) {
-  if(!relationship.type) {
-    relationship.type = Coalesce.__container__.lookupFactory('model:' + relationship.typeKey);
-  }
-  if(!relationship.type) {
-    throw new Error("Could not find a type for '" + relationship.name + "' with typeKey '" + relationship.typeKey + "'");
-  }
-  if(!relationship.type.typeKey) {
-    throw new Error("Relationship '" + relationship.name + "' has no typeKey");
-  }
-  if(!relationship.typeKey) {
-    relationship.typeKey = relationship.type.typeKey;
-  }
-}
-
 function sessionAlias(name) {
   return function () {
     var session = this.session;
@@ -667,36 +651,42 @@ Model.reopen({
   touch: sessionAlias('touch')
 });
 
-Model.reopenClass({
-
-  /**
-    This is the only static method implemented in order to play nicely
-    with Ember's default model conventions in the router. It is preferred
-    to explicitly call `load` on a session.
-
-    In order to use this method, you must set the Coalesce.__container__ property. E.g.
-
-    ```
-      Coalesce.__container__ = App.__container__;
-    ```
-  */
-  find: function(id) {
-    if(!Coalesce.__container__) {
-      throw new Error("The Coalesce.__container__ property must be set in order to use static find methods.");
-    }
-    var container = Coalesce.__container__;
-    var session = container.lookup('session:main');
-    return session.find(this, id);
+/**
+  @private
+  
+  "reification" happens when the type is looked up on the context. This process
+  translates the String typeKeys into their corresponding classes.
+*/
+Model._isReified = false;
+Model.reify = function(context) {
+  if(this._isReified) return;
+  
+  // no need to reify the root class
+  if(this === Model) {
+    return;
   }
-
-  // XXX: EmberTODO
-  // typeKey: computed(function() {
-  //   var camelized = this.toString().split(/[:.]/)[1];
-  //   if(camelized) {
-  //     return underscore(camelized);
-  //   } else {
-  //     throw new Error("Could not infer typeKey for " + this.toString());
-  //   }
-  // })
-
-});
+  
+  console.assert(this.typeKey, "Model must have static 'typeKey' property set.");
+  
+  if(this.parentType && typeof this.parentType.reify === 'function') {
+    this.parentType.reify(context);
+  }
+  
+  // eagerly set to break loops
+  this._isReified = true;
+  
+  this.relationships.forEach(function(relationship) {
+    if(!relationship.type) {
+      relationship.type = context.typeFor(relationship.typeKey);
+    }
+    if(!relationship.type) {
+      throw new Error("Could not find a type for '" + relationship.name + "' with typeKey '" + relationship.typeKey + "'");
+    }
+    if(!relationship.type.typeKey) {
+      throw new Error("Relationship '" + relationship.name + "' has no typeKey");
+    }
+    if(!relationship.typeKey) {
+      relationship.typeKey = relationship.type.typeKey;
+    }
+  });
+}

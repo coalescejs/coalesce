@@ -1,28 +1,17 @@
-`import setup from './_shared'`
-`import {postWithComments} from '../support/schemas'`
+`import Context from 'coalesce/rest/context'`
+`import {postWithComments} from '../support/configs'`
 
-describe "rest", ->
+describe "rest with sideloading", ->
 
-  adapter = null
-  session = null
+  lazy 'context', -> new Context(postWithComments())
+  lazy 'session', -> @context.newSession()
 
-  beforeEach ->
-    setup.apply(this)
-    adapter = @adapter
-    session = @session
+  it 'is supported', ->
+    @server.r 'GET:/posts/1', 
+      posts: {id: "1", title: 'sideload my children', comments: [2, 3]}
+      comments: [{id: "2", body: "here we", post: "1"}, {id: "3",  body: "are", post: "1"}]
 
-
-  describe 'sideloading', ->
-
-    beforeEach ->
-      postWithComments.apply(this)
-
-    it 'sideloads', ->
-      adapter.r['GET:/posts/1'] =
-        posts: {id: "1", title: 'sideload my children', comments: [2, 3]}
-        comments: [{id: "2", body: "here we", post: "1"}, {id: "3",  body: "are", post: "1"}]
-
-      session.load('post', 1).then (post) ->
-        expect(adapter.h).to.eql(['GET:/posts/1'])
-        expect(post.comments[0].body).to.eq('here we')
-        expect(post.comments.lastObject.body).to.eq('are')
+    @session.load('post', 1).then (post) =>
+      expect(@server.h).to.eql(['GET:/posts/1'])
+      expect(post.comments[0].body).to.eq('here we')
+      expect(post.comments.lastObject.body).to.eq('are')

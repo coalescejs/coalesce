@@ -7,8 +7,7 @@ import Coalesce from '../namespace';
 */
 export default class ModelCache {
 
-  constructor({session}) {
-    this.session = session;
+  constructor() {
     this._promises = {};
   }
 

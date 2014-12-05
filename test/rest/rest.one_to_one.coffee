@@ -1,168 +1,143 @@
-`import setup from './_shared'`
-`import Model from 'coalesce/model/model'`
-`import ModelSerializer from 'coalesce/serializers/model'`
-`import {userWithPost} from '../support/schemas'`
+`import Context from 'coalesce/rest/context'`
+`import {userWithProfile, userWithEmbeddedProfile} from '../support/configs'`
 
-describe "rest", ->
+describe "rest with one->one relationship", ->
 
-  adapter = null
-  session = null
+  lazy 'context', -> new Context(userWithProfile())
+  lazy 'User', -> @context.typeFor('user')
+  lazy 'Profile', -> @context.typeFor('profile')
+  lazy 'session', -> @context.newSession()
 
-  beforeEach ->
-    setup.apply(this)
+  it 'child can be null', ->
+    @server.r 'GET:/profiles/1', profiles: {id: 1, title: 'mvcc ftw', user: null}
+    @server.r 'PUT:/profiles/1', profiles: {id: 1, title: 'new title', user: null}
 
-  context "one->one", ->
-
-    beforeEach ->
-      userWithPost.apply(this)
-
-      @adapter.configs =
-        post:
-          user: {owner: false}
-
-      adapter = @adapter
-      session = @session
+    @session.load(@Profile, 1).then (profile) =>
+      expect(profile.id).to.eq("1")
+      expect(profile.title).to.eq("mvcc ftw")
+      expect(profile.user).to.be.null
+      profile.title = 'new title'
+      @session.flush().then =>
+        expect(profile.title).to.eq('new title')
 
 
-    it 'child can be null', ->
-      adapter.r['GET:/posts/1'] = posts: {id: 1, title: 'mvcc ftw', user: null}
-      adapter.r['PUT:/posts/1'] = posts: {id: 1, title: 'new title', user: null}
+  it 'loads lazily', ->
+    @server.r 'GET:/profiles/1', profiles: {id: 1, title: 'mvcc ftw', user: 2}
+    @server.r 'GET:/users/2', users: {id: 2, name: 'brogrammer', profile: 1}
 
-      session.load(@Post, 1).then (post) ->
-        expect(post.id).to.eq("1")
-        expect(post.title).to.eq("mvcc ftw")
-        expect(post.user).to.be.null
-        post.title = 'new title'
-        session.flush().then ->
-          expect(post.title).to.eq('new title')
+    @session.load(@Profile, 1).then (profile) =>
+      expect(@server.h).to.eql(['GET:/profiles/1'])
+      expect(profile.id).to.eq("1")
+      expect(profile.title).to.eq('mvcc ftw')
+      user = profile.user
+      expect(user.id).to.eq("2")
+      expect(user.name).to.be.undefined
 
-
-    it 'loads lazily', ->
-      adapter.r['GET:/posts/1'] = posts: {id: 1, title: 'mvcc ftw', user: 2}
-      adapter.r['GET:/users/2'] = users: {id: 2, name: 'brogrammer', post: 1}
-
-      session.load(@Post, 1).then (post) ->
-        expect(adapter.h).to.eql(['GET:/posts/1'])
-        expect(post.id).to.eq("1")
-        expect(post.title).to.eq('mvcc ftw')
-        user = post.user
-        expect(user.id).to.eq("2")
-        expect(user.name).to.be.undefined
-
-        post.user.load().then ->
-          expect(adapter.h).to.eql(['GET:/posts/1', 'GET:/users/2'])
-          expect(user.name).to.eq('brogrammer')
-          expect(user.post.isEqual(post)).to.be.true
+      profile.user.load().then =>
+        expect(@server.h).to.eql(['GET:/profiles/1', 'GET:/users/2'])
+        expect(user.name).to.eq('brogrammer')
+        expect(user.profile.isEqual(profile)).to.be.true
 
 
-    it 'deletes one side', ->
-      adapter.r['DELETE:/users/2'] = {}
+  it 'deletes one side', ->
+    @server.r 'DELETE:/users/2', {}
 
-      post = @Post.create(id: "1", title: 'parent')
-      post.user = @User.create(id: "2", name: 'wes', post: post)
-      session.merge post
+    profile = @Profile.create(id: "1", title: 'parent')
+    profile.user = @User.create(id: "2", name: 'wes', profile: profile)
+    @session.merge profile
 
-      session.load('post', 1).then (post) ->
-        user = post.user
-        session.deleteModel(user)
-        expect(post.user).to.be.null
-        session.flush().then ->
-          expect(post.user).to.be.null
-          expect(adapter.h).to.eql(['DELETE:/users/2'])
-
-
-    it 'deletes both', ->
-      adapter.r['DELETE:/posts/1'] = {}
-      adapter.r['DELETE:/users/2'] = {}
-
-      post = @Post.create(id: "1", title: 'parent')
-      post.user = @User.create(id: "2", name: 'wes', post: post)
-      session.merge post
-
-      session.load('post', 1).then (post) ->
-        user = post.user
-        session.deleteModel(user)
-        session.deleteModel(post)
-        session.flush().then ->
-          expect(adapter.h.length).to.eq(2)
-          expect(adapter.h).to.include('DELETE:/users/2')
-          expect(adapter.h).to.include('DELETE:/posts/1')
+    @session.load('profile', 1).then (profile) =>
+      user = profile.user
+      @session.deleteModel(user)
+      expect(profile.user).to.be.null
+      @session.flush().then =>
+        expect(profile.user).to.be.null
+        expect(@server.h).to.eql(['DELETE:/users/2'])
 
 
-    it 'creates on server', ->
-      adapter.r['POST:/posts'] = -> posts: {client_id: post.clientId, id: 1, title: 'herp', user: 2}
-      adapter.r['GET:/users/2'] = users: {id: 1, name: 'derp', post: 1}
+  it 'deletes both', ->
+    @server.r 'DELETE:/profiles/1', {}
+    @server.r 'DELETE:/users/2', {}
 
-      post = session.create 'post', title: 'herp'
+    profile = @Profile.create(id: "1", title: 'parent')
+    profile.user = @User.create(id: "2", name: 'wes', profile: profile)
+    @session.merge profile
 
-      session.flush().then ->
-        expect(adapter.h).to.eql ['POST:/posts']
-        expect(post.id).to.eq("1")
-        expect(post.title).to.eq('herp')
-        expect(post.user).to.not.be.null
-        
-    
-    it 'creates on server and returns sideloaded', ->
-      adapter.r['POST:/posts'] = ->
-        users: {id: 2, name: 'derp', post: 1}
-        posts: {client_id: post.clientId, id: 1, title: 'herp', user: 2}
+    @session.load('profile', 1).then (profile) =>
+      user = profile.user
+      @session.deleteModel(user)
+      @session.deleteModel(profile)
+      @session.flush().then =>
+        expect(@server.h.length).to.eq(2)
+        expect(@server.h).to.include('DELETE:/users/2')
+        expect(@server.h).to.include('DELETE:/profiles/1')
 
-      post = session.create 'post', title: 'herp'
 
-      session.flush().then ->
-        expect(adapter.h).to.eql ['POST:/posts']
-        expect(post.id).to.eq("1")
-        expect(post.title).to.eq('herp')
-        expect(post.user).to.not.be.null
-        expect(post.user.name).to.eq('derp')
+  it 'creates on server', ->
+    @server.r 'POST:/profiles', -> profiles: {client_id: profile.clientId, id: 1, title: 'herp', user: 2}
+    @server.r 'GET:/users/2', users: {id: 1, name: 'derp', profile: 1}
 
-  context "one->one embedded", ->
+    profile = @session.create 'profile', title: 'herp'
 
-    beforeEach ->
-      userWithPost.apply(this)
+    @session.flush().then =>
+      expect(@server.h).to.eql ['POST:/profiles']
+      expect(profile.id).to.eq("1")
+      expect(profile.title).to.eq('herp')
+      expect(profile.user).to.not.be.null
+      
+  
+  it 'creates on server and returns sideloaded', ->
+    @server.r 'POST:/profiles', ->
+      users: {id: 2, name: 'derp', profile: 1}
+      profiles: {client_id: profile.clientId, id: 1, title: 'herp', user: 2}
 
-      @Post.defineSchema
-        relationships:
-          user: {kind: 'belongsTo', type: 'user', embedded: 'always'}
+    profile = @session.create 'profile', title: 'herp'
 
-      adapter = @adapter
-      session = @session
+    @session.flush().then =>
+      expect(@server.h).to.eql ['POST:/profiles']
+      expect(profile.id).to.eq("1")
+      expect(profile.title).to.eq('herp')
+      expect(profile.user).to.not.be.null
+      expect(profile.user.name).to.eq('derp')
 
+  context "when embedded", ->
+
+    lazy 'context', -> new Context(userWithEmbeddedProfile())
 
     it 'creates child', ->
-      adapter.r['PUT:/posts/1'] = -> posts: {id: 1, title: 'parent', user: {client_id: post.user.clientId, id: 2, name: 'child', post: 1}}
+      @server.r 'PUT:/profiles/1', -> profiles: {id: 1, title: 'parent', user: {client_id: profile.user.clientId, id: 2, name: 'child', profile: 1}}
 
-      post = session.merge @Post.create(id: "1", title: 'parent')
+      profile = @session.merge @Profile.create(id: "1", title: 'parent')
 
-      post.user = session.create 'user', name: 'child'
+      profile.user = @session.create 'user', name: 'child'
 
-      session.flush().then ->
-        expect(adapter.h).to.eql(['PUT:/posts/1'])
-        expect(post.user.isNew).to.be.false
-        expect(post.user.id).to.eq('2')
+      @session.flush().then =>
+        expect(@server.h).to.eql(['PUT:/profiles/1'])
+        expect(profile.user.isNew).to.be.false
+        expect(profile.user.id).to.eq('2')
 
 
     it 'creates hierarchy', ->
-      adapter.r['POST:/posts'] = -> posts: {client_id: post.clientId, id: 1, title: 'herp', user: {client_id: post.user.clientId, id: 1, name: 'derp', post: 1}}
+      @server.r 'POST:/profiles', -> profiles: {client_id: profile.clientId, id: 1, title: 'herp', user: {client_id: profile.user.clientId, id: 1, name: 'derp', profile: 1}}
 
-      post = session.create 'post', title: 'herp'
-      post.user = session.create 'user', name: 'derp'
+      profile = @session.create 'profile', title: 'herp'
+      profile.user = @session.create 'user', name: 'derp'
 
-      session.flush().then ->
-        expect(adapter.h).to.eql ['POST:/posts']
-        expect(post.id).to.eq("1")
-        expect(post.title).to.eq('herp')
-        expect(post.user.name).to.eq('derp')
+      @session.flush().then =>
+        expect(@server.h).to.eql ['POST:/profiles']
+        expect(profile.id).to.eq("1")
+        expect(profile.title).to.eq('herp')
+        expect(profile.user.name).to.eq('derp')
 
 
     it 'deletes parent', ->
-      adapter.r['DELETE:/posts/1'] = {}
+      @server.r 'DELETE:/profiles/1', {}
 
-      post = @Post.create(id: "1", title: 'parent')
-      post.user = @User.create(id: "2", name: 'wes')
-      post = session.merge post
+      profile = @Profile.create(id: "1", title: 'parent')
+      profile.user = @User.create(id: "2", name: 'wes')
+      profile = @session.merge profile
 
-      session.deleteModel(post)
-      session.flush().then ->
-        expect(adapter.h).to.eql(['DELETE:/posts/1'])
-        expect(post.isDeleted).to.be.true
+      @session.deleteModel(profile)
+      @session.flush().then =>
+        expect(@server.h).to.eql(['DELETE:/profiles/1'])
+        expect(profile.isDeleted).to.be.true

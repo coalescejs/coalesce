@@ -120,7 +120,9 @@ var testTree = (function() {
   
   var testVendorJs = concat(vendor, {
     inputFiles: [
+      'sinonjs/sinon.js',
       'mocha/mocha.js',
+      'mocha-lazy-bdd/dist/mocha-lazy-bdd.js',
       'chai/chai.js',
       'jquery/dist/jquery.js',
       'lodash/dist/lodash.js',

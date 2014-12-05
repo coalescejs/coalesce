@@ -13,7 +13,7 @@ export default class Operation {
     this.model = model;
     this.shadow = shadow;
     this.flush = flush;
-    this.adapter = this.flush.adapter;
+    this.adapter = this.flush.session.context.configFor(model).get('adapter');
     this.session = this.flush.session;
     // forces the operation to be performed
     this.force = false

@@ -8,7 +8,7 @@ import {singularize, camelize, underscore, dasherize} from '../utils/inflector';
 export default class ModelSerializer extends Serializer {
 
   constructor(...args) {
-    super(args);
+    super(...args);
     this._keyCache = {};
   }
 
@@ -150,11 +150,7 @@ export default class ModelSerializer extends Serializer {
   }
 
   typeFor(typeKey) {
-    return this.container.lookupFactory('model:' + typeKey);
-  }
-
-  serializerFor(typeKey) {
-    return this.serializerFactory.serializerFor(typeKey);
+    return this.context.typeFor(typeKey);
   }
 
 }

@@ -1,46 +1,21 @@
 import Error from './error';
 import BaseClass from './utils/base_class';
-import SerializerFactory from './factories/serializer';
 import Session from './session/session';
 import array_from from './utils/array_from';
 
 export default class Adapter extends BaseClass {
 
-  constructor() {
-    this.configs = {};
-    this.container = this.setupContainer(this.container);
-    this.serializerFactory = new SerializerFactory(this.container);
-  }
-
-  setupContainer(container) {
-    return container;
-  }
-
-  configFor(type) {
-    var configs = this.configs,
-        typeKey = type.typeKey;
-
-    return configs[typeKey] || {};
-  }
-
-  newSession() {
-    return new Session({
-      adapter: this,
-      idManager: this.idManager,
-      container: this.container
-    });
-  }
-
   serialize(model, opts) {
-    return this.serializerFactory.serializerForModel(model).serialize(model, opts);
+    return this._serializerFor(model).serialize(model, opts);
   }
 
   deserialize(typeKey, data, opts) {
-    return this.serializerFor(typeKey).deserialize(data, opts);
+    if(!opts.typeKey)
+    return this._serializerFor(typeKey).deserialize(data, opts);
   }
 
   serializerFor(typeKey) {
-    return this.serializerFactory.serializerFor(typeKey);
+    return this._serializerFor(typeKey);
   }
 
   merge(model, session) {
@@ -55,7 +30,7 @@ export default class Adapter extends BaseClass {
       typeKey = this.defaultSerializer;
     }
 
-    var serializer = this.serializerFor(typeKey),
+    var serializer = this._serializerFor(typeKey),
         deserialized = serializer.deserialize(data);
 
     if(deserialized.isModel) {
@@ -79,27 +54,9 @@ export default class Adapter extends BaseClass {
   reifyClientId(model) {
     this.idManager.reifyClientId(model);
   }
+  
+  _serializerFor(key) {
+    return this.context.configFor(key).get('serializer');
+  }
 
 }
-
-function mustImplement(name) {
-  return function() {
-    throw new Error("Your adapter " + this.toString() + " does not implement the required method " + name);
-  };
-}
-
-Adapter.reopen({
-
-  mergeError: Adapter.mergeData,
-
-  load: mustImplement("load"),
-
-  query: mustImplement("find"),
-
-  refresh: mustImplement("refresh"),
-
-  flush: mustImplement("flush"),
-
-  remoteCall: mustImplement("remoteCall"),
-
-});

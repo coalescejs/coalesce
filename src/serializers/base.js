@@ -1,4 +1,3 @@
-import SerializerFactory from '../factories/serializer';
 import BaseClass from '../utils/base_class';
 
 /**
@@ -9,16 +8,12 @@ import BaseClass from '../utils/base_class';
 */
 export default class Base extends BaseClass {
 
-  constructor() {
-    this.serializerFactory = new SerializerFactory(this.container);
-  }
-
   serialize() {}
   
   deserialize() {}
 
   serializerFor(typeKey) {
-    return this.serializerFactory.serializerFor(typeKey);
+    return this.context.configFor(typeKey).get('serializer');
   }
 
 }

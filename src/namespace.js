@@ -19,8 +19,12 @@ if(requireModule && typeof requireModule === 'function') {
 var Coalesce = {
   VERSION: 'VERSION_STRING_PLACEHOLDER',
   Promise: Promise,
-  ajax: ajax,
-  run: Backburner && new Backburner(['actions'])
+  ajax: ajax
+};
+
+if(Backburner) {
+  var backburner = new Backburner(['actions']);
+  Coalesce.run = backburner.run.bind(backburner);
 }
 
 export default Coalesce;

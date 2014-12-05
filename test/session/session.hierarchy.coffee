@@ -1,49 +1,50 @@
-`import {postWithComments} from '../support/schemas'`
-`import Container from 'coalesce/container'`
+# Use rest adapter for now
+`import Adapter from 'coalesce/rest/adapter'`
+`import {postWithComments} from '../support/configs'`
+`import Context from 'coalesce/context/default'`
 
 describe "Session", ->
 
-  beforeEach ->
-    @App = {}
-    @container = new Container()
-    Coalesce.__container__ = @container
-    @container.register('adapter:main', Coalesce.RestAdapter)
-
-    postWithComments.apply(this)
-
-    @adapter = @container.lookup('adapter:main')
-    @container = @adapter.container
-
-    @adapter.load = (model) -> Coalesce.Promise.resolve(model)
-    @adapter._update = (model) -> Promise.resolve(model) 
-    @adapter.flush = (session) ->
+  lazy 'Adapter', ->
+    `class A extends Adapter {}`
+    A.prototype.load = (model) -> Coalesce.Promise.resolve(model)
+    A.prototype._update = (model) -> Promise.resolve(model) 
+    A.prototype.flush = (session) ->
       models = session.dirtyModels
       Coalesce.Promise.resolve(models.copy(true)).then (models) ->
         models.forEach (model) -> session.merge(model)
+    A
 
+  lazy 'context', ->
+    c = new Context(postWithComments())
+    c.configure
+      adapter: @Adapter
+    c
+    
+  lazy 'Post', ->
+    @context.typeFor 'post'
+    
+  lazy 'Comment', ->
+    @context.typeFor 'comment'
 
   describe 'sibling sessions', ->
 
-    sessionA = null
-    sessionB = null
-    adapter = null
+    lazy 'sessionA', -> @context.newSession()
+    lazy 'sessionB', -> @context.newSession()
 
     beforeEach ->
-      sessionA = @adapter.newSession()
-      sessionB = @adapter.newSession()
-
-      sessionA.merge @Post.create(id: "1", title: 'original')
-      sessionB.merge @Post.create(id: "1", title: 'original')
+      @sessionA.merge @Post.create(id: "1", title: 'original')
+      @sessionB.merge @Post.create(id: "1", title: 'original')
 
     it 'updates are isolated', ->
       postA = null
       postB = null
 
-      pA = sessionA.load('post', 1).then (post) ->
+      pA = @sessionA.load('post', 1).then (post) ->
         postA = post
         postA.title = "a was here"
 
-      pB = sessionB.load('post', 1).then (post) ->
+      pB = @sessionB.load('post', 1).then (post) ->
         postB = post
         postB.title = "b was here"
 
@@ -53,51 +54,47 @@ describe "Session", ->
 
 
   describe "child session", ->
-
-    parent = null
-    child = null
-
-    beforeEach ->
-      parent = @adapter.newSession()
-      child = parent.newSession()
+    
+    lazy 'parent', -> @context.newSession()
+    lazy 'child', -> @parent.newSession()
 
     it '.flushIntoParent flushes updates immediately', ->
-      parent.merge @Post.create(id: "1", title: 'original')
+      @parent.merge @Post.create(id: "1", title: 'original')
 
-      child.load('post', 1).then (childPost) ->
+      @child.load('post', 1).then (childPost) =>
 
         childPost.title = 'child version'
 
-        parent.load('post', 1).then (parentPost) ->
+        @parent.load('post', 1).then (parentPost) =>
           expect(parentPost.title).to.eq('original')
-          f = child.flushIntoParent()
+          f = @child.flushIntoParent()
           expect(parentPost.title).to.eq('child version')
           f
 
     it '.flush waits for success before updating parent', ->
-      parent.merge @Post.create(id: "1", title: 'original')
+      @parent.merge @Post.create(id: "1", title: 'original')
 
-      child.load('post', 1).then (childPost) ->
+      @child.load('post', 1).then (childPost) =>
 
         childPost.title = 'child version'
 
-        parent.load('post', 1).then (parentPost) ->
+        @parent.load('post', 1).then (parentPost) =>
           expect(parentPost.title).to.eq('original')
-          f = child.flush()
+          f = @child.flush()
           expect(parentPost.title).to.eq('original')
           f.then ->
             expect(parentPost.title).to.eq('child version')
 
     it 'does not mutate parent session relationships', ->
-      post = parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
+      post = @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
       expect(post.comments.length).to.eq(1)
-      child.add(post)
+      @child.add(post)
       expect(post.comments.length).to.eq(1)
 
 
     it 'adds hasMany correctly', ->
-      parentPost = parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
-      post = child.add(parentPost)
+      parentPost = @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
+      post = @child.add(parentPost)
       expect(post).to.not.eq(parentPost)
       expect(post.comments.length).to.eq(1)
       expect(post.comments.firstObject).to.not.eq(parentPost.comments.firstObject)

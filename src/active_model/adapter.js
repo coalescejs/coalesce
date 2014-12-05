@@ -1,5 +1,4 @@
-import RestAdapter from '../rest/rest_adapter';
-import ActiveModelSerializer from './serializers/model';
+import RestAdapter from '../rest/adapter';
 
 import {decamelize, underscore, pluralize} from '../utils/inflector';
 
@@ -52,12 +51,6 @@ import {decamelize, underscore, pluralize} from '../utils/inflector';
   @extends RestAdapter
 **/
 export default class ActiveModelAdapter extends RestAdapter {
-
-  setupContainer(parent) {
-    var container = super(parent);
-    container.register('serializer:model', ActiveModelSerializer);
-    return container;
-  }
 
   pathForType(type) {
     var decamelized = decamelize(type);
