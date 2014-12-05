@@ -23,7 +23,7 @@ var context = new Context({
 
 
 // this is the main session for your application
-var session = context.session;
+var session = context.newSession();
 
 // you are good to go, write some application code
 var posts = session.query('posts');
