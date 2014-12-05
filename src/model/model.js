@@ -314,7 +314,9 @@ export default class Model extends BaseClass {
   }
   
   static get fields() {
-    if(this._fields) return this._fields;
+    if(this.hasOwnProperty('_fields')) {
+      return this._fields;
+    }
     var res = new Map(),
         parentClass = this.parentType;
     
@@ -337,7 +339,9 @@ export default class Model extends BaseClass {
   }
 
   static get attributes() {
-    if(this._attributes) return this._attributes;
+    if(this.hasOwnProperty('_attributes')) {
+      return this._attributes;
+    }
     var res = new Map();
     this.fields.forEach(function(options, name) {
       if(options.kind === 'attribute') {
@@ -348,7 +352,9 @@ export default class Model extends BaseClass {
   }
 
   static get relationships() {
-    if(this._relationships) return this._relationships;
+    if(this.hasOwnProperty('_relationships')) {
+      return this._relationships;
+    }
     var res = new Map();
     this.fields.forEach(function(options, name) {
       if(options.kind === 'belongsTo' || options.kind === 'hasMany') {

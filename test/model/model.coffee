@@ -161,6 +161,11 @@ describe 'Model', ->
         attributes:
           role: {type: 'string'}
       @Admin = Admin
+      `class Guest extends User {}`
+      Guest.defineSchema
+        attributes:
+          anonymous: {type: 'boolean'}
+      @Guest = Guest
     
     it 'can add fields', ->
       expect(@Admin.fields.get('role')).to.exist
@@ -171,5 +176,9 @@ describe 'Model', ->
     it 'does not modify the parent fields', ->
       expect(@User.fields.get('role')).to.not.exist
           
+    it 'can share common parent class', ->
+      @Admin.attributes
+      expect(@Guest.attributes.get('anonymous')).to.not.be.undefined
+      
           
       
