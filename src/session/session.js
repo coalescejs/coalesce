@@ -267,8 +267,14 @@ export default class Session {
   */
   loadModel(model, opts) {
     console.assert(model.id, "Cannot load a model with an id");
-    // TODO: this should be done on a per-attribute bases
-    var promise = this.cache.getPromise(model);
+    opts = opts || {};
+
+    var promise = null;
+
+    if( !opts.skipCache ){
+      // TODO: this should be done on a per-attribute bases
+      promise = this.cache.getPromise(model);
+    }
 
     if(promise) {
       // the cache's promise is not guaranteed to return anything
@@ -348,9 +354,15 @@ export default class Session {
     @return {Promise}
   */
   query(type, params, opts) {
+    opts = opts || {};
+
     var type = this.typeFor(type),
         query = this.fetchQuery(type, params),
-        promise = this.queryCache.getPromise(query);
+        promise = null;
+
+    if( !opts.skipCache ){
+      promise = this.queryCache.getPromise(query);
+    }
         
     if(!promise) {
       promise = this.refreshQuery(query, opts);
