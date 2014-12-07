@@ -125,3 +125,11 @@ describe 'PerField', ->
     expect(post.title).to.eq('B')
     session.merge App.Post.create(id: '1', title: 'C')
     expect(post.title).to.eq('B')
+
+  it 'should resolve an existing models belongTo upon creating a new model whos hasMany contains that existing model', ->
+    comment = session.merge App.Comment.create( id: "1", body: 'Im not new', post: undefined)
+
+    post = session.merge App.Post.create(title: 'im new', comments: [comment])
+
+    expect(comment.post).to.eq(post)
+    expect(post.comments[0]).to.eq(comment)

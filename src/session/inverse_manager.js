@@ -107,15 +107,16 @@ export default class InverseManager {
 
   _addToInverse(model, inverse, inverseModel) {
     model = this.session.models.getModel(model);
-    // make sure the inverse is loaded
-    if(!model || !model.isFieldLoaded(inverse.name)) return;
-    model.suspendRelationshipObservers(function() {
-      if(inverse.kind === 'hasMany') {
-        model[inverse.name].addObject(inverseModel)
-      } else if(inverse.kind === 'belongsTo') {
-        model[inverse.name] = inverseModel;
-      }
-    }, this);
+    if(model && model.isFieldLoaded(inverse.name) || (model && inverseModel.isNew)){
+      model.suspendRelationshipObservers(function() {
+        if(inverse.kind === 'hasMany' && model[inverse.name]) {
+          model[inverse.name].addObject(inverseModel)
+        } else if(inverse.kind === 'belongsTo') {
+          model[inverse.name] = inverseModel;
+        }
+      }, this);
+    }
+    return;
   }
   
   _removeFromInverse(model, inverse, inverseModel) {
