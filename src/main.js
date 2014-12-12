@@ -1,10 +1,7 @@
 
 import Coalesce from './namespace';
 
-import {setupContainer} from './container';
-import Container from './container';
-
-import Context from './context';
+import Context from './context/context';
 
 import Adapter from './adapter';
 import IdManager from './id_manager';
@@ -49,8 +46,6 @@ import isEqual from './utils/is_equal';
 
 import {pluralize, singularize} from './utils/inflector';
 
-Coalesce.Container = Container;
-Coalesce.setupContainer = setupContainer;
 Coalesce.Context = Context;
 
 Coalesce.Adapter = Adapter;

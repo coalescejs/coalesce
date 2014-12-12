@@ -1,8 +1,7 @@
-import Container from './container/container';
+import Base from './base';
+import Container from './container';
 
 import Session from './session/session';
-
-import IdManager from './id_manager';
 
 import BelongsToSerializer from './serializers/belongs_to';
 import BooleanSerializer from './serializers/boolean';
@@ -22,6 +21,24 @@ import QueryCache from './session/query_cache';
 import RestAdapter from './rest/rest_adapter';
 
 import Errors from './model/errors';
+
+var default = _.defaults;
+
+/**
+  Default context with sensible default configuration
+*/
+export default class Context extends Base {
+  
+  constructor(config={}, parent=null, container=new Container()) {
+    defaults(config, {
+      types: {
+        errors: Errors
+      }
+    });
+    super(config, container);
+  }
+  
+}
 
 function setupContainer(container) {
   container.register('model:errors', Errors);
@@ -69,13 +86,3 @@ function setupCaches(container) {
   container.register('query-cache:default', QueryCache);
   container.register('model-cache:default', ModelCache);
 }
-
-function CoalesceContainer() {
-  Container.apply(this, arguments);
-  setupContainer(this);
-}
-
-CoalesceContainer.prototype = Object.create(Container.prototype);
-
-export {setupContainer};
-export default CoalesceContainer;
