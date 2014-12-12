@@ -11,7 +11,7 @@ Coalesce.js is a robust and stable framework for syncing client state with a per
 * Forking models is first-class within the framework.
 * All operations are structured around javascript promises.
 
-Coalesce is a functional alternative to [ember-data](https://github.com/emberjs/data) and is used in production at [Outreach](https://outreach.io) with dozens of inter-related models.
+Coalesce is a functional alternative to [ember-data](https://github.com/emberjs/data) and is used in production at [Outreach](https://www.outreach.io) with dozens of inter-related models.
 
 ## Installation
 
