@@ -94,7 +94,7 @@ export default class Session {
     For now we assume this only works with new models or models from a parent session.
 
     @method add
-    @param {Coalesce.Model} model The model to add to the session
+    @param {Model} model The model to add to the session
   */
   add(model) {
     this.reifyClientId(model);
@@ -147,7 +147,7 @@ export default class Session {
     model will be updated.
 
     @method update
-    @param {Coalesce.Model} model A model containing updated properties
+    @param {Model} model A model containing updated properties
   */
   update(model) {
     this.reifyClientId(model);
@@ -160,10 +160,10 @@ export default class Session {
       this.adopt(dest);
     }
 
-    // if the model is detached or does not exist
+    // if the model does not exist
     // in the target session, updating is semantically
     // equivalent to adding
-    if(model.isDetached || !dest) {
+    if(!dest) {
       return this.add(model);
     }
 
@@ -188,6 +188,7 @@ export default class Session {
       } else if(relationship.kind === 'hasMany') {
         var children = model[name];
         var destChildren = dest[name];
+
         children.copyTo(destChildren);
       }
     }, this);
@@ -227,6 +228,15 @@ export default class Session {
       this.adopt(model);
     }
 
+    return model;
+  }
+  
+  fetchModel(model) {
+    var model = this.getModel(model);
+    if(!model) {
+      model = this.build(typeKey, {id: id});
+      this.adopt(model);
+    }
     return model;
   }
 
@@ -443,8 +453,13 @@ export default class Session {
     if(opts && opts.deserializationContext && typeof opts.deserializationContext !== 'string') {
       opts.deserializationContext = opts.deserializationContext.typeKey;
     }
+    
+    var shadow;
+    if(context && context.isModel) {
+      shadow = this.shadows.getModel(context);
+    }
 
-    return adapter.remoteCall(context, name, params, opts, this);
+    return adapter.remoteCall(context, name, params, shadow, opts, this);
   }
 
   modelWillBecomeDirty(model) {
@@ -671,7 +686,7 @@ export default class Session {
     if(this.parent) {
       model = this.parent.merge(model, visited);
     }
-
+    
     this.reifyClientId(model);
 
     if(!visited) visited = new Set();
@@ -682,7 +697,7 @@ export default class Session {
     visited.add(model);
 
     this.emit('willMerge', model);
-
+    
     this.updateCache(model);
 
     var detachedChildren = [];
@@ -750,6 +765,8 @@ export default class Session {
       // If doesn't have the latest client rev, merge against original
       ancestor = originals.getModel(model);
     }
+    
+    this._removeStaleRelationships(model, ancestor);
 
     this.suspendDirtyChecking(function() {
       merged = this._mergeModel(existing, ancestor, model);
@@ -820,6 +837,8 @@ export default class Session {
       // If doesn't have the latest client rev, merge against original
       ancestor = original;
     }
+    
+    this._removeStaleRelationships(model, ancestor);
 
     // TODO: load errors are merged here, harmless since no loaded data, but
     // need to rethink
@@ -859,6 +878,7 @@ export default class Session {
     // if the model does not exist, no "merging"
     // is required
     if(!dest) {
+      // OPTIMIZATION: re-use detached models
       if(model.isDetached) {
         dest = model;
       } else {
@@ -868,7 +888,8 @@ export default class Session {
       this.adopt(dest);
       return dest;
     }
-
+    console.log(this.toString(), model.toString());
+    console.assert(model.id || !dest.id, `Expected ${model} to have an id set`);
     // set id for new records
     dest.id = model.id;
     dest.clientId = model.clientId;
@@ -898,6 +919,26 @@ export default class Session {
     strategy.merge(dest, ancestor, model);
 
     return dest;
+  }
+  
+  /**
+    @private
+    
+    When merging a new version of a model, it may contains relationship data for
+    a relationship that it does not own. It is possible that this data could be
+    stale and we need to unload to pervent clobbering a client's changed to the
+    relationship.
+  */
+  _removeStaleRelationships(model, ancestor) {
+    if(!ancestor) {
+      return;
+    }
+    var adapter = this.context.configFor(model).get('adapter');
+    model.eachLoadedRelationship(function(name, relationship) {
+      if(ancestor.isFieldLoaded(name) && !adapter.isRelationshipOwner(relationship)) {
+        delete model._relationships[name];
+      }
+    });
   }
 
   _containsRev(modelA, modelB) {

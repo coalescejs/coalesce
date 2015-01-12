@@ -29,15 +29,15 @@ export default class InverseManager {
           this.registerRelationship(model, name, inverseModel);
         }
         inversesToClear.remove(inverseModel);
-      }    
+      }
       
       if(relationship.kind === 'belongsTo') {
-        var inverseModel =model[name];
+        var inverseModel = model[name];
         if(inverseModel) {
           checkInverse.call(this, inverseModel);
         }
       } else if(relationship.kind === 'hasMany') {
-        var inverseModels =model[name];
+        var inverseModels = model[name];
         inverseModels.forEach(function(inverseModel) {
           checkInverse.call(this, inverseModel);
         }, this);
@@ -111,6 +111,7 @@ export default class InverseManager {
     if(!model || !model.isFieldLoaded(inverse.name)) return;
     model.suspendRelationshipObservers(function() {
       if(inverse.kind === 'hasMany') {
+        debugger
         model[inverse.name].addObject(inverseModel)
       } else if(inverse.kind === 'belongsTo') {
         model[inverse.name] = inverseModel;

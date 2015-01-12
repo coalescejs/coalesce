@@ -163,6 +163,27 @@ export default class Model extends BaseClass {
       return false;
     }
   }
+  
+  /**
+    Like copy, but is session-aware
+  */
+  fork(session) {
+    if(this.session === session) return this;
+    
+    var fork = session.getModel(this);
+    if(fork) {
+      return fork;
+    }
+    
+    var fork = new this.constructor({
+      id: this.id,
+      clientId: this
+    });
+    
+    session.adopt(fork);
+    
+    return fork;
+  }
 
   /**
     Returns a copy with all properties unloaded except identifiers.
@@ -171,11 +192,10 @@ export default class Model extends BaseClass {
     @returns {Model}
   */
   lazyCopy() {
-    var copy = new this.constructor({
+    return new this.constructor({
       id: this.id,
       clientId: this.clientId
     });
-    return copy;
   }
 
   // creates a shallow copy with lazy children

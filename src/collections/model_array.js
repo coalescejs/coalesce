@@ -74,6 +74,13 @@ export default class ModelArray extends ObservableArray {
   copy() {
     return super(true);
   }
+  
+  lazyCopy() {
+    var arr = this.map(function(item) { return lazyCopy(item, true); });
+    var res = new this.constructor();
+    res.addObjects(arr);
+    return res;
+  }
 
   diff(arr) {
     var diff = new this.constructor();

@@ -49,7 +49,7 @@ export default class Flush {
         var name = d.name;
         var parentModel = model[name] || d.oldValue && shadows.getModel(d.oldValue);
         // embedded children should not be dependencies
-        var isEmbeddedRel = this.embeddedType(model.constructor, name);
+        var isEmbeddedRel = this.isEmbeddedRelationship(model.constructor, name);
         
         // TODO: handle hasMany's depending on adapter configuration
         if(parentModel && !isEmbeddedRel) {
@@ -59,7 +59,6 @@ export default class Flush {
       }
       
       var isEmbedded = model.isEmbedded;
-      
       if(op.isDirty && isEmbedded) {
         // walk up the embedded tree and mark root as dirty
         var rootModel = this.findEmbeddedRoot(model, models);
@@ -112,7 +111,7 @@ export default class Flush {
     return models.getModel(model);
   }
   
-  embeddedType(type, name) {
+  isEmbeddedRelationship(type, name) {
     return type.fields.get(name).embedded;
   }
   
@@ -131,58 +130,6 @@ export default class Flush {
     return result;
   }
   
-  /**
-    This callback is intendended to resolve the request ordering issue
-    for parent models. For instance, when we have a Post -> Comments
-    relationship, the parent post will be saved first. The request will
-    return and it is likely that the returned JSON will have no comments.
-    
-    In this callback we re-evaluate the relationships after the children
-    have been saved, effectively undoing the erroneous relationship results
-    of the parent request.
-    
-    TODO: this should utilize the "owner" of the relationship
-    TODO: move this to OperationGraph
-  */
-  rebuildRelationships(children, parent) {
-    parent.suspendRelationshipObservers(function() {
-      // TODO: figure out a way to preserve ordering (or screw ordering and use sets)
-      for(var i = 0; i < children.length; i++) {
-        var child = children[i];
-        
-        child.eachLoadedRelationship(function(name, relationship) {
-          // TODO: handle hasMany's for non-relational databases...
-          if(relationship.kind === 'belongsTo') {
-            var value =child[name],
-            inverse = child.constructor.inverseFor(name);
-            
-            if(inverse) {
-              if(!(parent instanceof inverse.parentType)) {
-                return;
-              }
-              // if embedded then we are certain the parent has the correct data
-              if(this.embeddedType(inverse.parentType, inverse.name)) {
-                return;
-              }
-              
-              if(inverse.kind === 'hasMany' && parent.isFieldLoaded(inverse.name)) {
-                var parentCollection =parent[inverse.name];
-                if(child.isDeleted) {
-                  parentCollection.removeObject(child);
-                } else if(value && value.isEqual(parent)) {
-                  // TODO: make sure it doesn't already exists (or change model arrays to sets)
-                  // TODO: think about 1-1 relationships
-                  parentCollection.addObject(child);
-                }
-              }
-              
-            }
-          }
-        }, this);
-      }
-    }, this);
-  }
-  
   perform() {
     var results = this.results,
         pending = this.pending,
@@ -194,19 +141,16 @@ export default class Flush {
     }, this); 
     
     return Coalesce.Promise.all(this.pending).then(function() {
-      return results.map(function(model) {
-        return session.merge(model);
-      });
+      return results;
     }, function(err) {
       // all the promises that haven't finished, we need still merge them into
-      // the session
+      // the session for error resolution
       var failures = pending.map(function(op) {
-        return op.fail();
+        var model =  op.fail();
+        session.merge(model);
+        return model;
       });
-      results = results.concat(failures);
-      throw results.map(function(model) {
-        return session.merge(model);
-      });
+      return results.concat(failures);
     });
   }
   

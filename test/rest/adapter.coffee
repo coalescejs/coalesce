@@ -10,21 +10,6 @@ describe "RestAdapter", ->
   
   subject -> @context.configFor('post').get('adapter')
 
-  describe '.mergePayload', ->
-
-    lazy 'data', ->
-      post: {id: 1, title: 'ma post', comments: [2, 3]}
-      comments: [{id: 2, body: 'yo'}, {id: 3, body: 'sup'}]
-
-    it 'should merge with typeKey as context', ->
-      post = @subject.mergePayload(@data, 'post', @session)[0]
-      expect(post.title).to.eq('ma post')
-      expect(post).to.eq(@session.getModel(post))
-
-    it 'should merge with no context', ->
-      models = @subject.mergePayload(@data, null, @session)
-      expect(models.size).to.eq(3)
-
   describe '.ajaxOptions', ->
     
     beforeEach ->

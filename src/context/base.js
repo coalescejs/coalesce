@@ -1,3 +1,5 @@
+import Adapter from '../adapter';
+
 import Container from './container';
 import Error from '../error';
 import Config from './config';
@@ -83,7 +85,9 @@ export default class Base {
   }
   
   _setupContainer() {
-    // subclasses override
+    // subclasses can override
+    var container = this.container;
+    container.register('adapter:default', container.lookupFactory('adapter:application') || Adapter);
   }
   
 }

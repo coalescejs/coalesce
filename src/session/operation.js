@@ -39,75 +39,6 @@ export default class Operation {
     child.parents.add(this);
   }
   
-  // determine which relationships are affected by this operation
-  // TODO: we should unify this with dirty checking
-  get dirtyRelationships() {
-    var adapter = this.adapter,
-    model = this.model,
-    rels = [],
-    shadow = this.shadow;
-    
-    if(model.isNew) {
-      // if the model is new, all relationships are considered dirty
-      model.eachRelationship(function(name, relationship) {
-        if(adapter.isRelationshipOwner(relationship)) {
-          rels.push({name: name, type: relationship.kind, relationship: relationship, oldValue: null});
-        }
-      }, this);
-    } else {
-      // otherwise we check the diff to see if the relationship has changed,
-      // in the case of a delete this won't really matter since it will
-      // definitely be dirty
-      var diff = this.diff;
-      for(var i = 0; i < diff.length; i++) {
-        var d = diff[i];
-        if(d.relationship && adapter.isRelationshipOwner(d.relationship)) {
-          rels.push(d);
-        }
-      }
-    }
-    
-    return rels;
-  }
-  
-  get isDirty() {
-    return !!this.dirtyType;
-  }
-  
-  get isDirtyFromUpdates() {
-    var model = this.model,
-    shadow = this.shadow,
-    adapter = this.adapter;
-    
-    // this case could happen via a dirty relationship where the other side does
-    // not have an inverse (in which case the model will not be dirty and hence no shadow)
-    if(!shadow) return false;
-    
-    var diff = this.diff;
-    var dirty = false;
-    var relDiff = [];
-    for(var i = 0; i < diff.length; i++) {
-      var d = diff[i];
-      if(d.type == 'attr') {
-        dirty = true;
-      } else {
-        relDiff.push(d);
-      }
-    }
-    return dirty || adapter.isDirtyFromRelationships(model, shadow, relDiff);
-  }
-  
-  get dirtyType() {
-    var model = this.model;
-    if(model.isNew) {
-      return "created";
-    } else if(model.isDeleted) {
-      return "deleted";
-    } else if(this.isDirtyFromUpdates || this.force) {
-      return "updated";
-    }
-  }
-  
   perform() {
     var promise,
         adapter = this.adapter,
@@ -125,10 +56,8 @@ export default class Operation {
     if(this.children.size > 0) {
       promise = promise.then((model) => {
         return Coalesce.Promise.all(array_from(this.children)).then(function(models) {
-          flush.rebuildRelationships(models, model);
           return model;
         }, function(models) {
-          // XXX: should we still rebuild relationships since this request succeeded?
           throw model;
         });
       });
@@ -141,64 +70,33 @@ export default class Operation {
     var flush = this.flush,
         adapter = this.adapter,
         session = this.session,
-        dirtyType = this.dirtyType,
         model = this.model,
         shadow = this.shadow,
         promise;
     
-    if(!dirtyType || !adapter.shouldSave(model)) {
+    if(!this.isDirty || model.isEmbedded) {
       if(model.isEmbedded) {
         // if embedded we want to extract the model from the result
         // of the parent operation
         promise = this._promiseFromEmbeddedParent();
       } else {
         // return an "identity" promise if we don't want to do anything
-        promise = Coalesce.Promise.resolve();
+        promise = Coalesce.Promise.resolve(model);
       }
-    } else if(dirtyType === "created") {
-      promise = adapter._contextualizePromise(adapter._create(model), model);
-    } else if(dirtyType === "updated") {
-      promise = adapter._contextualizePromise(adapter._update(model), model);
-    } else if(dirtyType === "deleted") {
-      promise = adapter._contextualizePromise(adapter._deleteModel(model), model);
+    } else {
+      promise = adapter.persist(model, shadow, null, session);
     }
     
+    // in the case of new records we need to assign the id
+    // of the model so dependent operations can use it
+    // serverModel could be null (e.g. an embedded record removed from its parent)
     promise = promise.then(function(serverModel) {
-      // in the case of new records we need to assign the id
-      // of the model so dependent operations can use it
-      // serverModel could be null (e.g. an embedded record removed from its parent)
       if(serverModel && !model.id) {
         model.id = serverModel.id;
       }
-      if(!serverModel) {
-        // if no data returned, assume that the server data
-        // is the same as the model
-        serverModel = model;
-      } else {
-        if(serverModel.meta && Object.keys(serverModel).length == 1 ){
-          model.meta = serverModel.meta;
-          serverModel = model;
-        }
-        if(!serverModel.clientRev) {
-          // ensure the clientRev is set on the returned model
-          // 0 is the default value
-          serverModel.clientRev = model.clientRev;
-        }
-      }
       return serverModel;
-    }, function(serverModel) {
-      // if the adapter returns errors we replace the
-      // model with the shadow if no other model returned
-      // TODO: could be more intuitive to move this logic
-      // into adapter._contextualizePromise
-      
-      // there won't be a shadow if the model is new
-      if(shadow && serverModel === model) {
-        shadow.errors = serverModel.errors;
-        throw shadow;
-      }
-      throw serverModel;
     });
+    
     this.resolve(promise);
     return this;
   }
@@ -242,6 +140,41 @@ export default class Operation {
     }, function(parent) {
       throw findInParent(parent);
     });
+  }
+  
+  get isDirty() {
+    return this.force || this.adapter.isDirty(this.model, this.shadow);
+  }
+  
+  // determine which relationships are affected by this operation
+  // TODO: we should unify this with dirty checking
+  get dirtyRelationships() {
+    var adapter = this.adapter,
+    model = this.model,
+    rels = [],
+    shadow = this.shadow;
+    
+    if(model.isNew) {
+      // if the model is new, all relationships are considered dirty
+      model.eachRelationship(function(name, relationship) {
+        if(adapter.isRelationshipOwner(relationship)) {
+          rels.push({name: name, type: relationship.kind, relationship: relationship, oldValue: null});
+        }
+      }, this);
+    } else {
+      // otherwise we check the diff to see if the relationship has changed,
+      // in the case of a delete this won't really matter since it will
+      // definitely be dirty
+      var diff = this.diff;
+      for(var i = 0; i < diff.length; i++) {
+        var d = diff[i];
+        if(d.relationship && adapter.isRelationshipOwner(d.relationship)) {
+          rels.push(d);
+        }
+      }
+    }
+    
+    return rels;
   }
   
 }

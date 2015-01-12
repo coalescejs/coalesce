@@ -1,62 +1,35 @@
-import Error from './error';
 import BaseClass from './utils/base_class';
-import Session from './session/session';
-import array_from from './utils/array_from';
+import Error from './error';
 
+/**
+  The Adapter is the main object responsible for interfacing with a remote server.
+*/
 export default class Adapter extends BaseClass {
 
-  serialize(model, opts) {
-    return this._serializerFor(model).serialize(model, opts);
-  }
-
-  deserialize(typeKey, data, opts) {
-    if(!opts.typeKey)
-    return this._serializerFor(typeKey).deserialize(data, opts);
-  }
-
-  serializerFor(typeKey) {
-    return this._serializerFor(typeKey);
-  }
-
-  merge(model, session) {
-    if(!session) {
-      session = this.container.lookup('session:main');
-    }
-    return session.merge(model);
-  }
-
-  mergeData(data, typeKey, session) {
-    if(!typeKey) {
-      typeKey = this.defaultSerializer;
-    }
-
-    var serializer = this._serializerFor(typeKey),
-        deserialized = serializer.deserialize(data);
-
-    if(deserialized.isModel) {
-      return this.merge(deserialized, session);
-    } else {
-      return array_from(deserialized).map(function(model) {
-        return this.merge(model, session);
-      }, this);
-    }
-  }
-
-  // This can be overridden in the adapter sub-classes
-  isDirtyFromRelationships(model, cached, relDiff) {
-    return relDiff.length > 0;
-  }
-
-  shouldSave(model) {
-    return true;
-  }
-
-  reifyClientId(model) {
-    this.idManager.reifyClientId(model);
+  load(model, opts, session) {
+    throw new Error(`${this} does not support load()`);
   }
   
-  _serializerFor(key) {
-    return this.context.configFor(key).get('serializer');
+  query(typeKey, params, opts, session) {
+    throw new Error(`${this} does not support query()`);
+  }
+
+  persist(model, shadow, opts, session) {
+    throw new Error(`${this} does not support persist()`);
+  }
+  
+  remoteCall(context, name, data, opts, session) {
+    throw new Error(`${this} does not support remoteCall()`);
+  }
+  
+  isDirty(model, shadow) {
+    return true;
+  }
+  
+  isRelationshipOwner(relationship) {
+    return relationship.embedded ||
+      relationship.kind === 'belongsTo' && relationship.owner !== false ||
+      relationship.kind === 'hasMany' && relationship.owner === true;
   }
 
 }

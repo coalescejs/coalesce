@@ -68,8 +68,7 @@ describe "Session", ->
       post = @Post.create(title: 'test')
       expect(@subject.add(post)).to.eq(post)
 
-
-    it 'overwrites unloaded models', ->
+    it 'preserves references', ->
       lazy = @Post.create id: '1'
       @subject.add(lazy)
       post = @subject.merge(@Post.create(id: '1', title: 'post'))
@@ -291,6 +290,22 @@ describe "Session", ->
       expect(post.title).to.eq('easy peazy')
       expect(@subject.getModel(post)).to.eq(post)
 
+  
+  describe '.update', ->
+    
+    it 'updates hasMany relationship', ->
+      @post = @subject.merge @Post.create id: 1, title: 'hi', comments: []
+      updatedPost = @Post.create id: 1, title: 'hello', comments: []
+      updatedPost.comments.push @Comment.create id:2, post: updatedPost 
+      @subject.update updatedPost
+      expect(@post.comments.length).to.eq(1)
+
+    it.only 'updates hasMany relationship from new model', ->
+      @post = @subject.merge @Post.create id: 1, title: 'hi', comments: []
+      updatedPost = @Post.create id: 1, title: 'hello', comments: []
+      updatedPost.comments.push @Comment.create post: updatedPost
+      @subject.update updatedPost
+      expect(@post.comments.length).to.eq(1)
 
   context 'with parent session', ->
 

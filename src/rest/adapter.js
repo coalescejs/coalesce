@@ -109,64 +109,65 @@ export default class RestAdapter extends Adapter {
   constructor() {
     super(...arguments);
     this._pendingOps = {};
-  }
-
-  load(model, opts, session) {
-    return this._mergeAndContextualizePromise(this._load(model, opts), session, model, opts);
+    this.middleware = [
+      new BuildRequest(this),
+      new Sanitize(this),
+      new Contextualize(this),
+      new Merge(this),
+      new Serialize(this),
+      new PerformRequest(this)
+    ]
   }
   
-  _load(model, opts) {
+  load(model, opts, session) {
     opts = opts || {};
-    _.defaults(opts, {
+    defaults(opts, {
       type: 'GET'
     });
-    return this._remoteCall(model, null, null, opts);
-  }
-
-  update(model, opts, session) {
-    return this._mergeAndContextualizePromise(this._update(model, opts), session, model, opts);
+    return this.execute(model, null, null, null, opts, session);
   }
   
-  _update(model, opts) {
+  persist(model, shadow, opts, session) {
+    // TODO once we coalesce operations, handle embedded models here and
+    // contextualize the parent's promise
+    var promise;
+    if(model.isNew) {
+      return  this.create(model, opts, session);
+    } else if(model.isDeleted) {
+      return this.deleteModel(model, shadow, opts, session);
+    } else {
+      return this.update(model, shadow, opts, session);
+    }
+  }
+  
+  update(model, shadow, opts, session) {
     opts = opts || {};
-    _.defaults(opts, {
+    defaults(opts, {
       type: 'PUT'
     });
-    return this._remoteCall(model, null, model, opts);
+    return this.execute(model, null, model, shadow, opts, session);
   }
-  
+
   create(model, opts, session) {
-    return this._mergeAndContextualizePromise(this._create(model, opts), session, model, opts);
+    return this.execute(model, null, model, null, opts, session);
   }
 
-  _create(model, opts) {
-    return this._remoteCall(model, null, model, opts);
-  }
-  
-  deleteModel(model, opts, session) {
-    return this._mergeAndContextualizePromise(this._deleteModel(model, opts), session, model, opts);
-  }
-
-  _deleteModel(model, opts) {
+  deleteModel(model, shadow, opts, session) {
     opts = opts || {};
-    _.defaults(opts, {
+    defaults(opts, {
       type: 'DELETE'
     });
-    return this._remoteCall(model, null, null, opts);
-  }
-
-  query(typeKey, query, opts, session) {
-    return this._mergeAndContextualizePromise(this._query(typeKey, query, opts), session, typeKey, opts);
+    return this.execute(model, null, null, null, opts, session);
   }
   
-  _query(typeKey, query, opts) {
+  query(typeKey, query, opts, session) {
     opts = opts || {};
-    _.defaults(opts, {
+    defaults(opts, {
       type: 'GET',
       serialize: false,
       deserializer: 'payload',
     });
-    return this._remoteCall(typeKey, null, query, opts);
+    return this.execute(typeKey, null, query, null, opts, session);
   }
 
   /**
@@ -189,50 +190,33 @@ export default class RestAdapter extends Adapter {
     @param Object [opts] an options hash
     @param Session [session] the session to merge the results into
   */
-  remoteCall(context, name, data, opts, session) {
+  remoteCall(context, name, data, shadow, opts, session) {
     var serialize = data && !!data.isModel;
     opts = opts || {};
-    _.defaults(opts, {
+    defaults(opts, {
       serialize: serialize,
       deserializer: 'payload'
     });
-    return this._mergeAndContextualizePromise(this._remoteCall(context, name, data, opts), session, context, opts);
+    return this.execute(context, name, data, shadow, opts, session)
   }
-
-  _remoteCall(context, name, data, opts) {
-    var adapter = this,
-        opts = this._normalizeOptions(opts),
-        url;
+  
+  /**
+    Executes a request and invokes the middleware chain
+  */
+  execute(context, name, data, shadow, opts, session) {
+    var opts = this._normalizeOptions(opts),
+        env = {context, name, data, shadow, opts, session},
+        middleware = this.middleware,
+        middlewareIndex = 0,
+        next;
     
-    if(opts.url) {
-      url = opts.url;
-    } else {
-      url = this.buildUrlFromContext(context, name);
-    }
-
-    var method = opts.type || "POST";
-    
-    if(opts.serialize !== false) {
-      var serializer = opts.serializer,
-          serializerOptions = opts.serializerOptions || {};
-          
-      if(!serializer && context) {
-        serializer = this.serializerForContext(context);
-      }
-      
-      if(serializer && data) {
-        serializer = this._serializerFor(serializer);
-        serializerOptions = _.defaults(serializerOptions, {context: context});
-        data = serializer.serialize(data, serializerOptions);
-      }
+    next = function() {
+      console.assert(middlewareIndex < middleware.length, "End of middleware chain reached");
+      var nextMiddleware = middleware[middlewareIndex++];
+      return nextMiddleware.call(next, env);
     }
     
-    if(opts.params) {
-      data = data || {};
-      data = _.defaults(data, opts.params);
-    }
-
-    return this._deserializePromise(this.ajax(url, method, {data: data}), context, opts);
+    return next();
   }
   
   _normalizeOptions(opts) {
@@ -243,191 +227,26 @@ export default class RestAdapter extends Adapter {
     }
     return opts;
   }
-
-  /**
-    @private
-
-    Deserialize the contents of a promise.
-  */
-  _deserializePromise(promise, context, opts) {
-    var serializer = opts.deserializer || opts.serializer,
-        serializerOptions = opts.serializerOptions || {};
-    
-    if(!serializer && context) {
-      serializer = this.serializerForContext(context);
-    }
-    
-    if(serializer) {
-      serializer = this._serializerFor(serializer);
-      _.defaults(serializerOptions, {context: context});
-    }
-
-    var adapter = this;
-    return promise.then(function(data){
-      if(opts.deserialize !== false) {
-        return serializer.deserialize(data, serializerOptions);
-      }
-      
-      return data;
-    }, function(xhr) {
-      if(opts.deserialize !== false) {
-        var data;
-        if(xhr.responseText) {
-          data = JSON.parse(xhr.responseText);
-        } else {
-          data = {};
-        }
-        
-        serializerOptions = defaults(serializerOptions, {context: context, xhr: xhr});
-        
-        // TODO: handle other errors codes such as 409
-        // determine serializer behavior off of xhr response code
-        if(xhr.status === 422) {
-          // in the event of a 422 response, handle a full payload, possibly with
-          // models that have `error` properties, therefore we just use the same
-          // serializer that we use in the success case
-          throw serializer.deserialize(data, serializerOptions);
-        } else {
-          // treat other errors generically
-          serializer = adapter._serializerFor(opts.errorSerializer || 'errors');
-          var errors = serializer.deserialize(data, serializerOptions);
-          if(context.isModel) {
-            // if the context is a model we want to return a model with errors
-            // so that it can be merged by the session
-            var model = context.lazyCopy();
-            model.errors = errors;
-            throw model;
-          }
-          throw errors;
-        }
-      }
-      throw xhr;
-    });
-  }
-
-  /**
-    @private
-
-    Merge the contents of the promise into the session.
-  */
-  _mergePromise(promise, session, opts) {
-    if(opts && opts.deserialize === false) {
-      return promise;
-    }
-
-    function merge(deserialized) {
-      if(typeof deserialized.merge === 'function') {
-        return deserialized.merge(session);
-      } else if(deserialized.isModel) {
-        return session.merge(deserialized);
-      }
-      return deserialized;
-    }
-
-    return promise.then(function(deserialized) {
-      return merge(deserialized);
-    }, function(deserialized) {
-      throw merge(deserialized);
-    });
-  }
-
-  /**
-    @private
-
-    Transform the promise's resolve value to the context
-    of the particular operation. E.g. a load operation may
-    return a complex payload consisting of many models. In
-    this case we want to just return the model that
-    corresponds to the load.
-  */
-  _contextualizePromise(promise, context, opts) {
-    if(opts && opts.deserializationContext !== undefined) {
-      context = opts.deserializationContext;
-    }
-
-    function contextualize(merged) {
-      // payloads detect their context during deserialization
-      if(context && merged.isPayload) {
-        var result = merged.context;
-        // the server might not return any data for the context
-        // of the operation (e.g. a delete with an empty response)
-        // in this case we just echo back the client's version
-        if(!result) {
-          result = context;
-        }
-        result.meta = merged.meta;
-        // TODO: we might want to merge errors here
-        if(merged.errors && (!result.errors || result === context)) {
-          result.errors = merged.errors;
-        }
-        return result;
-      }
-
-      return merged;
-    }
-
-    return promise.then(function(merged) {
-      return contextualize(merged);
-    }, function(merged) {
-      throw contextualize(merged);
-    });
-  }
-
-  /**
-    @private
-
-    Composition of `_mergePromise` and `_contextualizePromise`.
-  */
-  _mergeAndContextualizePromise(promise, session, context, opts) {
-    return this._contextualizePromise(this._mergePromise(promise, session, opts), context, opts);
-  }
-
-  /**
-    Useful for manually merging in payload data.
-
-    @method mergePayload
-    @param Object data the raw payload data
-    @param {any} [context] the context of the payload. This property will dictate the return value of this method.
-    @param Session [session] the session to merge into. Defaults to the main session.
-    @returns {any} The result of the merge contextualized to the context. E.g. if 'post' is the context, this will return all posts that are part of the payload.
-  */
-  mergePayload(data, context, session) {
-    var payload = this.deserialize('payload', data, {context: context});
-    if(!session) {
-      session = this.container.lookup('session:main');
-    }
-    payload.merge(session);
-    if(context) {
-      return payload.context;
-    }
-    return payload;
-  }
-
-  /**
-    Returns whether or not the passed in relationship
-    is the "owner" of the relationship. This defaults
-    to true for belongsTo and false for hasMany
-  */
-  isRelationshipOwner(relationship) {
-    var owner = relationship.owner;
-    // TODO: use lack of an inverse to determine this value as well
-    return relationship.kind === 'belongsTo' && owner !== false ||
-      relationship.kind === 'hasMany' && owner === true
-  }
   
-  isDirtyFromRelationships(model, cached, relDiff) {
-    for(var i = 0; i < relDiff.length; i++) {
-      var diff = relDiff[i];
-      if(this.isRelationshipOwner(diff.relationship) || model.isEmbedded) {
+  isDirty(model, shadow) {
+    if(model.isDeleted || model.isNew) {
+      return true;
+    }
+    var diff = model.diff(shadow);
+    for(var i = 0; i < diff.length; i++) {
+      var d = diff[i];
+      if(d.type !== 'attr') {
+        // not dirty if the model doesn't own the relationship
+        if(this.isRelationshipOwner(d.relationship)) {
+          return true;
+        }
+      } else {
         return true;
       }
     }
     return false;
   }
 
-  shouldSave(model) {
-    return !model.isEmbedded;
-  }
 
   /**
     Builds a URL from a context. A context can be one of three things:
@@ -669,12 +488,284 @@ export default class RestAdapter extends Adapter {
     return hash;
   }
   
+  serializerFor(key) {
+    return this.context.configFor(key).get('serializer');
+  }
+  
   serializerForContext(context) {
     return 'payload';
   }
 
 }
 
-RestAdapter.reopen({
-  defaultSerializer: 'payload'
-});
+class Middleware {
+  
+  constructor(adapter) {
+    this.adapter = adapter;
+  }
+  
+  //model, shadow, session, opts
+  call(next, env) {
+    return next();
+  }
+  
+}
+
+/**
+  @private
+
+  Serialize/deserialize the payload from a POJO
+*/
+class Serialize extends Middleware {
+  call(next, env) {
+    this.serialize(env);
+    
+    return this.deserializePromise(next, env);
+  }
+  
+  deserializePromise(next, {opts, context}) {
+    var adapter = this.adapter,
+        serializer = opts.deserializer || opts.serializer,
+        serializerOptions = opts.serializerOptions || {};
+    
+    if(!serializer && context) {
+      serializer = adapter.serializerForContext(context);
+    }
+    
+    if(serializer) {
+      serializer = adapter.serializerFor(serializer);
+      defaults(serializerOptions, {context: context});
+    }
+
+    return next().then(function(data){
+      if(opts.deserialize !== false) {
+        return serializer.deserialize(data, serializerOptions);
+      }
+      
+      return data;
+    }, function(xhr) {
+      if(opts.deserialize !== false) {
+        var data;
+        if(xhr.responseText) {
+          data = JSON.parse(xhr.responseText);
+        } else {
+          data = {};
+        }
+        
+        serializerOptions = defaults(serializerOptions, {context: context, xhr: xhr});
+        
+        // TODO: handle other errors codes such as 409
+        // determine serializer behavior off of xhr response code
+        if(xhr.status === 422) {
+          // in the event of a 422 response, handle a full payload, possibly with
+          // models that have `error` properties, therefore we just use the same
+          // serializer that we use in the success case
+          throw serializer.deserialize(data, serializerOptions);
+        } else {
+          // treat other errors generically
+          serializer = adapter.serializerFor(opts.errorSerializer || 'errors');
+          var errors = serializer.deserialize(data, serializerOptions);
+          if(context.isModel) {
+            // if the context is a model we want to return a model with errors
+            // so that it can be merged by the session
+            var model = context.lazyCopy();
+            model.errors = errors;
+            throw model;
+          }
+          throw errors;
+        }
+      }
+      throw xhr;
+    });
+  }
+  
+  serialize(env) {
+    var adapter = this.adapter,
+        opts = env.opts,
+        data = env.data;
+        
+    if(opts.serialize !== false) {
+      var serializer = opts.serializer,
+          serializerOptions = opts.serializerOptions || {};
+          
+      if(!serializer && context) {
+        serializer = this.adapter.serializerForContext(context);
+      }
+      
+      if(serializer && data) {
+        serializer = this.adapter.serializerFor(serializer);
+        serializerOptions = defaults(serializerOptions, {context: context});
+        env.data = serializer.serialize(data, serializerOptions);
+      }
+    }
+  }
+}
+
+/**
+  @private
+
+  Merge the contents of the promise into the session.
+*/
+class Merge extends Middleware {
+  call(next, {opts, session}) {
+    if(opts && opts.deserialize === false) {
+      return next();
+    }
+
+    function merge(deserialized) {
+      if(typeof deserialized.merge === 'function') {
+        return deserialized.merge(session);
+      } else if(deserialized.isModel) {
+        return session.merge(deserialized);
+      }
+      return deserialized;
+    }
+
+    return next().then(function(deserialized) {
+      return merge(deserialized);
+    }, function(deserialized) {
+      throw merge(deserialized);
+    });
+  }  
+}
+
+/**
+  @private
+
+  Transform the promise's resolve value to the context
+  of the particular operation. E.g. a load operation may
+  return a complex payload consisting of many models. In
+  this case we want to just return the model that
+  corresponds to the load.
+*/
+class Contextualize extends Middleware {
+  call(next, {opts}) {
+    if(opts && opts.deserializationContext !== undefined) {
+      context = opts.deserializationContext;
+    }
+
+    function contextualize(merged) {
+      // payloads detect their context during deserialization
+      if(context && merged.isPayload) {
+        var result = merged.context;
+        // the server might not return any data for the context
+        // of the operation (e.g. a delete with an empty response)
+        // in this case we just echo back the client's version
+        if(!result) {
+          result = context;
+        }
+        result.meta = merged.meta;
+        // TODO: we might want to merge errors here
+        if(merged.errors && (!result.errors || result === context)) {
+          result.errors = merged.errors;
+        }
+        return result;
+      }
+
+      return merged;
+    }
+
+    return next().then(function(merged) {
+      return contextualize(merged);
+    }, function(merged) {
+      throw contextualize(merged);
+    });
+  }  
+} 
+
+// class HandleEmptyResponse extends Middleware {
+//   
+//   call(next, {context}) {
+//     return promise.then(function(serverModel) {
+//       if(context.isModel && !serverModel) {
+//         return context;
+//       }
+//       return serverModel;
+//     }, function(serverModel) {
+//       if(context.isModel) {
+//         if(!serverModel.clientRev) {
+//           // ensure the clientRev is set on the returned model
+//           // 0 is the default value
+//           serverModel.clientRev = model.clientRev;
+//         }
+//       }
+//     }
+//   }
+//   
+// }
+
+/**
+  @private
+  
+  Misc handling of scenarios such as empty responses from the server
+*/
+class Sanitize extends Middleware {
+  
+  call(next, {context, shadow}) {
+    if(!context.isModel) {
+      return next();
+    }
+    var model = context;
+    return next().then(function(serverModel) {
+      if(!serverModel) {
+        // if no data returned, assume that the server data
+        // is the same as the model
+        serverModel = model;
+      } else {
+        if(serverModel.meta && Object.keys(serverModel).length == 1 ){
+          model.meta = serverModel.meta;
+          serverModel = model;
+        }
+        if(!serverModel.clientRev) {
+          // ensure the clientRev is set on the returned model
+          // 0 is the default value
+          serverModel.clientRev = model.clientRev;
+        }
+      }
+      return serverModel;
+    }, function(serverModel) {
+      // if the adapter returns errors we replace the
+      // model with the shadow if no other model returned
+      // TODO: could be more intuitive to move this logic
+      // into adapter._contextualizePromise
+      
+      // there won't be a shadow if the model is new
+      if(shadow && serverModel === model) {
+        shadow.errors = serverModel.errors;
+        throw shadow;
+      }
+      throw serverModel;
+    });
+  }
+  
+}
+
+class BuildRequest extends Middleware {
+  
+  call(next, env) {
+    var opts = env.opts,
+        context = env.context,
+        name = env.name;
+
+    if(opts.url) {
+      env.url = opts.url;
+    } else {
+      env.url = this.adapter.buildUrlFromContext(context, name);
+    }
+    
+    if(opts.params) {
+      env.data = env.data || {};
+      env.data = defaults(env.data, opts.params);
+    }
+
+    env.method = opts.type || "POST";
+    return next();
+  }
+  
+}
+
+class PerformRequest extends Middleware {
+  call(next, env) {
+    return this.adapter.ajax(env.url, env.method, {data: env.data});
+  }
+}
