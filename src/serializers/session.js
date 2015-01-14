@@ -37,36 +37,14 @@ export default class SessionSerializer extends Serializer {
 
     session.newModels = modelSetSerializer.deserialize(serializedSessionData.newModels);
     session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);
-    session.queryCache = this.deserializeQueryCache(session, serializedSessionData.queryCache);
+    
     // We also need to track where to start assigning clientIds since the models
     // we deserialize will already have clientIds assigned.
     session.idManager.uuid = serializedSessionData.uuidStart;
     return session;
   }
   
-  deserializeQueryCache(session, serialized) {
-
-    var queries = {};
-    for(var key in serialized) {
-      if(!serialized.hasOwnProperty(key)) continue;
-
-      var arrayOfModels = serialized[key].map(function(clientId) {
-        return session.models.getForClientId(clientId);
-      });
-
-      var typeKey = key.split('$')[0];
-      var stringedParams = key.split('$')[1];
-      var params = JSON.parse(stringedParams);
-
-      var newQuery = new Query(session, typeKey, params);
-
-      newQuery.setObjects(arrayOfModels);
-
-      queries[key] = newQuery;
-    }
-    return new QueryCache(queries);
-  }
-    
+  
   serialize(session) {
     var modelSetSerializer = this.serializerFor('model-set');
     
@@ -76,29 +54,13 @@ export default class SessionSerializer extends Serializer {
       shadows: {}
     };
     
-    serialized.models = modelSetSerializer.serialize(session.models);
+    // Only need to seralize dirty models.  
+    // WE WILL RELY ON SERVER RESPONSE CACHING TO HANDLE NON-DIRTY MODELS
+    serialized.models = modelSetSerializer.serialize(session.dirtyModels);
     serialized.newModels = modelSetSerializer.serialize(session.newModels);
     serialized.shadows = modelSetSerializer.serialize(session.shadows);
-    serialized.queryCache = this.serializeQueryCache(session.queryCache);
     serialized.uuidStart = session.idManager.uuid;
     
     return serialized;
-  }
-  
-  /**
-    Creates a hash of arrays. Each key is the typeKey$params of the query in the array. 
-    with the values of the array the clientId of each model in cache
-    e.g. {post$undefined: ['post1','post5']}
-  */
-  serializeQueryCache(cache) {
-    var res = {},
-        queries = cache._queries;
-    
-    for(var key in queries) {
-      if(!queries.hasOwnProperty(key)) continue;
-      
-      res[key] = queries[key].map(function(m) { return m.clientId; });
-    }
-    return res;
   }
 }

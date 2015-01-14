@@ -82,18 +82,13 @@ describe 'SessionSerializer', ->
         [
           seralizedUser2
         ]
-
-      queries = 
-        'post${}':['post1', 'post2']
-        'user${}':['user3']
       
 
       serializedSessionHash =
         models: data
         newModels: newData
         shadows: [],
-        uuidStart: 5,
-        queryCache: queries
+        uuidStart: 5
 
       deserializedSession = sessionSerializer.deserialize(session, serializedSessionHash)
       
@@ -103,12 +98,6 @@ describe 'SessionSerializer', ->
       expect(deserializedSession.shadows).to.not.be.undefined
       expect(deserializedSession.queryCache).to.not.be.undefined
       expect(deserializedSession.idManager.uuid).to.eq(5)
-
-      expect(deserializedSession.queryCache._queries['post${}']).to.be.an.instanceOf(Query)
-      expect(deserializedSession.queryCache._queries['post${}'].length).to.eq(2)
-      expect(deserializedSession.queryCache._queries['user${}'].length).to.eq(1)
-      expect(deserializedSession.queryCache._queries['post${}'][0].title).to.eq('heyna')
-      expect(deserializedSession.queryCache._queries['user${}'][0].name).to.eq('jerry')
 
       # check that a user was deserialized correctly
       deserializeUser = userSerializer.deserialize(seralizedUser2)
@@ -133,6 +122,10 @@ describe 'SessionSerializer', ->
       session.merge post2
       session.merge user1
 
+      # make post1 dirty so it will be seralized
+      post1.title = "yo1"
+      post1.title = "yo"
+
       # this response will be returned for both queries
       adapter.r['GET:/posts'] =
         posts: [postSerializer.serialize(post1),postSerializer.serialize(post2)]
@@ -148,17 +141,14 @@ describe 'SessionSerializer', ->
         expect(serializedSession.models).to.not.be.undefined
         expect(serializedSession.newModels).to.not.be.undefined
         expect(serializedSession.shadows).to.not.be.undefined
-        expect(serializedSession.queryCache).to.not.be.undefined
 
-        expect(serializedSession.queryCache['post${}'].length).to.eq(2)
-        expect(serializedSession.queryCache['post${"title":"yo"}'].length).to.eq(2)
         expect(serializedSession.uuidStart).to.eq(4)
 
         # check that a post was serialized correctly
         serializePost = storageModelSerializer.serialize(post1)
 
         serializedSessionPost = serializedSession.models[0]
-
+        
         expect(serializePost).to.eql(serializedSessionPost)
 
     describe "relationships", ->
@@ -169,6 +159,10 @@ describe 'SessionSerializer', ->
         session.load('user', 1).then (user) ->        
           expect(user.posts.length).to.eq(2)
 
+          # make user  dirty so they will be seralized
+          user.name = "johnny2"
+          user.name = "johnny"
+
           serializedSession = sessionSerializer.serialize(session)
 
           newSession = sessionSerializer.deserialize(adapter.newSession(), serializedSession)
@@ -178,13 +172,12 @@ describe 'SessionSerializer', ->
 
           # check has many
           expect(user.posts.length).to.eq(2)
+          
+          expect(user.posts[1].id).to.eq(post.id)
 
-          # TODO: order may be different in future here, maybe a better way to grab
-          # the object we want.  Or just have 1 assocaiation?
-          expect(user.posts[1]).to.eq(post)
-
-          # check belongs to
-          expect(post.user).to.eq(user)
+          # # check belongs to
+          # NO LONGER WORKS CAUSE WE ONLY SERIALIZE DIRTY MODELS
+          # expect(post.user).to.eq(user)
 
       it 'should serialize/deserialize relationships for new models ', ->
         user = session.create "user", name: "John"

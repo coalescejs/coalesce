@@ -35,6 +35,11 @@ describe "Session", ->
       post3 = session.merge @Post.create id: '3', title: 'save me plz too'
       post4 = session.create 'post', title: 'Im new'
 
+      # make dirty so they are seralized
+      post.title = 'save me plz2'
+      post2.title = 'save me plz to2'
+      post3.title = 'save me plz too2'
+
       Session.saveToStorage(session).then (_session) =>   
         #debugger
         # Reset everything 
@@ -49,31 +54,7 @@ describe "Session", ->
         Session.loadFromStorage(session).then (value) =>
           expect(session.getForId('post', 1)).to.not.be.undefined
           expect(session.getForId('post', 2)).to.not.be.undefined
-          expect(session.getForId('post', 3)).to.not.be.undefined
-            
-    it 'preserves cached queries', ->
-      adapter.query = =>
-        Coalesce.Promise.resolve [@Post.create(id: 1, title: 'offline')]
-        
-      session.query(@Post).then (posts) =>
-        expect(posts.length).to.eq(1)
-        
-        Session.saveToStorage(session).then (value) =>
-          # Reset everything 
-          reset.apply(@)
-          
-          # XXX: wtf, tests seem to sporadically fail without this sleep, despite
-          # both setItem and getItem returning promises. Maybe localforage promise
-          # implementation bug?
-          timeout = new Coalesce.Promise (resolve, reject) ->
-            Coalesce.run.later resolve
-            
-          timeout.then =>
-            Session.loadFromStorage(session).then (value) =>
-              posts = session.fetchQuery(@Post)
-              expect(posts.length).to.eq(1)
-        
-        
+          expect(session.getForId('post', 3)).to.not.be.undefined   
         
   describe '.loading Storage', ->  
     it 'should skip loading from storage when storage is empty', ->
