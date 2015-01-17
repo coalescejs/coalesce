@@ -111,9 +111,7 @@ export default class RestAdapter extends Adapter {
     this._pendingOps = {};
     this.middleware = [
       new BuildRequest(this),
-      new Sanitize(this),
-      new Contextualize(this),
-      new Merge(this),
+      new Sideload(this),
       new Serialize(this),
       new PerformRequest(this)
     ]
@@ -134,7 +132,7 @@ export default class RestAdapter extends Adapter {
     if(model.isNew) {
       return  this.create(model, opts, session);
     } else if(model.isDeleted) {
-      return this.deleteModel(model, shadow, opts, session);
+      return this.delete(model, shadow, opts, session);
     } else {
       return this.update(model, shadow, opts, session);
     }
@@ -152,7 +150,7 @@ export default class RestAdapter extends Adapter {
     return this.execute(model, null, model, null, opts, session);
   }
 
-  deleteModel(model, shadow, opts, session) {
+  delete(model, shadow, opts, session) {
     opts = opts || {};
     defaults(opts, {
       type: 'DELETE'
@@ -160,14 +158,14 @@ export default class RestAdapter extends Adapter {
     return this.execute(model, null, null, null, opts, session);
   }
   
-  query(typeKey, query, opts, session) {
+  query(query, opts, session) {
     opts = opts || {};
     defaults(opts, {
       type: 'GET',
       serialize: false,
       deserializer: 'payload',
     });
-    return this.execute(typeKey, null, query, null, opts, session);
+    return this.execute(query.typeKey, null, query.params, null, opts, session);
   }
 
   /**
@@ -568,7 +566,7 @@ class Serialize extends Middleware {
           if(context.isModel) {
             // if the context is a model we want to return a model with errors
             // so that it can be merged by the session
-            var model = context.lazyCopy();
+            var model = context.unloadedCopy();
             model.errors = errors;
             throw model;
           }
@@ -604,140 +602,32 @@ class Serialize extends Middleware {
 /**
   @private
 
-  Merge the contents of the promise into the session.
+  Sideload the contents of the promise into the session.
 */
-class Merge extends Middleware {
+class Sideload extends Middleware {
   call(next, {opts, session}) {
     if(opts && opts.deserialize === false) {
       return next();
     }
 
-    function merge(deserialized) {
-      if(typeof deserialized.merge === 'function') {
-        return deserialized.merge(session);
-      } else if(deserialized.isModel) {
-        return session.merge(deserialized);
+    function mergePayload(deserialized) {
+      if(deserialized.isPayload) {
+        // TODO: could optimize this and not merge the context
+        // since the session does that anyways
+        payload.forEach(function(model) {
+          session.merge(model);
+        });
+        return deserialized.context;
       }
       return deserialized;
     }
 
     return next().then(function(deserialized) {
-      return merge(deserialized);
+      return mergePayload(deserialized);
     }, function(deserialized) {
-      throw merge(deserialized);
+      throw mergePayload(deserialized);
     });
   }  
-}
-
-/**
-  @private
-
-  Transform the promise's resolve value to the context
-  of the particular operation. E.g. a load operation may
-  return a complex payload consisting of many models. In
-  this case we want to just return the model that
-  corresponds to the load.
-*/
-class Contextualize extends Middleware {
-  call(next, {opts}) {
-    if(opts && opts.deserializationContext !== undefined) {
-      context = opts.deserializationContext;
-    }
-
-    function contextualize(merged) {
-      // payloads detect their context during deserialization
-      if(context && merged.isPayload) {
-        var result = merged.context;
-        // the server might not return any data for the context
-        // of the operation (e.g. a delete with an empty response)
-        // in this case we just echo back the client's version
-        if(!result) {
-          result = context;
-        }
-        result.meta = merged.meta;
-        // TODO: we might want to merge errors here
-        if(merged.errors && (!result.errors || result === context)) {
-          result.errors = merged.errors;
-        }
-        return result;
-      }
-
-      return merged;
-    }
-
-    return next().then(function(merged) {
-      return contextualize(merged);
-    }, function(merged) {
-      throw contextualize(merged);
-    });
-  }  
-} 
-
-// class HandleEmptyResponse extends Middleware {
-//   
-//   call(next, {context}) {
-//     return promise.then(function(serverModel) {
-//       if(context.isModel && !serverModel) {
-//         return context;
-//       }
-//       return serverModel;
-//     }, function(serverModel) {
-//       if(context.isModel) {
-//         if(!serverModel.clientRev) {
-//           // ensure the clientRev is set on the returned model
-//           // 0 is the default value
-//           serverModel.clientRev = model.clientRev;
-//         }
-//       }
-//     }
-//   }
-//   
-// }
-
-/**
-  @private
-  
-  Misc handling of scenarios such as empty responses from the server
-*/
-class Sanitize extends Middleware {
-  
-  call(next, {context, shadow}) {
-    if(!context.isModel) {
-      return next();
-    }
-    var model = context;
-    return next().then(function(serverModel) {
-      if(!serverModel) {
-        // if no data returned, assume that the server data
-        // is the same as the model
-        serverModel = model;
-      } else {
-        if(serverModel.meta && Object.keys(serverModel).length == 1 ){
-          model.meta = serverModel.meta;
-          serverModel = model;
-        }
-        if(!serverModel.clientRev) {
-          // ensure the clientRev is set on the returned model
-          // 0 is the default value
-          serverModel.clientRev = model.clientRev;
-        }
-      }
-      return serverModel;
-    }, function(serverModel) {
-      // if the adapter returns errors we replace the
-      // model with the shadow if no other model returned
-      // TODO: could be more intuitive to move this logic
-      // into adapter._contextualizePromise
-      
-      // there won't be a shadow if the model is new
-      if(shadow && serverModel === model) {
-        shadow.errors = serverModel.errors;
-        throw shadow;
-      }
-      throw serverModel;
-    });
-  }
-  
 }
 
 class BuildRequest extends Middleware {

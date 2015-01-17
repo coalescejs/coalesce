@@ -2,8 +2,18 @@ import ObservableArray from './observable_array';
 import ModelSet from './model_set';
 import isEqual from '../utils/is_equal';
 import Coalesce from '../namespace';
+import fork from '../utils/fork';
 
 export default class ModelArray extends ObservableArray {
+  
+  replace(idx, amt, objects) {
+    if(this.session) {
+      objects = objects.map(function(model) {
+        return this.session.fetch(model);
+      }, this);
+    }
+    super(idx, amt, objects);
+  }
   
   arrayContentWillChange(index, removed, added) {
     for (var i=index; i<index+removed; i++) {
@@ -47,36 +57,13 @@ export default class ModelArray extends ObservableArray {
     }
     return false;
   }
-
-  /**
-    Ensure that dest has the same content as this array.
-
-    @method copyTo
-    @param dest the other model collection to copy to
-    @return dest
-  */
-  copyTo(dest) {
-    var existing = new ModelSet(dest);
-
-    this.forEach(function(model) {
-      if(existing.has(model)) {
-        existing.delete(model);
-      } else {
-        dest.pushObject(model);
-      }
-    });
-
-    for(var model of existing) {
-      dest.removeObject(model);
-    }
-  }
   
   copy() {
     return super(true);
   }
   
-  lazyCopy() {
-    var arr = this.map(function(item) { return lazyCopy(item, true); });
+  fork(graph) {
+    var arr = this.map(function(item) { return fork(item, graph); });
     var res = new this.constructor();
     res.addObjects(arr);
     return res;

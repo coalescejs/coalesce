@@ -10,7 +10,7 @@ export default class Adapter extends BaseClass {
     throw new Error(`${this} does not support load()`);
   }
   
-  query(typeKey, params, opts, session) {
+  query(query, opts, session) {
     throw new Error(`${this} does not support query()`);
   }
 

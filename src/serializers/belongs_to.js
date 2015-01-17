@@ -10,18 +10,17 @@ export default class BelongsToSerializer extends Serializer {
     if(!serialized) {
       return null;
     }
-    if(!opts.embedded) {
+    if(!opts.field.embedded) {
       var idSerializer = this.serializerFor('id');
       serialized = {
         id: idSerializer.deserialize(serialized)
       };
-      opts.reifyClientId = false;
     }
     return this.deserializeModel(serialized, opts);
   }
 
   deserializeModel(serialized, opts) {
-    var serializer = this.serializerFor(opts.typeKey);
+    var serializer = this.serializerFor(opts.field.typeKey);
     return serializer.deserialize(serialized, opts);
   }
 
@@ -29,7 +28,7 @@ export default class BelongsToSerializer extends Serializer {
     if(!model) {
       return null;
     }
-    if(opts.embedded) {
+    if(opts.field.embedded) {
       return this.serializeModel(model, opts);
     }
     var idSerializer = this.serializerFor('id');
@@ -37,7 +36,7 @@ export default class BelongsToSerializer extends Serializer {
   }
 
   serializeModel(model, opts) {
-    var serializer = this.serializerFor(opts.typeKey);
+    var serializer = this.serializerFor(opts.field.typeKey);
     return serializer.serialize(model);
   }
 

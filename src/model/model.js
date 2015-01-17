@@ -2,7 +2,7 @@ import Coalesce from '../namespace';
 import BaseClass from '../utils/base_class';
 import ModelSet from '../collections/model_set';
 import copy from '../utils/copy';
-import lazyCopy from '../utils/lazy_copy';
+import fork from '../utils/fork';
 import isEqual from '../utils/is_equal';
 import Attribute from './attribute';
 import BelongsTo from './belongs_to';
@@ -59,8 +59,15 @@ export default class Model extends BaseClass {
     return true;
   }
   
+  get graph() {
+    return this._graph;
+  }
+  
   get session() {
-    return this._session;
+    if(this._graph && this._graph instanceof Session) {
+      return this._graph;
+    }
+    return null;
   }
   
   set session(value) {
@@ -80,7 +87,7 @@ export default class Model extends BaseClass {
     this._attributes = {};
     this._relationships = {};
     this._suspendedRelationships = false;
-    this._session = null;
+    this._graph = null;
 
     for(var name in fields) {
       if(!fields.hasOwnProperty(name)) continue;
@@ -153,7 +160,15 @@ export default class Model extends BaseClass {
   }
   
   get isEmbedded() {
-    return !!this._parent;
+    return !!this._embeddedParent;
+  }
+  
+  get _embeddedParent() {
+    return this.__embeddedParent && this.graph.fetchByClientId(this.__embeddedParent);
+  }
+  
+  set _embeddedParent(value) {
+    this.__embeddedParent = value ? value.clientId : undefined;
   }
 
   get isDirty() {
@@ -165,46 +180,18 @@ export default class Model extends BaseClass {
   }
   
   /**
-    Returns a copy with all properties unloaded except identifiers.
-
-    @method lazyCopy
-    @returns {Model}
+    @private
+    
+    The equivalent model in a parent session
   */
-  lazyCopy() {
-    return new this.constructor({
-      id: this.id,
-      clientId: this.clientId
-    });
-  }
-
-  copy(graph=null) {
-    var dest = new this.constructor();
-    this.copyTo(dest);
-    return dest;
-  }
-
-  copyTo(dest) {
-    this.copyMeta(dest);
-    this.copyAttributes(dest);
-    this.copyRelationships(dest);
-  }
-  
-  copyMeta(dest) {
-    // TODO _parent should just use clientId
-    dest._parent = this._parent;
-    dest._meta = copy(this._meta);
-  }
-  
-  copyAttributes(dest) {
-    this.loadedAttributes.forEach(function(options, name) {
-      dest._attributes[name] = copy(this._attributes[name], true);
-    }, this);
-  }
-  
-  copyRelationships(dest, graph=nil) {
-    this.eachLoadedRelationship(function(name, relationship) {
-      dest[name] = this[name];
-    }, this);
+  get __parent() {
+    var session = this.session,
+        parentSession = session && session.parent,
+        parent = parentSession.get(this);
+    
+    if(parent) {
+      return parent;
+    }
   }
 
   // XXX: move to ember
@@ -606,13 +593,55 @@ export default class Model extends BaseClass {
 
     return possibleRelationships[0];
   }
+  
+  /**
+    Returns a copy with all properties unloaded except identifiers.
+
+    @method unloadedCopy
+    @returns {Model}
+  */
+  unloadedCopy() {
+    return new this.constructor({
+      id: this.id,
+      clientId: this.clientId
+    });
+  }
+
+  fork(graph=null) {
+    var fork = graph.fetch(this);
+    this.forkTo(fork, graph);
+    return fork;
+  }
+
+  _forkTo(fork, graph) {
+    this.forkMeta(fork, graph);
+    this.forkAttributes(fork, graph);
+    this.forkRelationships(fork, graph);
+  }
+  
+  _forkMeta(fork, graph) {
+    fork.__embeddedParent = this.__embeddedParent;
+    fork._meta = fork(this._meta, graph);
+  }
+  
+  _forkAttributes(fork, graph) {
+    this.loadedAttributes.forEach(function(options, name) {
+      fork._attributes[name] = fork(this._attributes[name], graph);
+    }, this);
+  }
+  
+  _forkRelationships(fork, graph=nil) {
+    this.eachLoadedRelationship(function(name, relationship) {
+      fork[name] = fork(this[name]);
+    }, this);
+  }
 }
 
 /**
   The embedded parent of this model.
   @private
 */
-Model.prototype._parent = null;
+Model.prototype._embeddedParent = null;
 
 function sessionAlias(name) {
   return function () {

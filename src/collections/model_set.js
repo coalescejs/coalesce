@@ -1,4 +1,5 @@
 function guidFor(model) {
+  console.assert(model.clientId, "Model must have a clientId set");
   return model.clientId;
 }
 
@@ -6,6 +7,7 @@ import array_from from '../utils/array_from';
 // XXX: this is just needed since payload extends this class, should eventually
 // change that
 import BaseClass from '../utils/base_class';
+import fork from '../utils/fork';
 
 /**
   An unordered collection of unique models.
@@ -123,6 +125,15 @@ export default class ModelSet extends BaseClass {
     return ret;
   }
   
+  fork(graph=null) {
+    var C = this.constructor, ret = new C(), loc = this._size;
+    ret._size = loc;
+    while(--loc>=0) {
+      ret[loc] = fork(this[loc]);
+      ret[guidFor(this[loc])] = loc;
+    }
+    return ret;
+  }
   
   forEach(callbackFn, thisArg = undefined) {
     for (var i=0; i < this._size; i++) {
@@ -144,7 +155,7 @@ export default class ModelSet extends BaseClass {
     return this[idx];
   }
 
-  getForClientId(clientId) {
+  getByClientId(clientId) {
     var idx = this[clientId];
     if(idx === undefined) return;
     return this[idx];
@@ -155,25 +166,6 @@ export default class ModelSet extends BaseClass {
       yield this[i];
     }
   }
-
-  /**
-    Adds the model to the set or overwrites the existing
-    model.
-  */
-  addData(model) {
-    var existing = this.getModel(model);
-    var dest;
-    if(existing) {
-      dest = existing.copy();
-      model.copyTo(dest);
-    } else {
-      // copy since the dest could be the model in the session
-      dest = model.copy();
-    }
-    this.add(dest);
-    return dest;
-  }
-  
 
   //
   // Backwards compat. methods

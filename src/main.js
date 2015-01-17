@@ -13,7 +13,7 @@ import ModelSet from './collections/model_set';
 import HasManyArray from './collections/has_many_array';
 
 import MergeStrategy from './merge/base';
-import PerField from './merge/per_field';
+import ModelMerge from './merge/model';
 
 import Model from './model/model';
 import './model/diff';
@@ -58,7 +58,7 @@ Coalesce.ModelSet = ModelSet;
 Coalesce.HasManyArray = HasManyArray;
 
 Coalesce.MergeStrategy = MergeStrategy;
-Coalesce.PerField = PerField;
+Coalesce.ModelMerge = ModelMerge;
 
 Coalesce.Model = Model;
 Coalesce.Errors = Errors;

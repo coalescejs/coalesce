@@ -23,28 +23,6 @@ describe 'ModelArray', ->
       expect(array.length).to.eq(0)
 
 
-  describe '.copyTo', ->
-
-    dest = null
-
-    beforeEach ->
-      dest = new ModelArray()
-
-    it 'should copy objects', ->
-      array.addObjects [@Post.create(clientId: '1'), @Post.create(clientId: '2')]
-      array.copyTo(dest)
-
-      expect(dest.length).to.eq(2)
-
-    it 'should remove objects not present in source array', ->
-      array.addObject @Post.create(clientId: '1')
-      dest.addObject @Post.create(clientId: '2')
-      array.copyTo(dest)
-
-      expect(dest.length).to.eq(1)
-      expect(dest.objectAt(0).clientId).to.eq('1')
-
-
   describe '.load', ->
 
     beforeEach ->

@@ -10,29 +10,44 @@ export default class BelongsTo extends Relationship {
       enumerable: true,
       configurable: true,
       get: function() {
-        var value = this._relationships[name],
-            session = this.session;
-        if(session && value && value.session !== session) {
-          value = this._relationships[name] = this.session.add(value);
+        var graph = this.graph;
+        if(!graph) {
+          return this._relationships[name];
         }
-        return value;
+        
+        // TODO: explore prototypical inheritance here
+        if(!this.isFieldLoaded(name) && this.__parent) {
+          value = this._relationships[name] = this.__parent._relationships[name];
+        }
+        
+        return value && graph.fetchByClientId(value);
       },
       set: function(value) {
-        var oldValue = this._relationships[name];
-        if(oldValue === value) return;
+        var oldValue = this[name];
+        if(oldValue === value.clientId) return;
+        
         this.belongsToWillChange(name);
-        var session = this.session;
+        
+        var session = this.session,
+            graph = this.graph;
+            
+        if(value && embedded) {
+          value._embeddedParent = this;
+        }
+        
         if(session) {
           session.modelWillBecomeDirty(this);
-          if(value) {
-            value = session.add(value);
-          }
         }
-        if(value && embedded) {
-          value._parent = this;
+
+        if(graph) {
+          // internally, only the clientId is tracked
+          this._relationships[name] = value.clientId;
+        } else {
+          this._relationships[name] = value;
         }
-        this._relationships[name] = value;
+        
         this.belongsToDidChange(name);
+        
         return value;
       }
     });

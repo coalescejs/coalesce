@@ -1,6 +1,6 @@
-import ObservableArray from '../collections/observable_array';  
+import ModelArray from '../collections/model_array';  
 
-export default class Query extends ObservableArray {
+export default class Query extends ModelArray {
   
   constructor(session, type, params) {
     this.session = session;

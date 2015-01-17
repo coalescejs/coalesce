@@ -5,15 +5,6 @@ export default class HasManyArray extends ModelArray {
   get session() {
     return this.owner && this.owner.session;
   }
-  
-  replace(idx, amt, objects) {
-    if(this.session) {
-      objects = objects.map(function(model) {
-        return this.session.add(model);
-      }, this);
-    }
-    super(idx, amt, objects);
-  }
 
   arrayContentWillChange(index, removed, added) {
     var model = this.owner,
@@ -47,7 +38,7 @@ export default class HasManyArray extends ModelArray {
       }
       
       if(this.embedded) {
-        inverseModel._parent = model;
+        inverseModel._embeddedParent = model;
       }
     }
   }

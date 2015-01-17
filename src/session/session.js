@@ -1,5 +1,5 @@
-import ModelArray from '../collections/model_array';
 import ModelSet from '../collections/model_set';
+import Graph from '../collections/graph';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
@@ -12,13 +12,14 @@ import evented from '../utils/evented';
 
 var uuid = 1;
 
-export default class Session {
+var defaults = _.defaults;
+
+export default class Session extends Graph {
 
   constructor({context, idManager, parent}) {
     this.context = context;
     this.idManager = idManager;
     this.parent = parent;
-    this.models = new ModelSet();
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
     this.shadows = new ModelSet();
@@ -58,67 +59,25 @@ export default class Session {
   adopt(model) {
     this.reifyClientId(model);
     console.assert(model.rev, "Model must have a rev property set");
-    console.assert(!model.session || model.session === this, "Models instances cannot be moved between sessions. Use `add` or `update` instead.");
-    console.assert(!this.models.getModel(model) || this.models.getModel(model) === model, "An equivalent model already exists in the session!");
+    console.assert(!model.session || model.session === this, "Models instances cannot be moved between sessions. Use `add` or `update` instead.");;
 
-    if(model.isNew) {
-      this.newModels.add(model);
-    }
     // Only loaded models are stored on the session
     if(!model.session) {
-      this.models.add(model);
       // Need to register with the inverse manager before being added to the
       // session. Otherwise, in a child session, the entire graph will be
       // materialized.
       this.inverseManager.register(model);
-      model.session = this;
+      
+      if(model.isNew) {
+        this.newModels.add(model);
+      }
     }
-    return model;
+    return super(model);
   }
 
-  /**
-    Adds a model to this session. Some cases below:
-
-    If the model is detached (meaning not currently associated with a session),
-    then the model will be re-used in this session. The entire graph of detached
-    objects will be traversed and added to the session.
-
-    If the model is already associated with this session in *loaded form* (not necessarily
-    the same instance that is passed in), this method is a NO-OP.
-
-    If the model is already associated with a *different* session then the model
-    will be copied to this session. In order to prevent large graphs from being
-    copied, all relations will be copied in lazily.
-
-    TODO: when adding *non-new* models we should think through the semantics.
-    For now we assume this only works with new models or models from a parent session.
-
-    @method add
-    @param {Model} model The model to add to the session
-  */
   add(model) {
     this.reifyClientId(model);
-
-    var dest = this.getModel(model);
-    if(dest) return dest;
-    
-    if(model.session === this) return model;
-
-    // If new and detached we can re-use. If the model is
-    // detached but *not* new we have undefined semantics
-    // so for the time being we just create a lazy copy.
-    if(model.isNew && model.isDetached) {
-      dest = model;
-    } else if(model.isNew) {
-      dest = model.copy();
-      // TODO: we need to recurse here for new children, otherwise
-      // they will become lazy
-    } else {
-      // TODO: model copy creates lazy copies for the
-      // relationships. How do we update the inverse here?
-      dest = model.lazyCopy();
-    }
-    return this.adopt(dest);
+    super(model);
   }
 
   /**
@@ -131,42 +90,18 @@ export default class Session {
     @param {Coalesce.Model} model The model to remove from the session
   */
   remove(model) {
-    // TODO: think through relationships that still reference the model
-    this.models.remove(model);
+    this.reifyClientId(model);
     this.shadows.remove(model);
     this.newModels.remove(model);
+    return super(model);
   }
 
-  /**
-    Updates a model in this session using the passed in model as a reference.
-
-    If the passed in model is not already associated with this session, this
-    is equivalent to adding the model to the session.
-
-    If the model already is associated with this session, then the existing
-    model will be updated.
-
-    @method update
-    @param {Model} model A model containing updated properties
-  */
   update(model) {
     this.reifyClientId(model);
+    // TODO: this is kinda ugly
+    var wasDeleted = this.fetch(model).isDeleted;
     
-    var dest = this.getModel(model);
-    
-    if(!dest) {
-      if(model.isDetached) {
-        dest = model;
-      } else {
-        dest = model.copy(this);
-      }
-      this.adopt(dest);
-      return dest;
-    }
-    
-    var wasDeleted = dest.isDeleted;
-    
-    model.copyTo(dest, this);
+    var res = super(model);
 
     // handle deletion
     if(model.isDeleted) {
@@ -193,19 +128,24 @@ export default class Session {
     this.inverseManager.unregister(model);
   }
 
+  fetch(model) {
+    this.reifyClientId(model);
+    super(model);
+  }
+
   /**
     Returns the model corresponding to the given typeKey and id
     or instantiates a new model if one does not exist.
 
     @returns {Model}
   */
-  fetch(type, id) {
+  fetchById(type, id) {
     type = this._typeFor(type);
     var typeKey = type.typeKey;
     // Always coerce to string
     id = id+'';
 
-    var model = this.getForId(typeKey, id);
+    var model = this.getById(typeKey, id);
     if(!model) {
       model = this.build(typeKey, {id: id});
       this.adopt(model);
@@ -214,22 +154,13 @@ export default class Session {
     return model;
   }
   
-  fetchModel(model) {
-    var model = this.getModel(model);
-    if(!model) {
-      model = this.build(typeKey, {id: id});
-      this.adopt(model);
-    }
-    return model;
-  }
-
   /**
     Loads the model corresponding to the given typeKey and id.
 
     @returns {Promise}
   */
   load(type, id, opts) {
-    var model = this.fetch(type, id);
+    var model = this.fetchById(type, id);
     return this.loadModel(model, opts);
   }
 
@@ -239,21 +170,36 @@ export default class Session {
     @returns {Promise}
   */
   loadModel(model, opts) {
-    console.assert(model.id, "Cannot load a model with an id");
-    // TODO: this should be done on a per-attribute bases
-    var cache = this._modelCacheFor(model),
-        promise = cache.getPromise(model),
-        adapter = this._adapterFor(model);
-
-    if(promise) {
-      // the cache's promise is not guaranteed to return anything
-      promise = promise.then(function() {
-        return model;
-      });
+    var promise;
+    if(this.parent) {
+      promise = this.parent.load(model, opts);
     } else {
-      promise = adapter.load(model, opts, this);
-      cache.add(model, promise);
+      console.assert(model.id, "Cannot load a model without an id");
+      // TODO: this should be done on a per-attribute bases
+      var cache = this._modelCacheFor(model),
+          adapter = this._adapterFor(model);
+        
+      if(!opts || opts.skipCache !== false) {  
+        promise = cache.getPromise(model)
+      }
+
+      if(promise) {
+        // the cache's promise is not guaranteed to return anything
+        promise = promise.then(function() {
+          return model;
+        });
+      } else {
+        promise = adapter.load(model, opts, this);
+        cache.add(model, promise);
+      }
     }
+    
+    promise = promise.then((serverModel) => {
+      this.merge(serverModel);
+    }, (error) => {
+      // TODO: think through 404 errors, delete the model?
+      this.revert(model);
+    });
 
     return promise;
   }
@@ -266,9 +212,8 @@ export default class Session {
     @return {Promise}
   */
   refresh(model, opts) {
-    var session = this,
-        adapter = this._adapterFor(model);
-    return adapter.load(model, opts, this);
+    defaults(opts, {skipCache: true});
+    return this.load(model, opts);
   }
 
   /**
@@ -346,10 +291,8 @@ export default class Session {
     @return {Promise}
   */
   refreshQuery(query, opts) {
-    // TODO: for now we populate the query in the session, eventually this
-    // should be done in the adapter layer a la models
     var adapter = this._adapterFor(query.type),
-      promise = adapter.query(query.type.typeKey, query.params, opts, this).then(function(models) {
+      promise = adapter.query(query, opts, this).then(function(models) {
       query.meta = models.meta;
       query.replace(0, query.length, models);
       return query;
@@ -360,32 +303,28 @@ export default class Session {
     return promise;
   }
 
-  getModel(model) {
-    var res = this.models.getModel(model);
+  get(model) {
+    var res = super(model);
     if(!res && this.parent) {
-      res = this.parent.getModel(model);
+      res = this.parent.get(model);
       if(res) {
-        res = this.adopt(res.copy());
-        // TODO: is there a better place for this?
-        this.updateCache(res);
+        res = this.fetch(res);
       }
     }
     return res;
   }
 
-  getForId(typeKey, id) {
+  getById(typeKey, id) {
     var clientId = this.idManager.getClientId(typeKey, id);
     return this.getForClientId(clientId);
   }
 
-  getForClientId(clientId) {
-    var res = this.models.getForClientId(clientId);
+  getByClientId(clientId) {
+    var res = super(clientId);
     if(!res && this.parent) {
-      res = this.parent.getForClientId(clientId);
+      res = this.parent.getByClientId(clientId);
       if(res) {
-        res = this.adopt(res.copy());
-        // TODO: is there a better place for this?
-        this.updateCache(res);
+        res = this.fetch(res);
       }
     }
     return res;
@@ -405,7 +344,7 @@ export default class Session {
     
     var shadow;
     if(context && context.isModel) {
-      shadow = this.shadows.getModel(context);
+      shadow = this.shadows.get(context);
     }
 
     return adapter.remoteCall(context, name, params, shadow, opts, this);
@@ -416,15 +355,15 @@ export default class Session {
       return;
     }
     // Embedded models dirty their parents as well
-    if(model._parent) {
-      this.modelWillBecomeDirty(model._parent);
+    if(model._embeddedParent) {
+      this.modelWillBecomeDirty(model._embeddedParent);
     }
     this.touch(model);
   }
 
   get dirtyModels() {
     var models = new ModelSet(array_from(this.shadows).map(function(model) {
-      return this.models.getModel(model);
+      return this.models.get(model);
     }, this));
 
     this.newModels.forEach(function(model) {
@@ -463,7 +402,7 @@ export default class Session {
     // shadows are only created when the model is dirtied,
     // if no model exists in the `shadows` property then
     // it is safe to assume the model has not been modified
-    return shadows.getModel(model) || models.getModel(model);
+    return shadows.get(model) || models.get(model);
   }
 
   /**
@@ -534,7 +473,7 @@ export default class Session {
   */
   touch(model) {
     if(!model.isNew) {
-      var shadow = this.shadows.getModel(model);
+      var shadow = this.shadows.get(model);
       if(!shadow) {
         this.shadows.addObject(model.copy())
       }
@@ -586,7 +525,7 @@ export default class Session {
       // the childs normal rev.
 
       // "rebase" against parent version
-      // var parentModel = parent.getModel(model);
+      // var parentModel = parent.get(model);
       // if(parentModel) {
       //   this.merge(parentModel);
       // }
@@ -674,8 +613,8 @@ export default class Session {
     }
     this.reifyClientId(serverModel);
     
-    var model = this.getModel(serverModel),
-        shadow = this.shadows.getModel(serverModel);
+    var model = this.get(serverModel),
+        shadow = this.shadows.get(serverModel);
         
     // Some backends will not return versioning information. In this
     // case we just fabricate our own server versioning, assuming that
@@ -731,7 +670,7 @@ export default class Session {
         // we only create shadows if the model has been dirtied.
         // TODO: diff the model with the serverModel and see if
         // we can remove the shadow entirely
-        shadows.addData(model);
+        shadows.update(model);
       }
     }
     
@@ -785,21 +724,21 @@ export default class Session {
     
     this.reifyClientId(original);
     
-    var model = this.getModel(original);
+    var model = this.get(original);
     console.assert(!!model, "Cannot revert non-existant model");
         
     if(!model.isNew) {
-      var shadow = this.shadows.getModel(original);
+      var shadow = this.shadows.get(original);
       if(!original.rev || shadow.rev <= original) {
         // "rollback" shadow to the original
-        this.shadows.addData(original);
+        this.shadows.update(original);
       }
     } else if(model.isNew) {
       // re-track the model as a new model
       this.newModels.add(model);
     }
     
-    return this.shadows.getModel(original);
+    return this.shadows.get(original);
   }
 
   
@@ -851,14 +790,11 @@ export default class Session {
     return res;
   }
   
-  destroy() {
-    // NOOP: needed for Ember's container
-  }
-  
-  static create(props) {
-    return new this(props);
-  }
-
 }
+
+// Legacy aliases
+Session.prototype.getModel = Session.prototype.get;
+Session.prototype.getForId = Session.prototype.getById;
+Session.prototype.getForClientId = Session.prototype.getByClientId;
 
 evented(Session.prototype);

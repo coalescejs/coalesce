@@ -1,7 +1,6 @@
 import Coalesce from '../namespace';
 import Graph from '../collections/graph';
 import Operation from './operation';
-import materializeRelationships from '../utils/materialize_relationships';
 import array_from from '../utils/array_from';
 
 var remove = _.remove;
@@ -41,10 +40,10 @@ export default class Flush {
     
     var shadow = this.session.shadows.get(model);
     // take a snapshot of the mode/shadow in this state
-    model = model.copy(this.models);
+    model = model.fork(this.models);
     this.models.add(model);
     if(shadow) {
-      shadow = shadow.copy(this.shadows);
+      shadow = shadow.fork(this.shadows);
       this.shadows.add(shadow);
     }
     
@@ -54,7 +53,7 @@ export default class Flush {
         shadow,
         opts
       );
-      op.embeddedParent = this.add(model._parent);
+      op.embeddedParent = this.add(model._embeddedParent);
     } else {
       op = this.ops[model.clientId] = new PersistOperation(
         model,

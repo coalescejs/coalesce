@@ -1,6 +1,8 @@
 import Serializer from './base';
 import {singularize, camelize, underscore, dasherize} from '../utils/inflector';
 
+var clone = _.clone;
+
 /**
   @namespace serializers
   @class ModelSerializer
@@ -95,35 +97,47 @@ export default class ModelSerializer extends Serializer {
   deserialize(hash, opts) {
     var model = this.createModel();
 
+    this.extractIdentifiers(model, hash, opts);
+    
+    // OPTIMIZATION: extract directly to graph
+    if(opts.graph) {
+      model = opts.graph.fetch(model);  
+    }
+    
     this.extractMeta(model, hash, opts);
-    this.extractAttributes(model, hash);
-    this.extractRelationships(model, hash);
+    this.extractAttributes(model, hash, opts);
+    this.extractRelationships(model, hash, opts);
 
     return model;
   }
-
-  extractMeta(model, hash, opts) {
+  
+  extractIdentifiers(model, hash, opts) {
     this.extractField(model, hash, 'id', 'id');
     this.extractField(model, hash, 'clientId', 'string');
+    this.idManager.reifyClientId(model);
+  }
+
+  extractMeta(model, hash, opts) {
     this.extractField(model, hash, 'rev', 'revision');
     this.extractField(model, hash, 'clientRev', 'revision');
     this.extractField(model, hash, 'errors', 'errors');
-    if(!opts || opts.reifyClientId !== false) {
-      this.idManager.reifyClientId(model);
-    }
   }
 
-  extractAttributes(model, hash) {
+  extractAttributes(model, hash, opts) {
     model.eachAttribute(function(name, attribute) {
-      this.extractField(model, hash, name, attribute.type, attribute);
+      opts = clone(opts);
+      opts.field = relationship;
+      this.extractField(model, hash, name, attribute.type, opts);
     }, this);
   }
 
-  extractRelationships(model, hash) {
+  extractRelationships(model, hash, opts) {
     model.eachRelationship(function(name, relationship) {
       // we dasherize the kind for lookups for consistency
       var kindKey = dasherize(relationship.kind);
-      this.extractField(model, hash, name, kindKey, relationship);
+      opts = clone(opts);
+      opts.field = relationship;
+      this.extractField(model, hash, name, kindKey, opts);
     }, this);
   }
 
@@ -146,7 +160,7 @@ export default class ModelSerializer extends Serializer {
   }
 
   createModel() {
-    return this.typeFor(this.typeKey).create();
+    var model = this.typeFor(this.typeKey).create();
   }
 
   typeFor(typeKey) {

@@ -32,10 +32,24 @@ export default class HasMany extends Relationship {
             value.addObjects(content);
           }
         }
+        
+        var graph = this.graph;
+        if(!graph) {
+          return this._relationships[name];
+        }
+        
+        // TODO: explore prototypical inheritance here
+        if(!this.isFieldLoaded(name) && this.__parent) {
+          var parentValue = this.__parent._relationships[name].fork(graph);
+          if(parentValue) {
+            value = this._relationships[name] = parentValue.fork(graph);
+          }
+        }
+        
         return value;
       },
       set: function(value) {
-        var oldValue = this._relationships[name];
+        var oldValue = this[name];
         if(oldValue === value) return;
         if(value && value instanceof CollectionType) {
           // XXX: this logic might not be necessary without Ember
