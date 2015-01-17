@@ -1,5 +1,5 @@
 import Coalesce from '../namespace';
-import ModelSet from '../collections/model_set';
+import Graph from '../collections/graph';
 import Operation from './operation';
 import materializeRelationships from '../utils/materialize_relationships';
 import array_from from '../utils/array_from';
@@ -10,151 +10,117 @@ export default class Flush {
   
   constructor(session, models) {
     this.session = session;
-    this.models = this.buildDirtySet(models);
-    this.shadows = new ModelSet(array_from(this.models).map(function(model) {
-      // shadows are already frozen copies so no need to re-copy
-      return session.shadows.getModel(model) || model.copy();
-    }));
+    this.ops = {};
+    this.models = new Graph();
+    this.shadows = new Graph();
     this.results = [];
     this.pending = [];
-    this.ops = new Map();
-    this.build();
+    this.promise = new Coalesce.Promise((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    })
   }
   
-  build() {
-    var models = this.models,
-        shadows = this.shadows,
-        ops = this.ops,
-        session = this.session;
-        
-    this.removeEmbeddedOrphans(models, shadows, session);
+  then(...args) {
+    this.promise.then.apply(this.promise, ...args);
+  }
+  
+  catch(...args) {
+    this.promise.catch.apply(this.promise, ...args);
+  }
+  
+  add(model, opts) {
+    var op;
+    if(op = this.ops[model.client]) {
+      return op;
+    }
     
-    // for embedded serialization purposes we need to materialize
-    // all the lazy relationships in the set
-    // (all of the copies have lazy models in their relationships)
-    materializeRelationships(models);
+    if(model.session !== this.session) {
+      model = this.session.getModel(model);
+    }
     
-    models.forEach(function(model) {
-      
-      var shadow = shadows.getModel(model);
-      
-      console.assert(shadow || model.isNew, "Shadow does not exist for non-new model");
-      
-      var op = this.getOp(model);
-      op.shadow = shadow;
-      
-      var rels = op.dirtyRelationships;
-      for(var i = 0; i < rels.length; i++) {
-        var d = rels[i];
-        var name = d.name;
-        var parentModel = model[name] || d.oldValue && shadows.getModel(d.oldValue);
-        // embedded children should not be dependencies
-        var isEmbeddedRel = this.isEmbeddedRelationship(model.constructor, name);
-        
-        // TODO: handle hasMany's depending on adapter configuration
-        if(parentModel && !isEmbeddedRel) {
-          var parentOp = this.getOp(parentModel);
-          parentOp.addChild(op);
-        }
-      }
-      
-      var isEmbedded = model.isEmbedded;
-      if(op.isDirty && isEmbedded) {
-        // walk up the embedded tree and mark root as dirty
-        var rootModel = this.findEmbeddedRoot(model, models);
-        var rootOp = this.getOp(rootModel);
-        rootOp.force = true;
-        
-        // ensure the embedded parent is a parent of the operation
-        var parentModel = model._parent;
-        var parentOp = this.getOp(parentModel);
-        
-        // if the child already has some parents, they need to become
-        // the parents of the embedded root as well
-        op.parents.forEach(function(parent) {
-          if(parent === rootOp) return;
-          if(this.findEmbeddedRoot(parent.model, models) === rootModel) return;
-          parent.addChild(rootOp);
-        }, this);
-        
+    var shadow = this.session.shadows.get(model);
+    // take a snapshot of the mode/shadow in this state
+    model = model.copy(this.models);
+    this.models.add(model);
+    if(shadow) {
+      shadow = shadow.copy(this.shadows);
+      this.shadows.add(shadow);
+    }
+    
+    if(model.isEmbedded) {
+      op = this.ops[model.clientId] = new EmbeddedOperation(
+        model,
+        shadow,
+        opts
+      );
+      op.embeddedParent = this.add(model._parent);
+    } else {
+      op = this.ops[model.clientId] = new PersistOperation(
+        model,
+        shadow,
+        opts
+      );
+    }
+    
+    // all children that are part of a relationship that owned by
+    // this model should be saved first
+    var rels = op.dirtyRelationships;
+    for(var i = 0; i < rels.length; i++) {
+      var d = rels[i];
+      var name = d.name;
+      var parentModel = model[name] || d.oldValue;
+      // embedded children should not be dependencies
+      var isEmbeddedRel = this._isEmbeddedRelationship(model.constructor, name);
+      if(parentModel && !isEmbeddedRel) {
+        var parentOp = this.add(parentModel);
         parentOp.addChild(op);
       }
-      
-    }, this);
-  }
-  
-  /**
-    @private
-    Iterate over the models and remove embedded records
-    that are missing their embedded parents.
-  */
-  removeEmbeddedOrphans(models, shadows, session) {
-    var orphans = [];
-    models.forEach(function(model) {
-      if(!model.isEmbedded) return;
-      var root = this.findEmbeddedRoot(model, models);
-      if(!root || root.isEqual(model)) {
-        orphans.push(model);
-      }
-    }, this);
-    models.removeObjects(orphans);
-    shadows.removeObjects(orphans);
-  }
-  
-  findEmbeddedRoot(model, models) {
-    var parent = model;
-    while(parent) {
-      model = parent;
-      parent = model._parent;
     }
-    // we want the version in the current session
-    return models.getModel(model);
-  }
-  
-  isEmbeddedRelationship(type, name) {
-    return type.fields.get(name).embedded;
-  }
-  
-  /**
-    @private
     
-    Build the set of dirty models that are part of the flush.
-  */
-  buildDirtySet(models) {
-    var result = new ModelSet();
-    models.forEach(function(model) {
-      var copy = model.copy();
-      copy.errors = null;
-      result.add(copy);
-    }, this);
-    return result;
+    return op;
+  }
+  
+  remove(model) {
+    delete this.ops[model.clientId];
+    this.models.remove(model);
+    this.shadows.remove(model);
+  }
+  
+  performLater() {
+    Coalesce.run.once(this, this.perform);
   }
   
   perform() {
     var results = this.results,
         pending = this.pending,
         session = this.session;
+        
+    for(var clientId in this.ops) {
+      if(!this.ops.hasOwnProperty(clientId)) continue;
+      var op = this.ops[clientId];
+      this._trackOperation(op.perform());
+    }
     
-    this.ops.forEach(function(op, model) {
-      op.perform();
-      this.trackOperation(op);
-    }, this); 
-    
-    return Coalesce.Promise.all(this.pending).then(function() {
+    var promise = Coalesce.Promise.all(this.pending).then(function() {
       return results;
     }, function(err) {
       // all the promises that haven't finished, we need still merge them into
       // the session for error resolution
       var failures = pending.map(function(op) {
-        var model =  op.fail();
+        // TODO: fail with special error 
+        var model = op.fail();
         session.merge(model);
         return model;
       });
       return results.concat(failures);
     });
+    
+    this.resolve(promise);
+    return this;
   }
   
-  trackOperation(op) {
+  _trackOperation(op) {
     var results = this.results,
         pending = this.pending;
     pending.push(op)
@@ -169,23 +135,8 @@ export default class Flush {
     });
   }
   
-  getOp(model) {
-    // ops is is a normal Ember.Map and doesn't use client
-    // ids so we need to make sure that we are looking up
-    // with the correct model instance
-    var models = this.models,
-    materializedModel = models.getModel(model);
-    // TODO: we do this check since it is possible that some
-    // lazy models are not part of `models`, a more robust
-    // solution needs to be figured out for dealing with operations
-    // on lazy models
-    if(materializedModel) model = materializedModel;
-    var op = this.ops.get(model);
-    if(!op) {
-      op = new Operation(this, model, this.shadows.getModel(model));
-      this.ops.set(model, op);
-    }
-    return op;
+  _isEmbeddedRelationship(type, name) {
+    return type.fields.get(name).embedded;
   }
   
 }

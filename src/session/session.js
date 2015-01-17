@@ -22,7 +22,6 @@ export default class Session {
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
     this.shadows = new ModelSet();
-    this.originals = new ModelSet();
     this.newModels = new ModelSet();
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
@@ -58,6 +57,7 @@ export default class Session {
 
   adopt(model) {
     this.reifyClientId(model);
+    console.assert(model.rev, "Model must have a rev property set");
     console.assert(!model.session || model.session === this, "Models instances cannot be moved between sessions. Use `add` or `update` instead.");
     console.assert(!this.models.getModel(model) || this.models.getModel(model) === model, "An equivalent model already exists in the session!");
 
@@ -134,7 +134,7 @@ export default class Session {
     // TODO: think through relationships that still reference the model
     this.models.remove(model);
     this.shadows.remove(model);
-    this.originals.remove(model);
+    this.newModels.remove(model);
   }
 
   /**
@@ -151,48 +151,31 @@ export default class Session {
   */
   update(model) {
     this.reifyClientId(model);
+    
     var dest = this.getModel(model);
-
-    if(model.isNew && !dest) {
-      dest = model.constructor.create();
-      // need to set the clientId for adoption
-      dest.clientId = model.clientId;
-      this.adopt(dest);
-    }
-
-    // if the model does not exist
-    // in the target session, updating is semantically
-    // equivalent to adding
+    
     if(!dest) {
-      return this.add(model);
+      if(model.isDetached) {
+        dest = model;
+      } else {
+        dest = model.copy(this);
+      }
+      this.adopt(dest);
+      return dest;
     }
+    
+    var wasDeleted = dest.isDeleted;
+    
+    model.copyTo(dest, this);
 
     // handle deletion
     if(model.isDeleted) {
       // no-op if already deleted
-      if(!dest.isDeleted) {
+      if(!wasDeleted) {
         this.deleteModel(dest);
       }
-      return dest;
     }
-
-    model.copyAttributes(dest);
-    model.copyMeta(dest);
-
-    model.eachLoadedRelationship(function(name, relationship) {
-      if(relationship.kind === 'belongsTo') {
-        var child = model[name]
-        if(child) {
-          dest[name] = child;
-        }
-      } else if(relationship.kind === 'hasMany') {
-        var children = model[name];
-        var destChildren = dest[name];
-
-        children.copyTo(destChildren);
-      }
-    }, this);
-
+    
     return dest;
   }
 
@@ -377,40 +360,6 @@ export default class Session {
     return promise;
   }
 
-  /**
-    Sends all local changes down to the server
-    
-    @return {Promise}
-  */
-  flush() {
-    var session = this,
-        dirtyModels = this.dirtyModels,
-        newModels = this.newModels,
-        shadows = this.shadows;
-    
-    this.emit('willFlush', dirtyModels);
-    
-    var flush = new Flush(this, dirtyModels),
-        promise = flush.perform();
-
-    // Optimistically assume updates will be
-    // successful. Copy shadow models into
-    // originals and remove the shadow.
-    dirtyModels.forEach(function(model) {
-      // track original to merge against new data that
-      // hasn't seen client updates
-      var original = this.originals.getModel(model);
-      var shadow = this.shadows.getModel(model);
-      if(shadow && (!original || original.rev < shadow.rev)) {
-        this.originals.add(shadow);
-      }
-      this.markClean(model);
-    }, this);
-    newModels.clear();
-
-    return promise;
-  }
-
   getModel(model) {
     var res = this.models.getModel(model);
     if(!res && this.parent) {
@@ -486,16 +435,14 @@ export default class Session {
   }
 
   suspendDirtyChecking(callback, binding) {
-    var self = this;
-
     // could be nested
     if(this._dirtyCheckingSuspended) {
-      return callback.call(binding || self);
+      return callback.call(binding || this);
     }
 
     try {
       this._dirtyCheckingSuspended = true;
-      return callback.call(binding || self);
+      return callback.call(binding || this);
     } finally {
       this._dirtyCheckingSuspended = false;
     }
@@ -666,6 +613,47 @@ export default class Session {
   }
   
   /**
+    Persist a single model down to the server
+  */
+  persist(model, opts, flush=null) {    
+    // optimistically assume updates succeed, revert() call below
+    // will revert this on failure
+    this.markClean(model);
+    this.newModels.remove(model);
+    
+    if(!flush) {
+      flush = new Flush(this);
+      flush.performLater();
+    }
+        
+    return flush.add(model, opts).then(function(serverModel) {
+      this.merge(serverModel);
+    }, function(error) {
+      // TODO: handle new data
+      this.revert(shadow);
+    });
+  }
+  
+  /**
+    Sends all local changes down to the server
+    
+    @return {Promise}
+  */
+  flush(models=this.dirtyModels) {
+    // XXX: move this
+    this.emit('willFlush', dirtyModels);
+    
+    var flush = new Flush(this);
+    flush.performLater();
+    
+    models.forEach(function(model) {
+      this.persist(model, null, flush);
+    }, this);
+
+    return flush;
+  }
+  
+  /**
     Merges new data for a model into this session.
 
     If the corresponding model inside the session is "dirty"
@@ -678,217 +666,86 @@ export default class Session {
     this data is assumed to have not seen the latest client changes.
 
     @method merge
-    @param {Coalesce.Model} model The model to merge
-    @param {Set} [visited] Cache used to break recursion. This is required for non-version-aware backends.
+    @param {Model} model The model to merge
   */
-  merge(model, visited) {
-    console.assert(model.isModel, `${model} is not a model`);
+  merge(serverModel) {
     if(this.parent) {
-      model = this.parent.merge(model, visited);
+      serverModel = this.parent.merge(serverModel, visited);
     }
+    this.reifyClientId(serverModel);
     
-    this.reifyClientId(model);
-
-    if(!visited) visited = new Set();
-
-    if(visited.has(model)) {
-      return this.getModel(model);
-    }
-    visited.add(model);
-
-    this.emit('willMerge', model);
-    
-    this.updateCache(model);
-
-    var detachedChildren = [];
-    // Since we re-use objects during merge if they are detached,
-    // we need to precompute all detached children
-    model.eachChild(function(child) {
-      if(child.isDetached) {
-        detachedChildren.push(child);
+    var model = this.getModel(serverModel),
+        shadow = this.shadows.getModel(serverModel);
+        
+    // Some backends will not return versioning information. In this
+    // case we just fabricate our own server versioning, assuming that
+    // all new models are a newer version.
+    // NOTE: rev is also used to break merge recursion
+    if(!serverModel.rev) {
+      if(model) {
+        serverModel.rev = model.rev++;
+      } else {
+        serverModel.rev = 0;
       }
-    }, this);
-
-    var merged;
-
-    if(model.hasErrors) {
-      merged = this._mergeError(model);
-    } else {
-      merged = this._mergeSuccess(model);
-    }
-
-    if(model.meta){
-      merged.meta = model.meta;
     }
     
-    for(var i = 0; i < detachedChildren.length; i++) {
-      var child = detachedChildren[i];
-      this.merge(child, visited);
-    }
-
-    this.emit('didMerge', model);
-    return merged;
-  }
-
-  mergeModels(models) {
-    var merged = new ModelArray();
-    merged.session = this;
-    merged.addObjects(models);
-    merged.meta = models.meta;
-    var session = this;
-    models.forEach(function(model) {
-      merged.pushObject(session.merge(model));
-    });
-    return merged;
-  }
-
-  _mergeSuccess(model) {
-    var models = this.models,
-        shadows = this.shadows,
-        newModels = this.newModels,
-        originals = this.originals,
-        merged,
-        ancestor,
-        existing = models.getModel(model),
-        shadow = shadows.getModel(model);
-
-    if(existing && this._containsRev(existing, model)) {
-      return existing;
-    }
-
-    var hasClientChanges = !shadow || this._containsClientRev(model, shadow);
-
-    if(hasClientChanges) {
-      // If has latest client rev, merge against the shadow
-      ancestor = shadow;
-    } else {
-      // If doesn't have the latest client rev, merge against original
-      ancestor = originals.getModel(model);
+    // Optimistically assume has seen client's version if no clientRev set
+    if(!serverModel.clientRev) {
+      if(shadow || model) {
+        serverModel.clientRev = (shadow || model).clientRev;
+      } else {
+        serverModel.clientRev = 0;
+      }
     }
     
-    this._removeStaleRelationships(model, ancestor);
-
-    this.suspendDirtyChecking(function() {
-      merged = this._mergeModel(existing, ancestor, model);
-    }, this);
-
-    if(hasClientChanges) {
-      // after merging, if the record is deleted, we remove
-      // it entirely from the session
-      if(merged.isDeleted) {
+    // Have we already seen this version?
+    if(model && model.rev >= serverModel.rev) {
+      return model;
+    }
+    
+    // If a model comes in with a clientRev that is lower than the
+    // shadow it is to be merged against, then the common ancestor is
+    // no longer tracked. In this scenario we currently just toss out.
+    if(shadow && shadow.clientRev > serverModel.clientRev) {
+      console.warn(`Not merging stale model ${serverModel}`)
+      return model;
+    }
+    
+    // If there is no shadow, then no merging is necessary and we just
+    // update the session with the new data
+    if(!shadow) {
+      model = this.update(serverModel);
+      
+      // TODO: move this check to update?
+      if(!model.isNew) {
+        newModels.remove(model);
+      }
+    } else {
+      model = this._merge(serverModel);
+      
+      if(model.isDeleted) {
         this.remove(merged);
       } else {
         // After a successful merge we update the shadow to the
         // last known value from the server. As an optimization,
         // we only create shadows if the model has been dirtied.
-        if(shadows.contains(model)) {
-          // TODO: should remove unless client has unflushed changes
-          shadows.addData(model);
-        }
-
-        // Once the server has seen our local changes, the original
-        // is no longer needed
-        originals.remove(model);
-
-        if(!merged.isNew) {
-          newModels.remove(merged);
-        }
+        // TODO: diff the model with the serverModel and see if
+        // we can remove the shadow entirely
+        shadows.addData(model);
       }
-    } else {
-      // TODO: what should we do with the shadow if the merging ancestor
-      // is the original? In order to update, it would require knowledge
-      // of how the server handles merging (if at all)
     }
     
-    // clear the errors on the merged model
-    // TODO: we need to do a proper merge here
-    merged.errors = null;
-    
-    return merged;
+    this.updateCache(model);
+
+    return model;
   }
-
-  _mergeError(model) {
-    var models = this.models,
-        shadows = this.shadows,
-        newModels = this.newModels,
-        originals = this.originals,
-        merged,
-        ancestor,
-        existing = models.getModel(model),
-        // If a shadow does not exist this could be an error during
-        // a create operation. In this case, if the server has seen
-        // the client's changes we should merge using the new model
-        // as the ancestor. This case could happen if the server manipulates
-        // the response to return valid values without saving.
-        shadow = shadows.getModel(model) || existing;
-        
-    if(!existing) {
-      // This case could happen on error during create inside child session
-      return model;
-    }
+  
+  /**
+    @private
     
-    var original = originals.getModel(model);
-
-    var hasClientChanges = this._containsClientRev(model, shadow);
-    if(hasClientChanges) {
-      // If has latest client rev, merge against the shadow.
-      ancestor = shadow;
-    } else {
-      // If doesn't have the latest client rev, merge against original
-      ancestor = original;
-    }
-    
-    this._removeStaleRelationships(model, ancestor);
-
-    // TODO: load errors are merged here, harmless since no loaded data, but
-    // need to rethink
-    // only merge if we haven't already seen this version
-    if(ancestor && !this._containsRev(existing, model)) {
-      this.suspendDirtyChecking(function() {
-        merged = this._mergeModel(existing, ancestor, model);
-      }, this);
-    } else {
-      merged = existing;
-    }
-
-    // set the errors on the merged model
-    // TODO: we need to do a proper merge here
-    merged.errors = copy(model.errors);
- 
-    if(!model.isNew && original) {
-      // "rollback" shadow to the original
-      shadows.addData(original);
-      // add any new loaded data from the server
-      // TODO: rethink case above here where "the server returns valid values without saving"
-      // we should not update the model in this case
-      shadows.addData(model);
-
-      // the shadow is now the server version, so no reason to
-      // keep the original around
-      originals.remove(model);
-    } else if(model.isNew) {
-      // re-track the model as a new model
-      newModels.add(existing);
-    }
-
-    return merged;
-  }
-
-  _mergeModel(dest, ancestor, model) {
-    // if the model does not exist, no "merging"
-    // is required
-    if(!dest) {
-      // OPTIMIZATION: re-use detached models
-      if(model.isDetached) {
-        dest = model;
-      } else {
-        dest = model.copy();
-      }
-
-      this.adopt(dest);
-      return dest;
-    }
-    console.log(this.toString(), model.toString());
+    Do the actual merging.
+  */
+  _merge(dest, ancestor, model) {
     console.assert(model.id || !dest.id, `Expected ${model} to have an id set`);
     // set id for new records
     dest.id = model.id;
@@ -898,15 +755,6 @@ export default class Session {
     
     // TODO: move merging isDeleted into merge strategy
     // dest.isDeleted = model.isDeleted;
-
-    //XXX: why do we need this? at this point shouldn't the dest always be in
-    // the session?
-    this.adopt(dest);
-
-    // as an optimization we might not have created a shadow
-    if(!ancestor) {
-      ancestor = dest;
-    }
     
     // Reify child client ids before merging. This isn't semantically
     // required, but many data structures that might be used in the merging
@@ -916,10 +764,44 @@ export default class Session {
     }, this);
 
     var strategy = this._mergeStrategyFor(model.typeKey);
-    strategy.merge(dest, ancestor, model);
+    strategy.merge(dest, ancestor, model, session);
 
     return dest;
   }
+  
+  /**
+    Invoked when a server operation fails and the shadow needs to be
+    reverted back to an earlier version.
+    
+    TODO: check to see if we still need a shadow after reverting
+    
+    @method revert
+    @param {Model} original The original version of the model
+  */
+  revert(original) {
+    if(this.parent) {
+      original = this.parent.revert(serverModel);
+    }
+    
+    this.reifyClientId(original);
+    
+    var model = this.getModel(original);
+    console.assert(!!model, "Cannot revert non-existant model");
+        
+    if(!model.isNew) {
+      var shadow = this.shadows.getModel(original);
+      if(!original.rev || shadow.rev <= original) {
+        // "rollback" shadow to the original
+        this.shadows.addData(original);
+      }
+    } else if(model.isNew) {
+      // re-track the model as a new model
+      this.newModels.add(model);
+    }
+    
+    return this.shadows.getModel(original);
+  }
+
   
   /**
     @private
@@ -939,16 +821,6 @@ export default class Session {
         delete model._relationships[name];
       }
     });
-  }
-
-  _containsRev(modelA, modelB) {
-    if(!modelA.rev) return false;
-    if(!modelB.rev) return false;
-    return modelA.rev >= modelB.rev;
-  }
-
-  _containsClientRev(modelA, modelB) {
-    return modelA.clientRev >= modelB.clientRev;
   }
   
   _typeFor(key) {

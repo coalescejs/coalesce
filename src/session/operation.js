@@ -9,9 +9,10 @@ An operation that is part of a flush
 @class Operation
 */
 export default class Operation {
-  constructor(flush, model, shadow) {
+  constructor(flush, model, shadow, opts) {
     this.model = model;
     this.shadow = shadow;
+    this.opts = opts;
     this.flush = flush;
     this.adapter = this.flush.session.context.configFor(model).get('adapter');
     this.session = this.flush.session;
@@ -25,13 +26,12 @@ export default class Operation {
     });
   }
   
-  get diff() {
-    return this.model.diff(this.shadow);
+  then(...args) {
+    this.promise.then.apply(this.promise, ...args);
   }
   
-  then(...args) {
-    var promise = this.promise;
-    return promise.then.apply(promise, args);
+  catch(...args) {
+    this.promise.catch.apply(this.promise, ...args);
   }
   
   addChild(child) {
@@ -39,10 +39,13 @@ export default class Operation {
     child.parents.add(this);
   }
   
+  get diff() {
+    return this.model.diff(this.shadow);
+  }
+  
   perform() {
     var promise,
-        adapter = this.adapter,
-        flush = this.flush;
+        model = this.model;
     
     // perform after all parents have performed
     if(this.parents.size > 0) {
@@ -51,40 +54,6 @@ export default class Operation {
       });
     } else {
       promise = this._perform();
-    }
-    
-    if(this.children.size > 0) {
-      promise = promise.then((model) => {
-        return Coalesce.Promise.all(array_from(this.children)).then(function(models) {
-          return model;
-        }, function(models) {
-          throw model;
-        });
-      });
-    }
-    
-    return promise;
-  }
-  
-  _perform() {
-    var flush = this.flush,
-        adapter = this.adapter,
-        session = this.session,
-        model = this.model,
-        shadow = this.shadow,
-        promise;
-    
-    if(!this.isDirty || model.isEmbedded) {
-      if(model.isEmbedded) {
-        // if embedded we want to extract the model from the result
-        // of the parent operation
-        promise = this._promiseFromEmbeddedParent();
-      } else {
-        // return an "identity" promise if we don't want to do anything
-        promise = Coalesce.Promise.resolve(model);
-      }
-    } else {
-      promise = adapter.persist(model, shadow, null, session);
     }
     
     // in the case of new records we need to assign the id
@@ -96,6 +65,17 @@ export default class Operation {
       }
       return serverModel;
     });
+    
+    // TODO: do we need to wait for children?
+    if(this.children.size > 0) {
+      promise = promise.then((model) => {
+        return Coalesce.Promise.all(array_from(this.children)).then(function(models) {
+          return model;
+        }, function(models) {
+          throw model;
+        });
+      });
+    }
     
     this.resolve(promise);
     return this;
@@ -112,38 +92,8 @@ export default class Operation {
     return this.model;
   }
   
-  get _embeddedParent() {
-    var model = this.model,
-        parentModel = model._parent,
-        flush = this.flush;
-    
-    console.assert(parentModel, "Embedded parent does not exist!");
-    
-    return flush.getOp(parentModel);
-  }
-  
-  _promiseFromEmbeddedParent() {
-    var model = this.model,
-    adapter = this.adapter;
-    
-    function findInParent(parentModel) {
-      var res = null;
-      parentModel.eachRelatedModel(function(child, embeddedType) {
-        if(res) return;
-        if(child.isEqual(model)) res = child;
-      });
-      return res;
-    }
-    
-    return this._embeddedParent.then(function(parent) {
-      return findInParent(parent);
-    }, function(parent) {
-      throw findInParent(parent);
-    });
-  }
-  
   get isDirty() {
-    return this.force || this.adapter.isDirty(this.model, this.shadow);
+    return this.adapter.isDirty(this.model, this.shadow);
   }
   
   // determine which relationships are affected by this operation
@@ -178,3 +128,58 @@ export default class Operation {
   }
   
 }
+
+class PersistOperation {
+  
+  _perform() {
+    var adapter = this.adapter,
+        session = this.session,
+        model = this.model,
+        shadow = this.shadow,
+        opts = this.opts;
+            
+    if(this.force || this.isDirty) {
+      return adapter.persist(model, shadow, null, opts, session);
+    } else {
+      return Coalesce.Promise.resolve(model);
+    }
+  }
+  
+}
+
+export {PersistOperation};
+
+/**
+  @private
+  
+  Piggy-back on the embedded parent.
+*/
+class EmbeddedOperation {
+  
+  addChild(child) {
+    this.embeddedParent.addChild(child);
+  }
+  
+  _perform() {
+    var model = this.model,
+    adapter = this.adapter;
+    
+    function findInParent(parentModel) {
+      var res = null;
+      parentModel.eachRelatedModel(function(child, embeddedType) {
+        if(res) return;
+        if(child.isEqual(model)) res = child;
+      });
+      return res;
+    }
+    
+    return this.embeddedParent.then(function(parent) {
+      return findInParent(parent);
+    }, function(parent) {
+      throw findInParent(parent);
+    });
+  }
+  
+}
+
+export {EmbeddedOperation};

@@ -8,8 +8,12 @@ import BaseClass from '../utils/base_class';
 */
 export default class Base extends BaseClass {
 
-  merge(ours, ancestor, theirs) {
+  merge(ours, ancestor, theirs, session, opts) {
     // Not Implemented
+  }
+  
+  mergeStrategyFor(typeKey) {
+    return this.context.configFor(typeKey).get('merge');
   }
 
 }

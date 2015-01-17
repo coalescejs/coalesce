@@ -73,7 +73,7 @@ export default class Model extends BaseClass {
       id: null,
       clientId: null,
       rev: null,
-      clientRev: 0,
+      clientRev: null,
       isDeleted: false,
       errors: null
     }
@@ -165,27 +165,6 @@ export default class Model extends BaseClass {
   }
   
   /**
-    Like copy, but is session-aware
-  */
-  fork(session) {
-    if(this.session === session) return this;
-    
-    var fork = session.getModel(this);
-    if(fork) {
-      return fork;
-    }
-    
-    var fork = new this.constructor({
-      id: this.id,
-      clientId: this
-    });
-    
-    session.adopt(fork);
-    
-    return fork;
-  }
-
-  /**
     Returns a copy with all properties unloaded except identifiers.
 
     @method lazyCopy
@@ -198,9 +177,7 @@ export default class Model extends BaseClass {
     });
   }
 
-  // creates a shallow copy with lazy children
-  // TODO: we should not lazily copy detached children
-  copy() {
+  copy(graph=null) {
     var dest = new this.constructor();
     this.copyTo(dest);
     return dest;
@@ -224,7 +201,7 @@ export default class Model extends BaseClass {
     }, this);
   }
   
-  copyRelationships(dest) {
+  copyRelationships(dest, graph=nil) {
     this.eachLoadedRelationship(function(name, relationship) {
       dest[name] = this[name];
     }, this);

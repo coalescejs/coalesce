@@ -12,7 +12,9 @@ import ModelSerializer from '../serializers/model';
 import RevisionSerializer from '../serializers/revision';
 import StringSerializer from '../serializers/string';
 
-import PerField from '../merge/per_field';
+import ModelMerge from '../merge/model';
+import HasManyMerge from '../merge/has_many';
+import BelongsToMerge from '../merge/belongs_to';
 
 import ModelCache from '../session/model_cache';
 import QueryCache from '../session/query_cache';
@@ -75,7 +77,9 @@ export default class Context extends Base {
   }
   
   _setupMergeStrategies(container) {
-    container.register('mergeStrategy:default', PerField);
+    container.register('merge:default', ModelMerge);
+    container.register('merge:belongs-to', BelongsToMerge);
+    container.register('merge:has-many', HasManyMerge);
   }
   
   _setupCaches(container) {
