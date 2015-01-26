@@ -2,7 +2,6 @@ import Context from '../context/default';
 import PayloadSerializer from './serializers/payload';
 import RestErrorsSerializer from './serializers/errors';
 import RestAdapter from './adapter';
-
 export default class RestContext extends Context {
   
   _setupContainer() {

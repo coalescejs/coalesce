@@ -9,7 +9,7 @@ export default class ModelArray extends ObservableArray {
   replace(idx, amt, objects) {
     if(this.session) {
       objects = objects.map(function(model) {
-        return this.session.fetch(model);
+        return this.session.adopt(model);
       }, this);
     }
     super(idx, amt, objects);
@@ -63,7 +63,7 @@ export default class ModelArray extends ObservableArray {
   }
   
   fork(graph) {
-    var arr = this.map(function(item) { return fork(item, graph); });
+    var arr = this.map(function(item) { return graph.adopt(item); });
     var res = new this.constructor();
     res.addObjects(arr);
     return res;

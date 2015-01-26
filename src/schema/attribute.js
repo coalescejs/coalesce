@@ -13,11 +13,12 @@ export default class Attribute extends Field {
       enumerable: true,
       configurable: true,
       get: function() {
+        var value = this._attributes[name];
         // TODO: explore prototypical inheritance here
-        if(!this.isFieldLoaded(name) && this.__parent) {
-          this._attributes[name] = this.__parent._attributes[name];
+        if(!this.isNew && value === undefined && this.__parent) {
+          value = this._attributes[name] = this.__parent._attributes[name];
         }
-        return this._attributes[name];
+        return value;
       },
       set: function(value) {
         var oldValue = this[name];

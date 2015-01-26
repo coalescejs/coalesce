@@ -27,11 +27,11 @@ export default class Operation {
   }
   
   then(...args) {
-    this.promise.then.apply(this.promise, ...args);
+    return this.promise.then.apply(this.promise, ...args);
   }
   
   catch(...args) {
-    this.promise.catch.apply(this.promise, ...args);
+    return this.promise.catch.apply(this.promise, ...args);
   }
   
   addChild(child) {
@@ -129,7 +129,7 @@ export default class Operation {
   
 }
 
-class PersistOperation {
+class PersistOperation extends Operation {
   
   _perform() {
     var adapter = this.adapter,
@@ -154,7 +154,7 @@ export {PersistOperation};
   
   Piggy-back on the embedded parent.
 */
-class EmbeddedOperation {
+class EmbeddedOperation extends Operation {
   
   addChild(child) {
     this.embeddedParent.addChild(child);

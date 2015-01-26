@@ -20,14 +20,10 @@ export default class HasManyMerge extends Base {
       // TODO: think about merging the actual object, not
       // returning the entire value
       return theirs.map(function(model) {
-        // recurse on embedded and detached relationships
-        if(theirs.isEmbedded || theirs.isDetached) {
-          return session.merge(theirs);
-        } else {
-          return session.fetchModel(theirs);
-        }
+        return session.fetch(model);
       });
     }
+    
     return ours;
   }
 

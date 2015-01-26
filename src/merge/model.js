@@ -1,7 +1,8 @@
 import Base from './base';
 import ModelSet from '../collections/model_set';
 import isEqual from '../utils/is_equal';
-import copy from '../utils/copy';
+import fork from '../utils/fork';
+import {dasherize} from '../utils/inflector';
 
 /**
   Merge strategy that merges on a per-field basis.
@@ -18,8 +19,8 @@ import copy from '../utils/copy';
 export default class ModelMerge extends Base {
 
   merge(ours, ancestor, theirs, session, opts) {
-    this.mergeAttributes(ours, ancestor, theirs);
-    this.mergeRelationships(ours, ancestor, theirs);
+    this.mergeAttributes(ours, ancestor, theirs, session);
+    this.mergeRelationships(ours, ancestor, theirs, session);
     return ours;
   }
 
@@ -30,7 +31,6 @@ export default class ModelMerge extends Base {
   }
 
   mergeRelationships(ours, ancestor, theirs, session) {
-    var session = this.session;
     ours.eachRelationship(function(name, relationship) {
       this.mergeField(ours, ancestor, theirs, session, relationship);
     }, this);
@@ -44,7 +44,7 @@ export default class ModelMerge extends Base {
 
     if(!ours.isFieldLoaded(name)) {
       if(theirs.isFieldLoaded(name)) {
-        ours[name] = copy(theirsValue);
+        ours[name] = fork(theirsValue, session);
       }
       return;
     }
@@ -52,17 +52,16 @@ export default class ModelMerge extends Base {
     if(!theirs.isFieldLoaded(name) || isEqual(oursValue, theirsValue)) {
       return;
     }
-    
-    console.assert(ancestor.isFieldLoaded(name), `${name} not present on common ancestor`);
-    
-    var mergeStrategy = this.mergeStrategyFor(field.name);
-    if(mergeStrategy) {
-      ours[name] = mergeStrategy.merge(oursValue, ancestorValue, theirsValue, session, field);
+        
+    // TODO: support custom attribute merging
+    var merge = field.kind !== 'attribute' && this.mergeFor(dasherize(field.kind));
+    if(merge) {
+      ours[name] = merge.merge(oursValue, ancestorValue, theirsValue, session, field);
     } else {
       // default field merge logic
-      if(isEqual(oursValue, ancestorValue)) {
+      if(!ancestor.isFieldLoaded(name) || isEqual(oursValue, ancestorValue)) {
         // if unchanged, always use theirs
-        ours[name] = copy(theirsValue);
+        ours[name] = fork(theirsValue);
       } else {
         // ours was modified, use it instead of theirs
         // NO-OP

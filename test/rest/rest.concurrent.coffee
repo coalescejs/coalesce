@@ -35,7 +35,7 @@ describe "rest concurrent flushes", ->
       else
         10
       calls++
-      Coalesce.run.later callback, delay
+      Coalesce.backburner.defer callback, delay
 
     @server.r 'PUT:/posts/1', (xhr) ->
       data = JSON.parse(xhr.requestBody)

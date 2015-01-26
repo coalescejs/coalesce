@@ -125,11 +125,11 @@ export default class ModelSet extends BaseClass {
     return ret;
   }
   
-  fork(graph=null) {
+  fork(graph) {
     var C = this.constructor, ret = new C(), loc = this._size;
     ret._size = loc;
     while(--loc>=0) {
-      ret[loc] = fork(this[loc]);
+      ret[loc] = fork(this[loc], graph);
       ret[guidFor(this[loc])] = loc;
     }
     return ret;

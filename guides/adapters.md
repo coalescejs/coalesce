@@ -7,4 +7,4 @@ The `Adapter` class has various properties that can be overridden by a specific 
 * *serializer* - The `Serializer` instance that will be used to serialize/deserialize models that go through this adapter.
 * *modelCache* - The `ModelCache` instance that will be consulted by the session when loading models.
 * *queryCache* - The `QueryCache` instance that will be consulted by the session when performing queries.
-* *mergeStrategy* - The `MergeStrategy` instance that will be used when merging data into the session.
+* *merge* - The `MergeStrategy` instance that will be used when merging data into the session.

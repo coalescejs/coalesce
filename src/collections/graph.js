@@ -2,12 +2,20 @@ import ModelSet from './model_set';
 
 export default class Graph extends ModelSet {
   
+  add(entity) {
+    console.assert(!entity.graph || entity.graph === this, "Entity already belongs to a different graph, consider using fork() instead");
+    console.assert(!this.get(entity) || this.get(entity) === entity, "An equivalent entity already exists in the graph");
+    super(entity);
+    entity.graph = this;
+    return this;
+  }
+  
   /**
     Add the model to the session or update an existing
     model if one does not exist.
   */
-  update(model) {
-    return model.fork(this);
+  update(entity) {
+    return entity.fork(this);
   }
   
   /**
@@ -15,24 +23,36 @@ export default class Graph extends ModelSet {
     of this graph, then an unloaded model is returned with the same
     identifiers.
   */  
-  fetch(model) {
-    var model = this.get(model);
-    if(!model) {
-      model = model.unloadedCopy();
-      this.adopt(model);
+  fetch(entity) {
+    var res = this.get(entity);
+    if(!res) {
+      res = entity.unloadedCopy();
+      this.add(res);
     }
-    return model;
+    return res;
   }
   
-  adopt(model) {
-    console.assert(!this.models.getModel(model) || this.models.getModel(model) === model, "An equivalent model already exists in the session!");
-
-    // Only loaded models are stored on the session
-    if(!model.graph) {
-      this.add(model);
-      model.graph = this;
+  /**
+    Similar to fetch but will keep the fields of new models and recurse
+    detached new models.
+    
+    TODO: OPTIMIZATION: re-use the model object if not associated with graph
+  */
+  adopt(entity) {
+    if(entity.isModel && entity.isNew) {
+      var model = entity,
+          children = [];
+      model.eachChild(function(child) {
+        children.push(child);
+      });
+      model = this.update(model);
+      children.forEach(function(child) {
+        this.adopt(child);
+      }, this);
+      return model;
+    } else {
+      return this.fetch(model);
     }
-    return model;
   }
 
   

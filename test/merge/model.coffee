@@ -1,18 +1,16 @@
-`import PerField from 'coalesce/merge/per_field'`
+`import ModelMerge from 'coalesce/merge/model'`
 `import Model from 'coalesce/model/model'`
 `import Context from 'coalesce/context/default'`
 
-describe 'PerField', ->
+describe 'ModelMerge', ->
 
-  beforeEach ->
-    
+  lazy 'context', ->
     `class User extends Model {}`
     User.defineSchema
       attributes:
         name: {type: 'string'}
       relationships:
         posts: {kind: 'hasMany', type: 'post'}
-    @User = User
       
     `class Comment extends Model {}`
     Comment.defineSchema
@@ -20,8 +18,7 @@ describe 'PerField', ->
         body: {type: 'string'}
       relationships:
         post: {kind: 'belongsTo', type: 'post'}
-    @Comment = Comment
-
+        
     `class Post extends Model {}`
     Post.defineSchema
       attributes:
@@ -31,14 +28,19 @@ describe 'PerField', ->
       relationships:
         comments: {kind: 'hasMany', type: 'comment'}
         user: {kind: 'belongsTo', type: 'user'}
-    @Post = Post
     
-    @context = new Context
+    new Context
       types:
         user: User
         comment: Comment
         post: Post
-    @session = @context.newSession()
+  
+  lazy 'session', ->
+    @context.newSession()
+    
+  lazy 'User', -> @context.typeFor('user')
+  lazy 'Comment', -> @context.typeFor('comment')
+  lazy 'Post', -> @context.typeFor('post')
 
   it 'keeps modified fields from both versions', ->
     post = @session.merge @Post.create(id: '1', title: 'titleA', body: 'bodyA', createdAt: new Date(1985, 7, 22))

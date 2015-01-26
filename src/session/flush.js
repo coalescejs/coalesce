@@ -1,6 +1,7 @@
 import Coalesce from '../namespace';
 import Graph from '../collections/graph';
 import Operation from './operation';
+import {PersistOperation, EmbeddedOperation} from './operation';
 import array_from from '../utils/array_from';
 
 var remove = _.remove;
@@ -21,11 +22,11 @@ export default class Flush {
   }
   
   then(...args) {
-    this.promise.then.apply(this.promise, ...args);
+    return this.promise.then.apply(this.promise, ...args);
   }
   
   catch(...args) {
-    this.promise.catch.apply(this.promise, ...args);
+    return this.promise.catch.apply(this.promise, ...args);
   }
   
   add(model, opts) {
@@ -49,6 +50,7 @@ export default class Flush {
     
     if(model.isEmbedded) {
       op = this.ops[model.clientId] = new EmbeddedOperation(
+        this,
         model,
         shadow,
         opts
@@ -56,6 +58,7 @@ export default class Flush {
       op.embeddedParent = this.add(model._embeddedParent);
     } else {
       op = this.ops[model.clientId] = new PersistOperation(
+        this,
         model,
         shadow,
         opts
@@ -87,7 +90,7 @@ export default class Flush {
   }
   
   performLater() {
-    Coalesce.run.once(this, this.perform);
+    Coalesce.backburner.deferOnce('actions', this, this.perform);
   }
   
   perform() {

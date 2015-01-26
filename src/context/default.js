@@ -56,6 +56,7 @@ export default class Context extends Base {
   _setupInjections(container) {
     container.typeInjection('session', 'context', 'context:main');
     container.typeInjection('serializer', 'context', 'context:main');
+    container.typeInjection('merge', 'context', 'context:main');
     container.typeInjection('adapter', 'context', 'context:main');
     
     container.typeInjection('serializer', 'idManager', 'idManager:default');

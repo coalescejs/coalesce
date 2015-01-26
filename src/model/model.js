@@ -63,8 +63,12 @@ export default class Model extends BaseClass {
     return this._graph;
   }
   
+  set graph(value) {
+    return this._graph = value;
+  }
+  
   get session() {
-    if(this._graph && this._graph instanceof Session) {
+    if(this._graph && this._graph.isSession) {
       return this._graph;
     }
     return null;
@@ -187,18 +191,10 @@ export default class Model extends BaseClass {
   get __parent() {
     var session = this.session,
         parentSession = session && session.parent,
-        parent = parentSession.get(this);
+        parent = parentSession && parentSession.get(this);
     
     if(parent) {
       return parent;
-    }
-  }
-
-  // XXX: move to ember
-  willWatchProperty(key) {
-    // EmberTODO
-    if(this.isManaged && this.shouldTriggerLoad(key)) {
-      Coalesce.run.scheduleOnce('actions', this, this.load);
     }
   }
 
@@ -235,162 +231,9 @@ export default class Model extends BaseClass {
     }, this);
     return res;
   }
-
-  /**
-    Defines the attributes and relationships on the model.
-    
-    For example:
-    
-    ```
-    class Post extends Model {}
-    Post.defineSchema({
-      typeKey: 'post',
-      attributes: {
-        title: {
-          type: 'string'
-        },
-        body: {
-          type: 'string'
-        }
-      },
-      relationships: {
-        user: {
-          type: 'user',
-          kind: 'belongsTo'
-        },
-        comments: {
-          type: 'comment',
-          kind: 'hasMany'
-        }
-      }
-    });
-    ```
-    
-    @method defineSchema
-    @param {Object} schema
-  */
-  static defineSchema(schema) {
-    if(typeof schema.typeKey !== 'undefined') {
-      this.typeKey = schema.typeKey;
-    }
-    var attributes = schema.attributes || {};
-    for(var name in attributes) {
-      if(!attributes.hasOwnProperty(name)) continue;
-      var field = new Attribute(name, attributes[name]);
-      this.defineField(field);
-    }
-    var relationships = schema.relationships || {};
-    for(var name in relationships) {
-      if(!relationships.hasOwnProperty(name)) continue;
-      var options = relationships[name];
-      console.assert(options.kind, "Relationships must have a 'kind' property specified");
-      var field;
-      if(options.kind === 'belongsTo') {
-        field = new BelongsTo(name, options);
-      } else if(options.kind === 'hasMany') {
-        field = new HasMany(name, options);
-      } else {
-        console.assert(false, "Unkown relationship kind '" + options.kind + "'. Supported kinds are 'belongsTo' and 'hasMany'");
-      }
-      this.defineField(field);
-    }
-  }
   
-  static defineField(field) {
-    field.defineProperty(this.prototype);
-    field.parentType = this;
-    this.ownFields.set(field.name, field);
-    return field;
-  }
-  
-  static get ownFields() {
-    if(!this.hasOwnProperty('_ownFields')) {
-      this._ownFields = new Map();
-    }
-    return this._ownFields;
-  }
-  
-  static get fields() {
-    if(this.hasOwnProperty('_fields')) {
-      return this._fields;
-    }
-    var res = new Map(),
-        parentClass = this.parentType;
-    
-    var maps = [this.ownFields];
-    
-    if(parentClass.prototype instanceof Model) {
-      var parentFields = parentClass.fields;
-      if(parentFields) {
-        maps.push(parentClass.fields);
-      }
-    }
-    
-    for(var i = 0; i < maps.length; i++) {
-      maps[i].forEach(function(field, name) {
-        res.set(name, field);
-      });
-    }
-    
-    return this._fields = res;
-  }
-
-  static get attributes() {
-    if(this.hasOwnProperty('_attributes')) {
-      return this._attributes;
-    }
-    var res = new Map();
-    this.fields.forEach(function(options, name) {
-      if(options.kind === 'attribute') {
-        res.set(name, options);
-      }
-    });
-    return this._attributes = res;
-  }
-
-  static get relationships() {
-    if(this.hasOwnProperty('_relationships')) {
-      return this._relationships;
-    }
-    var res = new Map();
-    this.fields.forEach(function(options, name) {
-      if(options.kind === 'belongsTo' || options.kind === 'hasMany') {
-        res.set(name, options);
-      }
-    });
-    return this._relationships = res;
-  }
-
   get attributes() {
-    return this.constructor.attributes;
-  }
-  
-  get fields() {
-    return this.constructor.fields;
-  }
-
-  get loadedAttributes() {
-    var res = new Map();
-    this.attributes.forEach(function(options, name) {
-      if(this.isFieldLoaded(name)) {
-        res.set(name, options);
-      }
-    }, this);
-    return res;
-  }
-
-  get relationships() {
-    return this.constructor.relationships;
-  }
-
-  get loadedRelationships() {
-    var res = new Map();
-    this.relationships.forEach(function(options, name) {
-      if(this.isFieldLoaded(name)) {
-        res.set(name, options);
-      }
-    }, this);
-    return res;
+    return this._attributes;
   }
   
   metaWillChange(name) {
@@ -442,41 +285,8 @@ export default class Model extends BaseClass {
     // XXX: reregister
   }
   
-  //
-  // DEPRECATED back-compat methods below, instead should use es6 iterators
-  //
-  eachAttribute(callback, binding) {
-    this.attributes.forEach(function(options, name) {
-      callback.call(binding, name, options);
-    });
-  }
-
-  eachLoadedAttribute(callback, binding) {
-    this.loadedAttributes.forEach(function(options, name) {
-      callback.call(binding, name, options);
-    });
-  }
-  
-  eachRelationship(callback, binding) {
-    this.relationships.forEach(function(options, name) {
-      callback.call(binding, name, options);
-    });
-  }
-  
-  static eachRelationship(callback, binding) {
-    this.relationships.forEach(function(options, name) {
-      callback.call(binding, name, options);
-    });
-  }
-  
   static get parentType() {
     return Object.getPrototypeOf(this);
-  }
-
-  eachLoadedRelationship(callback, binding) {
-    this.loadedRelationships.forEach(function(options, name) {
-      callback.call(binding, name, options);
-    });
   }
   
   /**
@@ -552,48 +362,6 @@ export default class Model extends BaseClass {
     }
   }
   
-  static inverseFor(name) {
-    var relationship = this.relationships.get(name);
-    if (!relationship) { return null; }
-    
-    var inverseType = relationship.type;
-
-    if (typeof relationship.inverse !== 'undefined') {
-      var inverseName = relationship.inverse;
-      return inverseName && inverseType.relationships.get(inverseName);
-    }
-    
-    var possibleRelationships = findPossibleInverses(this, inverseType);
-
-    if (possibleRelationships.length === 0) { return null; }
-
-    console.assert(possibleRelationships.length === 1, "You defined the '" + name + "' relationship on " + this + " but multiple possible inverse relationships of type " + this + " were found on " + inverseType + ".");
-
-    function findPossibleInverses(type, inverseType, possibleRelationships) {
-      possibleRelationships = possibleRelationships || [];
-      
-      var relationships = inverseType.relationships;
-      
-      var typeKey = type.typeKey;
-      // Match inverse based on typeKey
-      var propertyName = camelize(typeKey);
-      var inverse = relationships.get(propertyName) || relationships.get(pluralize(propertyName));
-      if(inverse) {
-        possibleRelationships.push(inverse);
-      }
-      
-      var parentType = type.parentType;
-      if (parentType && parentType.typeKey) {
-        // XXX: container extends models and this logic creates duplicates
-        // XXX: add test for subclassing and extending the schema
-        // findPossibleInverses(parentType, inverseType, possibleRelationships);
-      }
-      return possibleRelationships;
-    }
-
-    return possibleRelationships[0];
-  }
-  
   /**
     Returns a copy with all properties unloaded except identifiers.
 
@@ -607,33 +375,41 @@ export default class Model extends BaseClass {
     });
   }
 
-  fork(graph=null) {
-    var fork = graph.fetch(this);
-    this.forkTo(fork, graph);
-    return fork;
+  fork(graph) {
+    var dest = graph.fetch(this);
+    this._forkTo(dest, graph);
+    return dest;
   }
 
-  _forkTo(fork, graph) {
-    this.forkMeta(fork, graph);
-    this.forkAttributes(fork, graph);
-    this.forkRelationships(fork, graph);
+  _forkTo(dest, graph) {
+    this._forkMeta(dest, graph);
+    this._forkAttributes(dest, graph);
+    this._forkRelationships(dest, graph);
   }
   
-  _forkMeta(fork, graph) {
-    fork.__embeddedParent = this.__embeddedParent;
-    fork._meta = fork(this._meta, graph);
+  _forkMeta(dest, graph) {
+    dest.__embeddedParent = this.__embeddedParent;
+    dest._meta = fork(this._meta, graph);
   }
   
-  _forkAttributes(fork, graph) {
+  _forkAttributes(dest, graph) {
     this.loadedAttributes.forEach(function(options, name) {
-      fork._attributes[name] = fork(this._attributes[name], graph);
+      dest._attributes[name] = fork(this._attributes[name], graph);
     }, this);
   }
   
-  _forkRelationships(fork, graph=nil) {
+  _forkRelationships(dest, graph) {
     this.eachLoadedRelationship(function(name, relationship) {
-      fork[name] = fork(this[name]);
+      if(relationship.kind === 'hasMany') {
+        dest[name] = fork(this[name], graph);
+      } else {
+        dest[name] = this[name] && graph.adopt(this[name]);
+      }
     }, this);
+  }
+  
+  static defineSchema(obj) {
+    this.schema = new Schema(obj);
   }
 }
 

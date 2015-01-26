@@ -12,7 +12,7 @@ export default class Base extends BaseClass {
     // Not Implemented
   }
   
-  mergeStrategyFor(typeKey) {
+  mergeFor(typeKey) {
     return this.context.configFor(typeKey).get('merge');
   }
 

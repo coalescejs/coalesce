@@ -300,7 +300,7 @@ describe "Session", ->
       @subject.update updatedPost
       expect(@post.comments.length).to.eq(1)
 
-    it.only 'updates hasMany relationship from new model', ->
+    it 'updates hasMany relationship from new model', ->
       @post = @subject.merge @Post.create id: 1, title: 'hi', comments: []
       updatedPost = @Post.create id: 1, title: 'hello', comments: []
       updatedPost.comments.push @Comment.create post: updatedPost

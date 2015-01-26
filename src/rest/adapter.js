@@ -442,11 +442,11 @@ export default class RestAdapter extends Adapter {
       hash = adapter.ajaxOptions(url, type, hash);
 
       hash.success = function(json) {
-        Coalesce.run(null, resolve, json);
+        Coalesce.backburner.run(null, resolve, json);
       };
 
       hash.error = function(jqXHR, textStatus, errorThrown) {
-        Coalesce.run(null, reject, adapter.ajaxError(jqXHR));
+        Coalesce.backburner.run(null, reject, adapter.ajaxError(jqXHR));
       };
 
       Coalesce.ajax(hash);
@@ -614,7 +614,7 @@ class Sideload extends Middleware {
       if(deserialized.isPayload) {
         // TODO: could optimize this and not merge the context
         // since the session does that anyways
-        payload.forEach(function(model) {
+        deserialized.forEach(function(model) {
           session.merge(model);
         });
         return deserialized.context;

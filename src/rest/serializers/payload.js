@@ -1,4 +1,3 @@
-import materializeRelationships from '../../utils/materialize_relationships';
 import Serializer from '../../serializers/base';
 import Payload from '../payload';
 import {singularize} from '../../utils/inflector';
@@ -86,12 +85,12 @@ export default class PayloadSerializer extends Serializer {
       console.assert(!!serializer, `No serializer found for '${typeKey}'`);
       if (Array.isArray(value)) {
         for (var i=0; i < value.length; i++) {
-          var model = serializer.deserialize(value[i]);
+          var model = serializer.deserialize(value[i], {graph: result});
           checkForContext(model);
           result.add(model);
         }
       } else {
-        var model = serializer.deserialize(value);
+        var model = serializer.deserialize(value, {graph: result});
         checkForContext(model);
         result.add(model);
       }
@@ -108,9 +107,7 @@ export default class PayloadSerializer extends Serializer {
         result.errors = errors;
       }
     }
-
-    materializeRelationships(result, this.idManager);
-
+    
     return result;
   }
 

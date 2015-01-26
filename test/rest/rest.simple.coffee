@@ -23,7 +23,7 @@ describe "rest with simple model", ->
       expect(@server.h).to.eql(['GET:/posts/1'])
 
 
-  it 'saves', ->
+  it.only 'saves', ->
     @server.r 'POST:/posts', -> posts: {client_id: post.clientId, id: 1, title: 'mvcc ftw'}
 
     post = @session.create('post')

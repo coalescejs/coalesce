@@ -14,15 +14,17 @@ var uuid = 1;
 
 var defaults = _.defaults;
 
+// TODO: use WeakMap and WeakSet
 export default class Session extends Graph {
 
   constructor({context, idManager, parent}) {
+    super();
     this.context = context;
     this.idManager = idManager;
     this.parent = parent;
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
-    this.shadows = new ModelSet();
+    this.shadows = new Graph();
     this.newModels = new ModelSet();
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
@@ -53,31 +55,23 @@ export default class Session extends Graph {
   */
   create(type, hash) {
     var model = this.build(type, hash);
-    return this.add(model);
+    return this.adopt(model);
   }
-
-  adopt(model) {
-    this.reifyClientId(model);
-    console.assert(model.rev, "Model must have a rev property set");
-    console.assert(!model.session || model.session === this, "Models instances cannot be moved between sessions. Use `add` or `update` instead.");;
-
-    // Only loaded models are stored on the session
-    if(!model.session) {
-      // Need to register with the inverse manager before being added to the
-      // session. Otherwise, in a child session, the entire graph will be
-      // materialized.
-      this.inverseManager.register(model);
-      
-      if(model.isNew) {
-        this.newModels.add(model);
-      }
-    }
-    return super(model);
+  
+  adopt(entity) {
+    this.reifyClientId(entity);
+    return super(entity);
   }
 
   add(model) {
+    console.assert(!model.session, "Model is already associated with a session");
     this.reifyClientId(model);
     super(model);
+    if(model.isNew) {
+      this.newModels.add(model);
+    }
+    this.inverseManager.register(model);
+    return model;
   }
 
   /**
@@ -107,11 +101,11 @@ export default class Session extends Graph {
     if(model.isDeleted) {
       // no-op if already deleted
       if(!wasDeleted) {
-        this.deleteModel(dest);
+        this.deleteModel(res);
       }
     }
     
-    return dest;
+    return res;
   }
 
   deleteModel(model) {
@@ -130,7 +124,7 @@ export default class Session extends Graph {
 
   fetch(model) {
     this.reifyClientId(model);
-    super(model);
+    return super(model);
   }
 
   /**
@@ -148,7 +142,7 @@ export default class Session extends Graph {
     var model = this.getById(typeKey, id);
     if(!model) {
       model = this.build(typeKey, {id: id});
-      this.adopt(model);
+      this.add(model);
     }
 
     return model;
@@ -195,10 +189,10 @@ export default class Session extends Graph {
     }
     
     promise = promise.then((serverModel) => {
-      this.merge(serverModel);
+      return this.merge(serverModel);
     }, (error) => {
       // TODO: think through 404 errors, delete the model?
-      this.revert(model);
+      return this.revert(model);
     });
 
     return promise;
@@ -244,18 +238,19 @@ export default class Session extends Graph {
     Similar to `fetch`, this method returns a cached local result of the query
     without a trip to the server.
     
+    TODO: addQuery/adoptQuery
+    
     @param {Type} type the type to query against
     @param {object} params the query parameters
     @return {Query}
   */
   fetchQuery(type, params) {
     type = this._typeFor(type);
-    var queryCache = this._queryCacheFor(type),
-        query = queryCache.getQuery(type, params);
+    var key = Query.key(type, params),
+        query = this.queries[key];
     
     if(!query) {
-      query = this.buildQuery(type, params);
-      queryCache.add(query);
+      query = this.queries[key] = this.buildQuery(type, params);
     }
     
     return query;
@@ -263,6 +258,8 @@ export default class Session extends Graph {
 
   /**
     Queries the server.
+    
+    TODO: move adapter.query() logic inside query
     
     @param {Type} type Type to query against
     @param {object} params Query parameters
@@ -272,18 +269,32 @@ export default class Session extends Graph {
   query(type, params, opts) {
     var type = this._typeFor(type),
         query = this.fetchQuery(type, params),
-        queryCache = this._queryCacheFor(type),
-        promise = queryCache.getPromise(query);
-        
-    if(!promise) {
-      promise = this.refreshQuery(query, opts);
-    }
     
-    return promise;
+    // TODO: Use cache
+    // var type = this._typeFor(type),
+    //     query = this.fetchQuery(type, params),
+    //     queryCache = this._queryCacheFor(type),
+    //     promise = queryCache.getPromise(query);
+    //     
+    // if(!promise) {
+    //   promise = this.refreshQuery(query, opts);
+    // }
+        
+    return this.loadQuery(query, opts);
+  }
+  
+  loadQuery(query, opts) {
+    var adapter = _adapterFor(query.type);
+    return this.adapter.query(query, opts, this).then(function(res) {
+      query.populate(res);
+      return query;
+    });
   }
   
   /**
     Queries the server and bypasses the cache.
+    
+    TODO: move adapter.query() logic inside query
     
     @param {Type} type Type to query against
     @param {object} params Query parameters
@@ -363,7 +374,7 @@ export default class Session extends Graph {
 
   get dirtyModels() {
     var models = new ModelSet(array_from(this.shadows).map(function(model) {
-      return this.models.get(model);
+      return this.get(model);
     }, this));
 
     this.newModels.forEach(function(model) {
@@ -394,25 +405,6 @@ export default class Session extends Graph {
       idManager: this.idManager
     });
     return child;
-  }
-
-  getShadow(model) {
-    var shadows = this.shadows;
-    var models = this.models;
-    // shadows are only created when the model is dirtied,
-    // if no model exists in the `shadows` property then
-    // it is safe to assume the model has not been modified
-    return shadows.get(model) || models.get(model);
-  }
-
-  /**
-    @private
-
-    Updates the promise cache
-  */
-  updateCache(model) {
-    var cache = this._modelCacheFor(model);
-    cache.add(model);
   }
 
   /**
@@ -472,10 +464,11 @@ export default class Session extends Graph {
     @param {Coalesce.Model} model
   */
   touch(model) {
+    console.assert(this.has(model), "Model is not part of session");
     if(!model.isNew) {
       var shadow = this.shadows.get(model);
       if(!shadow) {
-        this.shadows.addObject(model.copy())
+        this.shadows.update(model);
       }
     }
     model.bump();
@@ -573,6 +566,28 @@ export default class Session extends Graph {
     });
   }
   
+  
+  // XXX: put this somewhere
+  /**
+    @private
+    
+    When merging a new version of a model, it may contains relationship data for
+    a relationship that it does not own. It is possible that this data could be
+    stale and we need to unload to pervent clobbering a client's changed to the
+    relationship.
+  */
+  _removeStaleRelationships(model, ancestor) {
+    if(!ancestor) {
+      return;
+    }
+    var adapter = this.context.configFor(model).get('adapter');
+    model.eachLoadedRelationship(function(name, relationship) {
+      if(ancestor.isFieldLoaded(name) && !adapter.isRelationshipOwner(relationship)) {
+        delete model._relationships[name];
+      }
+    });
+  }
+  
   /**
     Sends all local changes down to the server
     
@@ -580,7 +595,7 @@ export default class Session extends Graph {
   */
   flush(models=this.dirtyModels) {
     // XXX: move this
-    this.emit('willFlush', dirtyModels);
+    this.emit('willFlush', models);
     
     var flush = new Flush(this);
     flush.performLater();
@@ -613,7 +628,7 @@ export default class Session extends Graph {
     }
     this.reifyClientId(serverModel);
     
-    var model = this.get(serverModel),
+    var model = this.fetch(serverModel),
         shadow = this.shadows.get(serverModel);
         
     // Some backends will not return versioning information. In this
@@ -621,24 +636,16 @@ export default class Session extends Graph {
     // all new models are a newer version.
     // NOTE: rev is also used to break merge recursion
     if(!serverModel.rev) {
-      if(model) {
-        serverModel.rev = model.rev++;
-      } else {
-        serverModel.rev = 0;
-      }
+      serverModel.rev = model.rev === null ? 1 : model.rev + 1;
     }
     
     // Optimistically assume has seen client's version if no clientRev set
     if(!serverModel.clientRev) {
-      if(shadow || model) {
-        serverModel.clientRev = (shadow || model).clientRev;
-      } else {
-        serverModel.clientRev = 0;
-      }
+      serverModel.clientRev = (shadow || model).clientRev;
     }
     
     // Have we already seen this version?
-    if(model && model.rev >= serverModel.rev) {
+    if(model.rev >= serverModel.rev) {
       return model;
     }
     
@@ -650,17 +657,29 @@ export default class Session extends Graph {
       return model;
     }
     
+    var detachedChildren = [];
+    serverModel.eachChild(function(child) {
+      this.reifyClientId(child);
+      if(child.isEmbedded || child.isDetached) {
+        detachedChildren.push(child);
+      }
+    }, this);
+    
     // If there is no shadow, then no merging is necessary and we just
     // update the session with the new data
     if(!shadow) {
-      model = this.update(serverModel);
+      this.suspendDirtyChecking(function() {
+        model = this.update(serverModel);
+      });
       
       // TODO: move this check to update?
       if(!model.isNew) {
-        newModels.remove(model);
+        this.newModels.remove(model);
       }
     } else {
-      model = this._merge(serverModel);
+      this.suspendDirtyChecking(function() {
+        model = this._merge(model, shadow, serverModel);
+      });
       
       if(model.isDeleted) {
         this.remove(merged);
@@ -670,11 +689,19 @@ export default class Session extends Graph {
         // we only create shadows if the model has been dirtied.
         // TODO: diff the model with the serverModel and see if
         // we can remove the shadow entirely
-        shadows.update(model);
+        console.assert(this.has(model));
+        this.shadows.update(serverModel);
       }
     }
     
-    this.updateCache(model);
+    this._modelCacheFor(serverModel).add(serverModel);
+    
+    // recurse on detached and embedded children
+    detachedChildren.forEach(function(child) {
+      if(child.isEmbedded || child.isDetached) {
+        this.merge(child);
+      }
+    }, this);
 
     return model;
   }
@@ -684,28 +711,28 @@ export default class Session extends Graph {
     
     Do the actual merging.
   */
-  _merge(dest, ancestor, model) {
-    console.assert(model.id || !dest.id, `Expected ${model} to have an id set`);
+  _merge(model, shadow, serverModel) {
+    console.assert(serverModel.id || !shadow.id, `Expected ${model} to have an id set`);
     // set id for new records
-    dest.id = model.id;
-    dest.clientId = model.clientId;
+    model.id = serverModel.id;
+    model.clientId = serverModel.clientId;
     // copy the server revision
-    dest.rev = model.rev;
+    model.rev = serverModel.rev;
     
     // TODO: move merging isDeleted into merge strategy
-    // dest.isDeleted = model.isDeleted;
+    // model.isDeleted = serverModel.isDeleted;
     
     // Reify child client ids before merging. This isn't semantically
     // required, but many data structures that might be used in the merging
     // process use client ids.
-    model.eachChild(function(child) {
+    serverModel.eachChild(function(child) {
       this.reifyClientId(child);
     }, this);
 
-    var strategy = this._mergeStrategyFor(model.typeKey);
-    strategy.merge(dest, ancestor, model, session);
+    var strategy = this._mergeFor(serverModel.typeKey);
+    strategy.merge(model, shadow, serverModel, this);
 
-    return dest;
+    return model;
   }
   
   /**
@@ -731,6 +758,7 @@ export default class Session extends Graph {
       var shadow = this.shadows.get(original);
       if(!original.rev || shadow.rev <= original) {
         // "rollback" shadow to the original
+        console.assert(this.has(original));
         this.shadows.update(original);
       }
     } else if(model.isNew) {
@@ -739,27 +767,6 @@ export default class Session extends Graph {
     }
     
     return this.shadows.get(original);
-  }
-
-  
-  /**
-    @private
-    
-    When merging a new version of a model, it may contains relationship data for
-    a relationship that it does not own. It is possible that this data could be
-    stale and we need to unload to pervent clobbering a client's changed to the
-    relationship.
-  */
-  _removeStaleRelationships(model, ancestor) {
-    if(!ancestor) {
-      return;
-    }
-    var adapter = this.context.configFor(model).get('adapter');
-    model.eachLoadedRelationship(function(name, relationship) {
-      if(ancestor.isFieldLoaded(name) && !adapter.isRelationshipOwner(relationship)) {
-        delete model._relationships[name];
-      }
-    });
   }
   
   _typeFor(key) {
@@ -778,8 +785,8 @@ export default class Session extends Graph {
     return this.context.configFor(key).get('queryCache');
   }
   
-  _mergeStrategyFor(key) {
-    return this.context.configFor(key).get('mergeStrategy');
+  _mergeFor(key) {
+    return this.context.configFor(key).get('merge');
   }
 
   toString() {
@@ -792,9 +799,14 @@ export default class Session extends Graph {
   
 }
 
+Session.prototype.isSession = true;
+
 // Legacy aliases
 Session.prototype.getModel = Session.prototype.get;
 Session.prototype.getForId = Session.prototype.getById;
 Session.prototype.getForClientId = Session.prototype.getByClientId;
+
+// XXX: Hack to get around Ember container
+Session.extend = undefined;
 
 evented(Session.prototype);

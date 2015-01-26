@@ -101,7 +101,7 @@ export default class ModelSerializer extends Serializer {
     
     // OPTIMIZATION: extract directly to graph
     if(opts.graph) {
-      model = opts.graph.fetch(model);  
+      model = opts.graph.adopt(model);  
     }
     
     this.extractMeta(model, hash, opts);
@@ -126,7 +126,7 @@ export default class ModelSerializer extends Serializer {
   extractAttributes(model, hash, opts) {
     model.eachAttribute(function(name, attribute) {
       opts = clone(opts);
-      opts.field = relationship;
+      opts.field = attribute;
       this.extractField(model, hash, name, attribute.type, opts);
     }, this);
   }
@@ -160,7 +160,7 @@ export default class ModelSerializer extends Serializer {
   }
 
   createModel() {
-    var model = this.typeFor(this.typeKey).create();
+    return this.typeFor(this.typeKey).create();
   }
 
   typeFor(typeKey) {

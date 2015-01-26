@@ -23,8 +23,7 @@ var Coalesce = {
 };
 
 if(Backburner) {
-  var backburner = new Backburner(['actions']);
-  Coalesce.run = backburner.run.bind(backburner);
+  Coalesce.backburner = new Backburner(['actions']);
 }
 
 export default Coalesce;
