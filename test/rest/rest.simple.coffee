@@ -1,5 +1,5 @@
 `import Context from 'coalesce/rest/context'`
-`import Model from 'coalesce/model/model'`
+`import Model from 'coalesce/entities/model'`
 
 describe "rest with simple model", ->
 
@@ -23,7 +23,7 @@ describe "rest with simple model", ->
       expect(@server.h).to.eql(['GET:/posts/1'])
 
 
-  it.only 'saves', ->
+  it 'saves', ->
     @server.r 'POST:/posts', -> posts: {client_id: post.clientId, id: 1, title: 'mvcc ftw'}
 
     post = @session.create('post')

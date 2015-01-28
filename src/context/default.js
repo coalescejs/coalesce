@@ -19,7 +19,7 @@ import BelongsToMerge from '../merge/belongs_to';
 import ModelCache from '../session/model_cache';
 import QueryCache from '../session/query_cache';
 
-import Errors from '../model/errors';
+import Errors from '../errors';
 
 import IdManager from '../id_manager';
 

@@ -1,4 +1,4 @@
-`import Model from 'coalesce/model/model'`
+`import Model from 'coalesce/entities/model'`
 `import Context from 'coalesce/rest/context'`
 
 describe "rest with rpc", ->

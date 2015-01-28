@@ -1,5 +1,5 @@
 `import Context from 'coalesce/context/base'`
-`import Model from 'coalesce/model/model'`
+`import Model from 'coalesce/entities/model'`
 
 describe 'Context', ->
   

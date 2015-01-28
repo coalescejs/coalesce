@@ -1,16 +1,16 @@
 import Base from './base';
-import ModelSet from '../collections/model_set';
+import EntitySet from '../collections/entity_set';
 import isEqual from '../utils/is_equal';
 import fork from '../utils/fork';
 import {dasherize} from '../utils/inflector';
 
 /**
-  Merge strategy that merges on a per-field basis.
+  Merge strategy that merges on a per-attribute basis.
 
-  Fields which have been editted by both will
+  Attributes which have been editted by both will
   default to "ours".
 
-  Fields which do not have an ancestor will default to
+  Attributes which do not have an ancestor will default to
   "theirs".
 
   @namespace merge
@@ -19,24 +19,13 @@ import {dasherize} from '../utils/inflector';
 export default class ModelMerge extends Base {
 
   merge(ours, ancestor, theirs, session, opts) {
-    this.mergeAttributes(ours, ancestor, theirs, session);
-    this.mergeRelationships(ours, ancestor, theirs, session);
+    ours.eachAttribute(function(name, attribute) {
+      this.mergeAttribute(ours, ancestor, theirs, session, attribute);
+    }, this);
     return ours;
   }
 
-  mergeAttributes(ours, ancestor, theirs, session) {
-    ours.eachAttribute(function(name, attribute) {
-      this.mergeField(ours, ancestor, theirs, session, attribute);
-    }, this);
-  }
-
-  mergeRelationships(ours, ancestor, theirs, session) {
-    ours.eachRelationship(function(name, relationship) {
-      this.mergeField(ours, ancestor, theirs, session, relationship);
-    }, this);
-  }
-
-  mergeField(ours, ancestor, theirs, session, field) {
+  mergeAttribute(ours, ancestor, theirs, session, field) {
     var name = field.name,
         oursValue = ours[name],
         ancestorValue = ancestor[name],
@@ -53,19 +42,12 @@ export default class ModelMerge extends Base {
       return;
     }
         
-    // TODO: support custom attribute merging
-    var merge = field.kind !== 'attribute' && this.mergeFor(dasherize(field.kind));
-    if(merge) {
-      ours[name] = merge.merge(oursValue, ancestorValue, theirsValue, session, field);
+    if(!ancestor.isFieldLoaded(name) || isEqual(oursValue, ancestorValue)) {
+      // if unchanged, always use theirs
+      ours[name] = fork(theirsValue);
     } else {
-      // default field merge logic
-      if(!ancestor.isFieldLoaded(name) || isEqual(oursValue, ancestorValue)) {
-        // if unchanged, always use theirs
-        ours[name] = fork(theirsValue);
-      } else {
-        // ours was modified, use it instead of theirs
-        // NO-OP
-      }
+      // ours was modified, use it instead of theirs
+      // NO-OP
     }
   }
 

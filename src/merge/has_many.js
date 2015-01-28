@@ -15,7 +15,7 @@ import isEqual from '../utils/is_equal';
 */
 export default class HasManyMerge extends Base {
 
-  merge(ours, ancestor, theirs, session, relationship) {
+  merge(ours, ancestor, theirs, session) {
     if(isEqual(ours, ancestor)) {
       // TODO: think about merging the actual object, not
       // returning the entire value

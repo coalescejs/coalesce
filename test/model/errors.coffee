@@ -1,4 +1,4 @@
-`import Errors from 'coalesce/model/errors'`
+`import Errors from 'coalesce/errors'`
 
 describe 'Errors', ->
 

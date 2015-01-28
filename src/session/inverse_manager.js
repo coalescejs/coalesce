@@ -1,4 +1,4 @@
-import ModelSet from '../collections/model_set';
+import EntitySet from '../collections/entity_set';
 import copy from '../utils/copy';
 
 /**
@@ -99,7 +99,7 @@ export default class InverseManager {
 
     var inversesFor = inverses[name];
     if(!inversesFor) {
-      inversesFor = inverses[name] = new ModelSet();
+      inversesFor = inverses[name] = new EntitySet();
     }
 
     return inversesFor;

@@ -1,5 +1,5 @@
-`import ModelSet from 'coalesce/collections/model_set'`
-`import Model from 'coalesce/model/model'`
+`import EntitySet from 'coalesce/collections/entity_set'`
+`import Model from 'coalesce/entities/model'`
 `import Context from 'coalesce/context/default'`
 
 describe 'Model', ->
@@ -57,7 +57,7 @@ describe 'Model', ->
     it 'returns true when dirty', ->
       user = null
       Object.defineProperty session, 'dirtyModels',
-        get: -> new ModelSet([user])
+        get: -> new EntitySet([user])
 
       user = new @User()
       user.session = session
@@ -65,7 +65,7 @@ describe 'Model', ->
 
     it 'returns false when untouched', ->
       Object.defineProperty session, 'dirtyModels',
-        get: -> new ModelSet
+        get: -> new EntitySet
 
       user = new @User()
       user.session = session

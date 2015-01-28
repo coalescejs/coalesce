@@ -1,9 +1,9 @@
-import ModelSet from '../collections/model_set';
+import EntitySet from '../collections/entity_set';
 import Graph from '../collections/graph';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
-import Model from '../model/model';
-import Query from './query';
+import Model from '../entities/model';
+import Query from '../entities/query';
 import Flush from './flush';
 import copy from '../utils/copy';
 import Error from '../error';
@@ -25,7 +25,7 @@ export default class Session extends Graph {
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
     this.shadows = new Graph();
-    this.newModels = new ModelSet();
+    this.newModels = new EntitySet();
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
   }
@@ -63,13 +63,14 @@ export default class Session extends Graph {
     return super(entity);
   }
 
-  add(model) {
-    console.assert(!model.session, "Model is already associated with a session");
-    this.reifyClientId(model);
-    super(model);
-    if(model.isNew) {
+  add(entity) {
+    console.assert(!entity.session, "Entity is already associated with a session");
+    this.reifyClientId(entity);
+    super(entity);
+    if(entity.isModel && entity.isNew) {
       this.newModels.add(model);
     }
+    // TODO think through inverses
     this.inverseManager.register(model);
     return model;
   }
@@ -83,25 +84,25 @@ export default class Session extends Graph {
     @method remove
     @param {Coalesce.Model} model The model to remove from the session
   */
-  remove(model) {
-    this.reifyClientId(model);
-    this.shadows.remove(model);
-    this.newModels.remove(model);
-    return super(model);
+  remove(entity) {
+    this.reifyClientId(entity);
+    this.shadows.remove(entity);
+    this.newModels.remove(entity);
+    return super(entity);
   }
 
-  update(model) {
-    this.reifyClientId(model);
+  update(entity) {
+    this.reifyClientId(entity);
     // TODO: this is kinda ugly
-    var wasDeleted = this.fetch(model).isDeleted;
+    var wasDeleted = this.fetch(entity).isDeleted;
     
-    var res = super(model);
+    var res = super(entity);
 
     // handle deletion
-    if(model.isDeleted) {
+    if(entity.isDeleted) {
       // no-op if already deleted
       if(!wasDeleted) {
-        this.deleteModel(res);
+        this.deleteModel(entity);
       }
     }
     
@@ -122,9 +123,9 @@ export default class Session extends Graph {
     this.inverseManager.unregister(model);
   }
 
-  fetch(model) {
-    this.reifyClientId(model);
-    return super(model);
+  fetch(entity) {
+    this.reifyClientId(entity);
+    return super(entity);
   }
 
   /**
@@ -148,66 +149,62 @@ export default class Session extends Graph {
     return model;
   }
   
+
   /**
-    Loads the model corresponding to the given typeKey and id.
+    Loads data for an entity.
 
     @returns {Promise}
   */
-  load(type, id, opts) {
-    var model = this.fetchById(type, id);
-    return this.loadModel(model, opts);
-  }
-
-  /**
-    Ensures data is loaded for a model.
-
-    @returns {Promise}
-  */
-  loadModel(model, opts) {
+  load(entity, opts) {
+    // BACK-COMPAT: load used to be the same as find
+    if(!entity.isModel) {
+      return this.find.apply(this, arguments);
+    }
+    
     var promise;
     if(this.parent) {
-      promise = this.parent.load(model, opts);
+      promise = this.parent.load(entity, opts);
     } else {
-      console.assert(model.id, "Cannot load a model without an id");
+      console.assert(entity.id, "Cannot load a entity without an id");
       // TODO: this should be done on a per-attribute bases
-      var cache = this._modelCacheFor(model),
-          adapter = this._adapterFor(model);
+      var cache = this._cacheFor(entity),
+          adapter = this._adapterFor(entity);
         
       if(!opts || opts.skipCache !== false) {  
-        promise = cache.getPromise(model)
+        promise = cache.getPromise(entity)
       }
 
       if(promise) {
         // the cache's promise is not guaranteed to return anything
         promise = promise.then(function() {
-          return model;
+          return entity;
         });
       } else {
-        promise = adapter.load(model, opts, this);
-        cache.add(model, promise);
+        promise = adapter.load(entity, opts, this);
+        cache.add(entity, promise);
       }
     }
     
-    promise = promise.then((serverModel) => {
-      return this.merge(serverModel);
+    promise = promise.then((serverEntity) => {
+      return this.merge(serverEntity);
     }, (error) => {
-      // TODO: think through 404 errors, delete the model?
-      return this.revert(model);
+      // TODO: think through 404 errors, delete the entity?
+      return this.revert(entity);
     });
 
     return promise;
   }
   
   /**
-    Similar to `loadModel`, but guarntees a trip to the server and skips the
-    session level model cache.
+    Convenience wrapper around load which ensures that the adapter
+    will be hit.
     
-    @params {Model} model the model to refresh
+    @params {Entity} entity the entity to refresh
     @return {Promise}
   */
-  refresh(model, opts) {
+  refresh(entity, opts) {
     defaults(opts, {skipCache: true});
-    return this.load(model, opts);
+    return this.load(entity, opts);
   }
 
   /**
@@ -217,11 +214,12 @@ export default class Session extends Graph {
     
     @returns {Promise}
   */
-  find(type, query, opts) {
-    if (typeof query === 'object') {
+  find(type, queryOrId, opts) {
+    if (typeof queryOrId === 'object') {
       return this.query(type, query, opts);
     }
-    return this.load(type, query, opts);
+    var model = this.fetchById(type, id);
+    return this.load(model, opts);
   }
   
   /**
@@ -237,8 +235,6 @@ export default class Session extends Graph {
   /**
     Similar to `fetch`, this method returns a cached local result of the query
     without a trip to the server.
-    
-    TODO: addQuery/adoptQuery
     
     @param {Type} type the type to query against
     @param {object} params the query parameters
@@ -258,9 +254,7 @@ export default class Session extends Graph {
 
   /**
     Queries the server.
-    
-    TODO: move adapter.query() logic inside query
-    
+
     @param {Type} type Type to query against
     @param {object} params Query parameters
     @param {object} opts Additional options
@@ -268,56 +262,15 @@ export default class Session extends Graph {
   */
   query(type, params, opts) {
     var type = this._typeFor(type),
-        query = this.fetchQuery(type, params),
-    
-    // TODO: Use cache
-    // var type = this._typeFor(type),
-    //     query = this.fetchQuery(type, params),
-    //     queryCache = this._queryCacheFor(type),
-    //     promise = queryCache.getPromise(query);
-    //     
-    // if(!promise) {
-    //   promise = this.refreshQuery(query, opts);
-    // }
+        query = this.fetchQuery(type, params);
         
-    return this.loadQuery(query, opts);
-  }
-  
-  loadQuery(query, opts) {
-    var adapter = _adapterFor(query.type);
-    return this.adapter.query(query, opts, this).then(function(res) {
-      query.populate(res);
-      return query;
-    });
-  }
-  
-  /**
-    Queries the server and bypasses the cache.
-    
-    TODO: move adapter.query() logic inside query
-    
-    @param {Type} type Type to query against
-    @param {object} params Query parameters
-    @param {object} opts Additional options
-    @return {Promise}
-  */
-  refreshQuery(query, opts) {
-    var adapter = this._adapterFor(query.type),
-      promise = adapter.query(query, opts, this).then(function(models) {
-      query.meta = models.meta;
-      query.replace(0, query.length, models);
-      return query;
-    });
-    var queryCache = this._queryCacheFor(query.type);
-    queryCache.add(query, promise);
-    
-    return promise;
+    return this.load(query, opts);
   }
 
-  get(model) {
-    var res = super(model);
+  get(entity) {
+    var res = super(entity);
     if(!res && this.parent) {
-      res = this.parent.get(model);
+      res = this.parent.get(entity);
       if(res) {
         res = this.fetch(res);
       }
@@ -373,7 +326,7 @@ export default class Session extends Graph {
   }
 
   get dirtyModels() {
-    var models = new ModelSet(array_from(this.shadows).map(function(model) {
+    var models = new EntitySet(array_from(this.shadows).map(function(model) {
       return this.get(model);
     }, this));
 
@@ -408,27 +361,17 @@ export default class Session extends Graph {
   }
 
   /**
-    Invalidate the cache for a particular model. This has the
+    Invalidate the cache for a particular entity. This has the
     effect of making the next `load` call hit the server.
 
     @method invalidate
     @param {Model} model
   */
-  invalidate(model) {
-    var cache = this._modelCacheFor(model);
-    cache.remove(model);
+  invalidate(entity) {
+    var cache = this._cacheFor(entity);
+    return cache.remove(entity);
   }
   
-  /**
-    Invalidate the cache for a particular query.
-
-    @method invalidateQuery
-    @param {Query} query
-  */
-  invalidateQuery(query) {
-    var queryCache = this._queryCacheFor(query.type);
-    queryCache.remove(query);
-  }
   
   /**
     Invalidate the cache for all queries corresponding to a particular Type.
@@ -437,41 +380,41 @@ export default class Session extends Graph {
     @param {Type} type Type to invalidate
   */
   invalidateQueries(type) {
+    // XXX: TODO
     var type = this._typeFor(type),
         queryCache = this._queryCacheFor(type);
     queryCache.removeAll(type);
   }
 
   /**
-    Mark a model as clean. This will prevent future
-    `flush` calls from persisting this model's state to
-    the server until the model is marked dirty again.
+    Mark an entity as clean. This will prevent future
+    `flush` calls from persisting this entity's state to
+    the server until the entity is marked dirty again.
 
     @method markClean
-    @param {Coalesce.Model} model
+    @param {Entity} entity
   */
-  markClean(model) {
+  markClean(entity) {
     // as an optimization, model's without shadows
     // are assumed to be clean
-    this.shadows.remove(model);
+    this.shadows.remove(entity);
   }
 
   /**
-    Mark a model as dirty. This will cause this model
-    to be sent to the adapter during a flush.
+    Mark an entity as dirty. 
 
     @method touch
-    @param {Coalesce.Model} model
+    @param {Entity} entity
   */
-  touch(model) {
-    console.assert(this.has(model), "Model is not part of session");
-    if(!model.isNew) {
-      var shadow = this.shadows.get(model);
+  touch(entity) {
+    console.assert(this.has(entity), `${entity} is not part of a session`);
+    if(!entity.isNew) {
+      var shadow = this.shadows.get(entity);
       if(!shadow) {
-        this.shadows.update(model);
+        this.shadows.update(entity);
       }
     }
-    model.bump();
+    entity.clientRev++;
   }
 
 
@@ -558,8 +501,8 @@ export default class Session extends Graph {
       flush.performLater();
     }
         
-    return flush.add(model, opts).then(function(serverModel) {
-      this.merge(serverModel);
+    return flush.add(model, opts).then(function(serverEntity) {
+      this.merge(serverEntity);
     }, function(error) {
       // TODO: handle new data
       this.revert(shadow);
@@ -608,9 +551,9 @@ export default class Session extends Graph {
   }
   
   /**
-    Merges new data for a model into this session.
+    Merges new data for an entity into this session.
 
-    If the corresponding model inside the session is "dirty"
+    If the corresponding entity inside the session is "dirty"
     and has not been successfully flushed, the local changes
     will be merged against these changes.
 
@@ -620,90 +563,89 @@ export default class Session extends Graph {
     this data is assumed to have not seen the latest client changes.
 
     @method merge
-    @param {Model} model The model to merge
+    @param {Entity} entity The entity to merge
   */
-  merge(serverModel) {
+  merge(serverEntity) {
     if(this.parent) {
-      serverModel = this.parent.merge(serverModel, visited);
+      serverEntity = this.parent.merge(serverEntity, visited);
     }
-    this.reifyClientId(serverModel);
+    this.reifyClientId(serverEntity);
     
-    var model = this.fetch(serverModel),
-        shadow = this.shadows.get(serverModel);
+    var entity = this.fetch(serverEntity),
+        shadow = this.shadows.get(serverEntity);
         
     // Some backends will not return versioning information. In this
     // case we just fabricate our own server versioning, assuming that
-    // all new models are a newer version.
+    // all new entities are a newer version.
     // NOTE: rev is also used to break merge recursion
-    if(!serverModel.rev) {
-      serverModel.rev = model.rev === null ? 1 : model.rev + 1;
+    if(!serverEntity.rev) {
+      serverEntity.rev = entity.rev === null ? 1 : entity.rev + 1;
     }
     
     // Optimistically assume has seen client's version if no clientRev set
-    if(!serverModel.clientRev) {
-      serverModel.clientRev = (shadow || model).clientRev;
+    if(!serverEntity.clientRev) {
+      serverEntity.clientRev = (shadow || entity).clientRev;
     }
     
     // Have we already seen this version?
-    if(model.rev >= serverModel.rev) {
-      return model;
+    if(entity.rev >= serverEntity.rev) {
+      return entity;
     }
     
-    // If a model comes in with a clientRev that is lower than the
+    // If a entity comes in with a clientRev that is lower than the
     // shadow it is to be merged against, then the common ancestor is
     // no longer tracked. In this scenario we currently just toss out.
-    if(shadow && shadow.clientRev > serverModel.clientRev) {
-      console.warn(`Not merging stale model ${serverModel}`)
-      return model;
+    if(shadow && shadow.clientRev > serverEntity.clientRev) {
+      console.warn(`Not merging stale entity ${serverEntity}`)
+      return entity;
     }
     
-    var detachedChildren = [];
-    serverModel.eachChild(function(child) {
-      this.reifyClientId(child);
-      if(child.isEmbedded || child.isDetached) {
-        detachedChildren.push(child);
+    
+    var childrenToRecurse = [];
+    for(var entity of serverEntity.children) {
+      // recurse on detached/embedded children entities
+      if(entity.isEmbedded || entity.isDetached) {
+        childrenToRecurse.push(child);
       }
-    }, this);
+    }
     
     // If there is no shadow, then no merging is necessary and we just
     // update the session with the new data
     if(!shadow) {
       this.suspendDirtyChecking(function() {
-        model = this.update(serverModel);
+        entity = this.update(serverEntity);
       });
       
       // TODO: move this check to update?
-      if(!model.isNew) {
-        this.newModels.remove(model);
+      if(!entity.isNew) {
+        this.newModels.remove(entity);
       }
     } else {
       this.suspendDirtyChecking(function() {
-        model = this._merge(model, shadow, serverModel);
+        entity = this._merge(entity, shadow, serverEntity);
       });
       
-      if(model.isDeleted) {
+      if(entity.isDeleted) {
         this.remove(merged);
       } else {
         // After a successful merge we update the shadow to the
         // last known value from the server. As an optimization,
-        // we only create shadows if the model has been dirtied.
-        // TODO: diff the model with the serverModel and see if
+        // we only create shadows if the entity has been dirtied.
+        // TODO: diff the entity with the serverEntity and see if
         // we can remove the shadow entirely
-        console.assert(this.has(model));
-        this.shadows.update(serverModel);
+        console.assert(this.has(entity));
+        this.shadows.update(serverEntity);
       }
     }
     
-    this._modelCacheFor(serverModel).add(serverModel);
+    this._entityCacheFor(serverEntity).add(serverEntity);
     
     // recurse on detached and embedded children
-    detachedChildren.forEach(function(child) {
-      if(child.isEmbedded || child.isDetached) {
-        this.merge(child);
-      }
+    childrenToRecurse.forEach(function(child) {
+      this.merge(child);
     }, this);
 
-    return model;
+    return entity;
   }
   
   /**
@@ -711,28 +653,28 @@ export default class Session extends Graph {
     
     Do the actual merging.
   */
-  _merge(model, shadow, serverModel) {
-    console.assert(serverModel.id || !shadow.id, `Expected ${model} to have an id set`);
+  _merge(entity, shadow, serverEntity) {
+    console.assert(serverEntity.id || !shadow.id, `Expected ${entity} to have an id set`);
     // set id for new records
-    model.id = serverModel.id;
-    model.clientId = serverModel.clientId;
+    entity.id = serverEntity.id;
+    entity.clientId = serverEntity.clientId;
     // copy the server revision
-    model.rev = serverModel.rev;
+    entity.rev = serverEntity.rev;
     
     // TODO: move merging isDeleted into merge strategy
-    // model.isDeleted = serverModel.isDeleted;
+    // entity.isDeleted = serverEntity.isDeleted;
     
     // Reify child client ids before merging. This isn't semantically
     // required, but many data structures that might be used in the merging
     // process use client ids.
-    serverModel.eachChild(function(child) {
+    serverEntity.eachChild(function(child) {
       this.reifyClientId(child);
     }, this);
 
-    var strategy = this._mergeFor(serverModel.typeKey);
-    strategy.merge(model, shadow, serverModel, this);
+    var strategy = this._mergeFor(serverEntity.typeKey);
+    strategy.merge(entity, shadow, serverEntity, this);
 
-    return model;
+    return entity;
   }
   
   /**
@@ -742,28 +684,28 @@ export default class Session extends Graph {
     TODO: check to see if we still need a shadow after reverting
     
     @method revert
-    @param {Model} original The original version of the model
+    @param {entity} original The original version of the entity
   */
   revert(original) {
     if(this.parent) {
-      original = this.parent.revert(serverModel);
+      original = this.parent.revert(serverEntity);
     }
     
     this.reifyClientId(original);
     
-    var model = this.get(original);
-    console.assert(!!model, "Cannot revert non-existant model");
+    var entity = this.get(original);
+    console.assert(!!entity, "Cannot revert non-existant entity");
         
-    if(!model.isNew) {
+    if(!entity.isNew) {
       var shadow = this.shadows.get(original);
       if(!original.rev || shadow.rev <= original) {
         // "rollback" shadow to the original
         console.assert(this.has(original));
         this.shadows.update(original);
       }
-    } else if(model.isNew) {
-      // re-track the model as a new model
-      this.newModels.add(model);
+    } else if(entity.isNew) {
+      // re-track the entity as a new entity
+      this.newModels.add(entity);
     }
     
     return this.shadows.get(original);
@@ -773,18 +715,20 @@ export default class Session extends Graph {
     return this.context.typeFor(key);
   }
   
-  _adapterFor(key) {
-    return this.context.configFor(key).get('adapter');
-  }
-  
-  _modelCacheFor(key) {
+  _cacheFor(key) {
+    if(key.isQuery || key.isRelationship) {
+      return this.context.configFor(key.type).get('queryCache');
+    }
     return this.context.configFor(key).get('modelCache');
   }
   
-  _queryCacheFor(key) {
-    return this.context.configFor(key).get('queryCache');
+  _adapterFor(key) {
+    if(key.isQuery || key.isRelationship) {
+      key = key.type;
+    }
+    return this.context.configFor(key).get('adapter');
   }
-  
+
   _mergeFor(key) {
     return this.context.configFor(key).get('merge');
   }

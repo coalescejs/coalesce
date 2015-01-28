@@ -1,5 +1,5 @@
 `import Context from 'coalesce/rest/context'`
-`import Errors from 'coalesce/model/errors'`
+`import Errors from 'coalesce/errors'`
 
 `import {post} from '../support/configs'`
 `import {delay} from '../support/async'`

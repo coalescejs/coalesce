@@ -1,4 +1,4 @@
-import Model from 'coalesce/model/model';
+import Model from 'coalesce/entities/model';
 
 function post() {
   class Post extends Model {};

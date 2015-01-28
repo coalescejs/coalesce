@@ -1,15 +1,9 @@
-import Coalesce from '../namespace';
 import BaseClass from '../utils/base_class';
-import ModelSet from '../collections/model_set';
 import copy from '../utils/copy';
 import fork from '../utils/fork';
 import isEqual from '../utils/is_equal';
-import Attribute from './attribute';
-import BelongsTo from './belongs_to';
-import HasMany from './has_many';
 import Error from '../error';
-import Field from './field';
-import {camelize, pluralize, underscore, classify} from '../utils/inflector';
+import ModelDiff from '../diff/model';
 
 export default class Model extends BaseClass {
 
@@ -80,6 +74,7 @@ export default class Model extends BaseClass {
   }
   
   constructor(fields) {
+    this._graph = null;
     this._meta = {
       id: null,
       clientId: null,
@@ -89,21 +84,13 @@ export default class Model extends BaseClass {
       errors: null
     }
     this._attributes = {};
-    this._relationships = {};
+    this._detachedRelationships = {};
     this._suspendedRelationships = false;
-    this._graph = null;
 
     for(var name in fields) {
       if(!fields.hasOwnProperty(name)) continue;
       this[name] = fields[name];
     }
-  }
-  
-  /**
-    Increase the client rev number
-  */
-  bump() {
-    return ++this.clientRev;
   }
   
   /**
@@ -234,6 +221,53 @@ export default class Model extends BaseClass {
   
   get attributes() {
     return this._attributes;
+  }
+  
+  /**
+    @private
+    
+    Return the raw relationship object.
+  */
+  getRelationshipEntity(name) {
+    var field = this.schema[name],
+        graph = this.graph;
+    if(!graph) {
+      return this._detachedRelationships[name];
+    }
+    
+    var clientId = field.class.clientId(this, field),
+        entity = graph.getByClientId(clientId);
+    
+    if(!entity) {
+      entity = new field.class(this, field);
+      graph.adopt(entity);
+    }
+    
+    return entity;
+  }
+    
+  
+  *relationshipEntities() {
+    for(var relationship in this.schema.relationships) {
+      yield this.getRelationshipEntity(relationship.name);
+    }
+  }
+  
+  *relationships() {
+    for(var entity in this.relationshipEntities) {
+      if(entity.isLoaded) {
+        yield entity;
+      }
+    }
+  }
+  
+  /**
+    @private
+    
+    All child entities
+  */
+  *children() {
+    yield* this.relationshiprelationshipEntities;
   }
   
   metaWillChange(name) {
@@ -411,6 +445,10 @@ export default class Model extends BaseClass {
   static defineSchema(obj) {
     this.schema = new Schema(obj);
   }
+  
+  diff(b) {
+    return new ModelDiff(this, b);
+  }
 }
 
 /**
@@ -429,6 +467,16 @@ function sessionAlias(name) {
   };
 }
 
+Model.reopen({
+  load: sessionAlias('loadModel'),
+  refresh: sessionAlias('refresh'),
+  deleteModel: sessionAlias('deleteModel'),
+  remoteCall: sessionAlias('remoteCall'),
+  markClean: sessionAlias('markClean'),
+  invalidate: sessionAlias('invalidate'),
+  touch: sessionAlias('touch')
+});
+
 function getMeta(name) {
   return this._meta[name];
 }
@@ -443,15 +491,7 @@ function setMeta(name, value) {
 }
 
 
-Model.reopen({
-  load: sessionAlias('loadModel'),
-  refresh: sessionAlias('refresh'),
-  deleteModel: sessionAlias('deleteModel'),
-  remoteCall: sessionAlias('remoteCall'),
-  markClean: sessionAlias('markClean'),
-  invalidate: sessionAlias('invalidate'),
-  touch: sessionAlias('touch')
-});
+
 
 /**
   @private

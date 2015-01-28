@@ -6,15 +6,11 @@ import Error from './error';
 */
 export default class Adapter extends BaseClass {
 
-  load(model, opts, session) {
+  load(entity, opts, session) {
     throw new Error(`${this} does not support load()`);
   }
-  
-  query(query, opts, session) {
-    throw new Error(`${this} does not support query()`);
-  }
 
-  persist(model, shadow, opts, session) {
+  persist(entity, shadow, opts, session) {
     throw new Error(`${this} does not support persist()`);
   }
   
@@ -22,7 +18,7 @@ export default class Adapter extends BaseClass {
     throw new Error(`${this} does not support remoteCall()`);
   }
   
-  isDirty(model, shadow) {
+  isDirty(entity, shadow) {
     return true;
   }
   

@@ -1,4 +1,4 @@
-import BaseClass from '../utils/base_class';
+import BaseClass from './utils/base_class';
 
 class Errors extends BaseClass {
 

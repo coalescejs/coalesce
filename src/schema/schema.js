@@ -60,7 +60,7 @@ export default class Schema {
     }
   }
   
-  get *relationships() {
+  *relationships() {
     for(var field of this) {
       if(field.kind !== 'attribute') {
         yield field;
@@ -68,7 +68,7 @@ export default class Schema {
     }
   }
   
-  get *attributes() {
+  *attributes() {
     for(var field of this) {
       if(field.kind === 'attribute') {
         yield field;

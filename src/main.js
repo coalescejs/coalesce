@@ -8,16 +8,15 @@ import RestContext from './rest/context';
 import Adapter from './adapter';
 import IdManager from './id_manager';
 
-import ModelArray from './collections/model_array';
-import ModelSet from './collections/model_set';
+import EntityArray from './collections/entity_array';
+import EntitySet from './collections/entity_set';
 import HasManyArray from './collections/has_many_array';
 
 import MergeStrategy from './merge/base';
 import ModelMerge from './merge/model';
 
-import Model from './model/model';
-import './model/diff';
-import Errors from './model/errors';
+import Model from './entities/model';
+import Errors from './errors';
 
 import RestErrorsSerializer from './rest/serializers/errors';
 import PayloadSerializer from './rest/serializers/payload';
@@ -53,8 +52,8 @@ Coalesce.Context = Context;
 Coalesce.Adapter = Adapter;
 Coalesce.IdManager = IdManager;
 
-Coalesce.ModelArray = ModelArray;
-Coalesce.ModelSet = ModelSet;
+Coalesce.EntityArray = EntityArray;
+Coalesce.EntitySet = EntitySet;
 Coalesce.HasManyArray = HasManyArray;
 
 Coalesce.MergeStrategy = MergeStrategy;

@@ -1,8 +1,7 @@
-`import ModelArray from 'coalesce/collections/model_array'`
-`import Model from 'coalesce/model/model'`
-`import attr from 'coalesce/model/attribute'`
+`import EntityArray from 'coalesce/collections/entity_array'`
+`import Model from 'coalesce/entities/model'`
 
-describe 'ModelArray', ->
+describe 'EntityArray', ->
 
   array = null
 
@@ -13,7 +12,7 @@ describe 'ModelArray', ->
       attributes:
         title: {type: 'string'}
     @Post = Post
-    array = new ModelArray()
+    array = new EntityArray()
 
   describe 'removeObject', ->
 

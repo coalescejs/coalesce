@@ -1,6 +1,6 @@
 import Coalesce from '../namespace';
 import Adapter from '../adapter';
-import ModelSet from '../collections/model_set';
+import EntitySet from '../collections/entity_set';
 
 import {decamelize, pluralize, camelize} from '../utils/inflector';
 import array_from from '../utils/array_from';
@@ -40,7 +40,7 @@ var defaults = _.defaults;
   Attribute names in your JSON payload should be the camelCased versions of
   the attributes in your Coalesce.js models.
 
-  For example, if you have a `Person` model:
+  For example, if you have a `Person` entity:
 
   ```js
   App.Person = Coalesce.Model.extend({
@@ -117,55 +117,63 @@ export default class RestAdapter extends Adapter {
     ]
   }
   
-  load(model, opts, session) {
+  load(entity, opts, session) {
+    if(entity.isModel) {
+      return this._loadModel(entity, opts, session);
+    } else {
+      return this._loadQuery(entity, opts, session);
+    }
+  }
+  
+  _loadModel(entity, opts, session) {
     opts = opts || {};
     defaults(opts, {
       type: 'GET'
     });
-    return this.execute(model, null, null, null, opts, session);
+    return this.invoke(entity, null, null, null, opts, session);
   }
   
-  persist(model, shadow, opts, session) {
-    // TODO once we coalesce operations, handle embedded models here and
-    // contextualize the parent's promise
-    var promise;
-    if(model.isNew) {
-      return  this.create(model, opts, session);
-    } else if(model.isDeleted) {
-      return this.delete(model, shadow, opts, session);
-    } else {
-      return this.update(model, shadow, opts, session);
-    }
-  }
-  
-  update(model, shadow, opts, session) {
-    opts = opts || {};
-    defaults(opts, {
-      type: 'PUT'
-    });
-    return this.execute(model, null, model, shadow, opts, session);
-  }
-
-  create(model, opts, session) {
-    return this.execute(model, null, model, null, opts, session);
-  }
-
-  delete(model, shadow, opts, session) {
-    opts = opts || {};
-    defaults(opts, {
-      type: 'DELETE'
-    });
-    return this.execute(model, null, null, null, opts, session);
-  }
-  
-  query(query, opts, session) {
+  _loadQuery(query, opts, session) {
     opts = opts || {};
     defaults(opts, {
       type: 'GET',
       serialize: false,
       deserializer: 'payload',
     });
-    return this.execute(query.typeKey, null, query.params, null, opts, session);
+    return this.invoke(query.typeKey, null, query.params, null, opts, session);
+  }
+  
+  persist(entity, shadow, opts, session) {
+    // TODO once we coalesce operations, handle embedded models here and
+    // contextualize the parent's promise
+    var promise;
+    if(entity.isNew) {
+      return  this.create(entity, opts, session);
+    } else if(entity.isDeleted) {
+      return this.delete(entity, shadow, opts, session);
+    } else {
+      return this.update(entity, shadow, opts, session);
+    }
+  }
+  
+  update(entity, shadow, opts, session) {
+    opts = opts || {};
+    defaults(opts, {
+      type: 'PUT'
+    });
+    return this.invoke(entity, null, entity, shadow, opts, session);
+  }
+
+  create(entity, opts, session) {
+    return this.invoke(entity, null, entity, null, opts, session);
+  }
+
+  delete(entity, shadow, opts, session) {
+    opts = opts || {};
+    defaults(opts, {
+      type: 'DELETE'
+    });
+    return this.invoke(entity, null, null, null, opts, session);
   }
 
   /**
@@ -183,7 +191,7 @@ export default class RestAdapter extends Adapter {
     * `url`: A custom url to use
 
     @method remoteCall
-    @param {any} context the model or type that is used as the context of the call
+    @param {any} context the entity or type that is used as the context of the call
     @param String name the name of the action to be called
     @param Object [opts] an options hash
     @param Session [session] the session to merge the results into
@@ -195,13 +203,13 @@ export default class RestAdapter extends Adapter {
       serialize: serialize,
       deserializer: 'payload'
     });
-    return this.execute(context, name, data, shadow, opts, session)
+    return this.invoke(context, name, data, shadow, opts, session)
   }
   
   /**
     Executes a request and invokes the middleware chain
   */
-  execute(context, name, data, shadow, opts, session) {
+  invoke(context, name, data, shadow, opts, session) {
     var opts = this._normalizeOptions(opts),
         env = {context, name, data, shadow, opts, session},
         middleware = this.middleware,
@@ -226,15 +234,15 @@ export default class RestAdapter extends Adapter {
     return opts;
   }
   
-  isDirty(model, shadow) {
-    if(model.isDeleted || model.isNew) {
+  isDirty(entity, shadow) {
+    if(entity.isDeleted || entity.isNew) {
       return true;
     }
-    var diff = model.diff(shadow);
+    var diff = entity.diff(shadow);
     for(var i = 0; i < diff.length; i++) {
       var d = diff[i];
       if(d.type !== 'attr') {
-        // not dirty if the model doesn't own the relationship
+        // not dirty if the entity doesn't own the relationship
         if(this.isRelationshipOwner(d.relationship)) {
           return true;
         }
@@ -249,7 +257,7 @@ export default class RestAdapter extends Adapter {
   /**
     Builds a URL from a context. A context can be one of three things:
 
-    1. An instance of a model
+    1. An instance of a entity
     2. A string representing a type (typeKey), e.g. 'post'
     3. A hash containing both a typeKey and an id
 
@@ -502,7 +510,7 @@ class Middleware {
     this.adapter = adapter;
   }
   
-  //model, shadow, session, opts
+  //entity, shadow, session, opts
   call(next, env) {
     return next();
   }
@@ -564,11 +572,11 @@ class Serialize extends Middleware {
           serializer = adapter.serializerFor(opts.errorSerializer || 'errors');
           var errors = serializer.deserialize(data, serializerOptions);
           if(context.isModel) {
-            // if the context is a model we want to return a model with errors
+            // if the context is a entity we want to return a entity with errors
             // so that it can be merged by the session
-            var model = context.unloadedCopy();
-            model.errors = errors;
-            throw model;
+            var entity = context.unloadedCopy();
+            entity.errors = errors;
+            throw entity;
           }
           throw errors;
         }
@@ -614,8 +622,8 @@ class Sideload extends Middleware {
       if(deserialized.isPayload) {
         // TODO: could optimize this and not merge the context
         // since the session does that anyways
-        deserialized.forEach(function(model) {
-          session.merge(model);
+        deserialized.forEach(function(entity) {
+          session.merge(entity);
         });
         return deserialized.context;
       }

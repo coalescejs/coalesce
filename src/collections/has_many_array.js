@@ -1,6 +1,6 @@
-import ModelArray from '../collections/model_array';
+import EntityArray from '../collections/entity_array';
 
-export default class HasManyArray extends ModelArray {
+export default class HasManyArray extends EntityArray {
   
   get session() {
     return this.owner && this.owner.session;

@@ -1,6 +1,6 @@
-import ModelSet from './model_set';
+import EntitySet from './entity_set';
 
-export default class Graph extends ModelSet {
+export default class Graph extends EntitySet {
   
   add(entity) {
     console.assert(!entity.graph || entity.graph === this, "Entity already belongs to a different graph, consider using fork() instead");
@@ -39,7 +39,7 @@ export default class Graph extends ModelSet {
     TODO: OPTIMIZATION: re-use the model object if not associated with graph
   */
   adopt(entity) {
-    if(entity.isModel && entity.isNew) {
+    if(entity.isNew) {
       var model = entity,
           children = [];
       model.eachChild(function(child) {

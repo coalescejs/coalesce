@@ -1,5 +1,5 @@
 `import ModelSerializer from 'coalesce/serializers/model'`
-`import Model from 'coalesce/model/model'`
+`import Model from 'coalesce/entities/model'`
 `import Context from 'coalesce/context/default'`
 `import Serializer from 'coalesce/serializers/base'`
 

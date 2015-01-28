@@ -15,9 +15,13 @@ import isEqual from '../utils/is_equal';
 */
 export default class BelongsToMerge extends Base {
 
-  merge(ours, ancestor, theirs, session, relationship) {
-    if(isEqual(ours, ancestor)) {
-      return session.fetch(theirs);
+  merge(ours, ancestor, theirs, session) {
+    var oursValue = ours.get(),
+        ancestorValue = ancestor.get(),
+        theirsValue = theirs.get();
+    
+    if(isEqual(oursValue, ancestorValue)) {
+      ours.set(session.merge(theirsValue));
     }
     return ours;
   }

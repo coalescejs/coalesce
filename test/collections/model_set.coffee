@@ -1,7 +1,7 @@
-`import Model from 'coalesce/model/model'`
-`import ModelSet from 'coalesce/collections/model_set'`
+`import Model from 'coalesce/entities/model'`
+`import EntitySet from 'coalesce/collections/entity_set'`
 
-describe 'ModelSet', ->
+describe 'EntitySet', ->
 
   beforeEach ->
     `class Post extends Model {}`
@@ -10,7 +10,7 @@ describe 'ModelSet', ->
       attributes:
         title: {type: 'string'}
     @Post = Post
-    @set = new ModelSet()
+    @set = new EntitySet()
 
 
   it 'removes based on isEqual', ->

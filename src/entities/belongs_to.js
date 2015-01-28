@@ -1,5 +1,5 @@
 // TODO: entityWillChange/entityDidChange
-export default class Base {
+export default class BelongsTo {
   
   constructor(model, field) {
     this._owner = model.clientId;

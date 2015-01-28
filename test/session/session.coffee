@@ -1,8 +1,8 @@
-`import Model from 'coalesce/model/model'`
+`import Model from 'coalesce/entities/model'`
 `import ModelSerializer from 'coalesce/serializers/model'`
 `import {postWithComments} from '../support/configs'`
 `import Context from 'coalesce/context/default'`
-`import Query from 'coalesce/session/query'`
+`import Query from 'coalesce/entities/query'`
 # Use rest adapter for now
 `import Adapter from 'coalesce/rest/adapter'`
 

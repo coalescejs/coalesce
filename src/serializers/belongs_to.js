@@ -7,37 +7,43 @@ import Serializer from './base';
 export default class BelongsToSerializer extends Serializer {
 
   deserialize(serialized, opts) {
+    var entity = this.createEntity();
+    
     if(!serialized) {
-      return null;
+      entity.set(serialized)
+    } else {
+      // support id or hash
+      if(typeof serialized !== 'object') {
+        serialized = {
+          id: serialized
+        };
+      }
+      
+      var serializer = this.serializerFor(opts.field.typeKey);
+      entity.set(serializer.deserialize(serialized, opts));
     }
-    if(!opts.field.embedded) {
-      var idSerializer = this.serializerFor('id');
-      serialized = {
-        id: idSerializer.deserialize(serialized)
-      };
-    }
-    return this.deserializeModel(serialized, opts);
+    
+    return entity
   }
 
-  deserializeModel(serialized, opts) {
-    var serializer = this.serializerFor(opts.field.typeKey);
-    return serializer.deserialize(serialized, opts);
-  }
-
-  serialize(model, opts) {
-    if(!model) {
+  serialize(entity, opts) {
+    var value = entity.get();
+    
+    if(!value) {
       return null;
     }
-    if(opts.field.embedded) {
-      return this.serializeModel(model, opts);
+    
+    if(opts.embedded) {
+      var serializer = this.serializerFor(opts.field.typeKey);
+      return serializer.serialize(model);
     }
+    
     var idSerializer = this.serializerFor('id');
     return idSerializer.serialize(model.id);
   }
-
-  serializeModel(model, opts) {
-    var serializer = this.serializerFor(opts.field.typeKey);
-    return serializer.serialize(model);
+  
+  createEntity() {
+    return new this.typeFor(this.typeKey);
   }
 
 }

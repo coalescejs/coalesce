@@ -32,32 +32,18 @@ export default class Relationship extends Field {
   defineProperty(prototype) {
     var field = this;
         name = field.name;
+        
     Object.defineProperty(prototype, name, {
       enumerable: true,
       configurable: true,
       get: function() {
-        var graph = this.graph;
-        if(!graph) {
-          return this._relationships[name];
-        }
-        
-        var clientId = BelongsTo.clientId(this, field),
-            entity = graph.getByClientId(clientId);
-        
-        if(!entity) {
-          entity = new field.class(this, field);
-          graph.adopt(entity);
-        }
+        var entity = this.getRelationshipEntity(name);
         
         return entity.get();
       },
       set: function(value) {
-        var graph = this.graph;
-        if(!graph) {
-          return this._relationships[name] = value;
-        }
+        var entity = this.getRelationshipEntity(name);
         
-        entity = this[name];
         return entity.set(value);
       }
     });

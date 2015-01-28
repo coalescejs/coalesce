@@ -1,4 +1,4 @@
-`import Model from 'coalesce/model/model'`
+`import Model from 'coalesce/entities/model'`
 `import HasManyArray from 'coalesce/collections/has_many_array'`
 `import Container from 'coalesce/context/container'`
 

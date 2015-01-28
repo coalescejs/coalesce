@@ -1,10 +1,10 @@
 import ObservableArray from './observable_array';
-import ModelSet from './model_set';
+import EntitySet from './entity_set';
 import isEqual from '../utils/is_equal';
 import Coalesce from '../namespace';
 import fork from '../utils/fork';
 
-export default class ModelArray extends ObservableArray {
+export default class EntityArray extends ObservableArray {
   
   replace(idx, amt, objects) {
     if(this.session) {
@@ -60,44 +60,6 @@ export default class ModelArray extends ObservableArray {
   
   copy() {
     return super(true);
-  }
-  
-  fork(graph) {
-    var arr = this.map(function(item) { return graph.adopt(item); });
-    var res = new this.constructor();
-    res.addObjects(arr);
-    return res;
-  }
-
-  diff(arr) {
-    var diff = new this.constructor();
-
-    this.forEach(function(model) {
-      if(!arr.contains(model)) {
-        diff.push(model);
-      }
-    }, this);
-
-    arr.forEach(function(model) {
-      if(!this.contains(model)) {
-        diff.push(model);
-      }
-    }, this);
-
-    return diff;
-  }
-
-  isEqual(arr) {
-    return this.diff(arr).length === 0;
-  }
-
-  load() {
-    var array = this;
-    return Coalesce.Promise.all(this.map(function(model) {
-      return model.load();
-    })).then(function() {
-      return array;
-    });
   }
 
 }

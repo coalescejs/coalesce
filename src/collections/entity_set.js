@@ -1,6 +1,6 @@
-function guidFor(model) {
-  console.assert(model.clientId, "Model must have a clientId set");
-  return model.clientId;
+function guidFor(entity) {
+  console.assert(entity.clientId, "Entity must have a clientId set");
+  return entity.clientId;
 }
 
 import array_from from '../utils/array_from';
@@ -10,15 +10,15 @@ import BaseClass from '../utils/base_class';
 import fork from '../utils/fork';
 
 /**
-  An unordered collection of unique models.
+  An unordered collection of unique entities.
   
-  Uniqueness is determined by the `clientId`. If a model is added and an
-  equivalent model already exists in the ModelSet, the existing model will be
+  Uniqueness is determined by the `clientId`. If a entity is added and an
+  equivalent entity already exists in the EntitySet, the existing entity will be
   overwritten.
 
-  @class ModelSet
+  @class EntitySet
 */
-export default class ModelSet extends BaseClass {
+export default class EntitySet extends BaseClass {
 
   constructor(iterable) {
     this._size = 0;
@@ -36,14 +36,14 @@ export default class ModelSet extends BaseClass {
     without having to recreate it.
 
     ```javascript
-    var models = new ModelSet([post1, post2, post3]);
+    var models = new EntitySet([post1, post2, post3]);
     models.size;  // 3
     models.clear();
     models.size;  // 0
     ```
 
     @method clear
-    @return {ModelSet} An empty Set
+    @return {EntitySet} An empty Set
   */
   clear() {
     var len = this._size;
@@ -146,11 +146,11 @@ export default class ModelSet extends BaseClass {
     for(idx = 0; idx < len; idx++) {
       array[idx] = this[idx];
     }
-    return `ModelSet<${array.join(',')}>`;
+    return `EntitySet<${array.join(',')}>`;
   }
   
-  get(model) {
-    var idx = this[guidFor(model)];
+  get(entity) {
+    var idx = this[guidFor(entity)];
     if(idx === undefined) return;
     return this[idx];
   }
@@ -213,13 +213,13 @@ var aliases = {
 for(var alias in aliases) {
   if(!aliases.hasOwnProperty(alias)) continue;
   var target = aliases[alias];
-  ModelSet.prototype[alias] = ModelSet.prototype[target];
+  EntitySet.prototype[alias] = EntitySet.prototype[target];
 }
 
 
 // Make iterable
-Object.defineProperty(ModelSet.prototype, Symbol.iterator, {
-  value: ModelSet.prototype.values,
+Object.defineProperty(EntitySet.prototype, Symbol.iterator, {
+  value: EntitySet.prototype.values,
   configurable: true,
   writable: true
 });
