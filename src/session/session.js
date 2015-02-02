@@ -13,6 +13,7 @@ import MergeFactory from '../factories/merge';
 import copy from '../utils/copy';
 import Error from '../error';
 import array_from from '../utils/array_from';
+import Store from '../store';
 
 var uuid = 1;
 
@@ -46,6 +47,8 @@ export default class Session {
     this.mergeFactory = new MergeFactory(container);
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
+
+    this.store = new Store("Coalesce");
   }
 
   /**
@@ -960,21 +963,14 @@ export default class Session {
     @param {Coalesce.Session} session The session to store
     @return {Promise}
   */
-  static saveToStorage(session){
-    return new Coalesce.Promise(function(resolve, reject) {
+  saveToStorage(){
 
-      var sessionSerializer = session.adapter.container.lookup('serializer:session');
-      var serializedSession = sessionSerializer.serialize(session);
+    var sessionSerializer = this.adapter.container.lookup('serializer:session');
+    var serializedSession = sessionSerializer.serialize(this);
 
-      localforage.setItem(sessionStorageKey, serializedSession, function(error, _serializedSession){
-        if(error !== null){
-          throw new Error("Session could not save to storage");
-        }else{
-          resolve(session);
-        }    
-      });
+    serializedSession["_id"] = sessionStorageKey;
 
-    });
+    return this.store.set(serializedSession);
   }
 
   /**
@@ -985,20 +981,12 @@ export default class Session {
     @param {Coalesce.Session} session The session to restore from storage
     @return {Promise}
   */
-  static loadFromStorage(session){
-    return new Coalesce.Promise(function(resolve, reject) {
+  loadFromStorage(session){
+    var session = this,
+        sessionSerializer = this.adapter.container.lookup('serializer:session');
 
-      var sessionSerializer = session.adapter.container.lookup('serializer:session');
-
-      localforage.getItem(sessionStorageKey, function(error, serializedSessionData){
-        
-        if(error !== null){
-          throw new Error("Session could not be loaded from storage");
-        }else{
-          var deserializedSession = sessionSerializer.deserialize(session, serializedSessionData);
-          resolve(deserializedSession);
-        }   
-      });
+    return this.store.get(sessionStorageKey).then(function(serializedSessionData){
+      return sessionSerializer.deserialize(session, serializedSessionData);
     });
   }
 
@@ -1008,17 +996,8 @@ export default class Session {
     @method clearStorage
     @return {Promise}
   */
-  static clearStorage(){
-    var promise = new Coalesce.Promise(function(resolve, reject) {
-      var storeCallback = function(){
-        resolve();
-      };
-
-      localforage.removeItem(sessionStorageKey, storeCallback);
-
-    });
-
-    return promise;
+  clearStorage(){
+    return this.store.remove(sessionStorageKey);
   }
   
   toString() {

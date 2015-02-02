@@ -73,7 +73,7 @@ function concatStandalone(tree, inputFile, outputFile) {
     inputFiles: [
       'iife-start',
       'loader/loader.js',
-      'localforage/dist/localforage.js',
+      'dexie/dist/latest/Dexie.js',
       'traceur-runtime.js',
       'backburner.amd.js',
       inputFile,
@@ -126,7 +126,7 @@ var testTree = (function() {
       'jquery/dist/jquery.js',
       'lodash/dist/lodash.js',
       'loader/loader.js',
-      'localforage/dist/localforage.js',
+      'dexie/dist/latest/Dexie.js',
       'traceur-runtime.js',
       'backburner.amd.js'
     ],

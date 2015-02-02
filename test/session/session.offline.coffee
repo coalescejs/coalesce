@@ -24,7 +24,7 @@ describe "Session", ->
 
   beforeEach (done) ->
     reset.apply(@)
-    Session.clearStorage().then -> 
+    session.clearStorage().then -> 
       done()
     
   describe '.saveTo and loadFrom Storage', ->
@@ -40,7 +40,7 @@ describe "Session", ->
       post2.title = 'save me plz to2'
       post3.title = 'save me plz too2'
 
-      Session.saveToStorage(session).then (_session) =>   
+      session.saveToStorage().then (_session) =>   
         #debugger
         # Reset everything 
         reset.apply(@)
@@ -51,16 +51,16 @@ describe "Session", ->
         expect(session.getForId('post', 2)).to.be.undefined
         expect(session.getForId('post', 3)).to.be.undefined
 
-        Session.loadFromStorage(session).then (value) =>
+        session.loadFromStorage().then (value) =>
           expect(session.getForId('post', 1)).to.not.be.undefined
           expect(session.getForId('post', 2)).to.not.be.undefined
           expect(session.getForId('post', 3)).to.not.be.undefined   
         
   describe '.loading Storage', ->  
     it 'should skip loading from storage when storage is empty', ->
-      Session.clearStorage().then () ->
+      session.clearStorage().then () ->
 
-        Session.loadFromStorage(session).then((value) ->
+        session.loadFromStorage().then((value) ->
 
           expect(session.models).to.not.be.null
           return

@@ -20,7 +20,7 @@ describe "Session Storage", ->
     session = adapter.newSession()
 
   afterEach (done) ->
-    Session.clearStorage().then ->  
+    session.clearStorage().then ->  
       done()
       return
 
@@ -30,14 +30,14 @@ describe "Session Storage", ->
 
     it 'returns a promise', ->
 
-      promise = Session.saveToStorage(session)
+      promise = session.saveToStorage()
       expect(promise).to.be.an.instanceOf(Promise)
 
     it 'promises a session', ->
 
       post = @Post.create(id: "1", title: 'test')
       session.merge(post)
-      Session.saveToStorage(session).then (sesh) ->
+      session.saveToStorage().then (sesh) ->
         expect(sesh).to.be.an.instanceOf(Session)
         expect(sesh).to.eq(session)
 
@@ -45,12 +45,12 @@ describe "Session Storage", ->
 
     it 'returns a promise', ->
 
-      promise = Session.loadFromStorage(session)
+      promise = session.loadFromStorage()
       expect(promise).to.be.an.instanceOf(Promise)
 
     it 'promises a session', ->
 
-      Session.loadFromStorage(session).then (sesh) ->
+      session.loadFromStorage().then (sesh) ->
         expect(sesh).to.be.an.instanceOf(Session)
         expect(sesh).to.eq(session)
 
@@ -58,6 +58,6 @@ describe "Session Storage", ->
 
     it 'returns a promise', ->
 
-      promise = Session.clearStorage()
+      promise = session.clearStorage()
       expect(promise).to.be.an.instanceOf(Promise)
 

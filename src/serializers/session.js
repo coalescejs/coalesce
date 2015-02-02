@@ -51,7 +51,8 @@ export default class SessionSerializer extends Serializer {
     var serialized = {
       models: {},
       newModels: {},
-      shadows: {}
+      shadows: {},
+      uuidStart: 0
     };
     
     // Only need to seralize dirty models.  
