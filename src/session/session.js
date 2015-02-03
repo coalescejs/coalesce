@@ -1,7 +1,6 @@
 import EntitySet from '../collections/entity_set';
 import Graph from '../collections/graph';
 import CollectionManager from './collection_manager';
-import InverseManager from './inverse_manager';
 import Model from '../entities/model';
 import Query from '../entities/query';
 import Flush from './flush';
@@ -23,9 +22,8 @@ export default class Session extends Graph {
     this.idManager = idManager;
     this.parent = parent;
     this.collectionManager = new CollectionManager();
-    this.inverseManager = new InverseManager(this);
     this.shadows = new Graph();
-    this.newModels = new EntitySet();
+    this.newEntities = new EntitySet();
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
   }
@@ -41,7 +39,7 @@ export default class Session extends Graph {
   */
   build(type, hash) {
     type = this._typeFor(type);
-    var model = type.create(hash || {});
+    var model = new type(hash || {});
     return model;
   }
 
@@ -67,12 +65,10 @@ export default class Session extends Graph {
     console.assert(!entity.session, "Entity is already associated with a session");
     this.reifyClientId(entity);
     super(entity);
-    if(entity.isModel && entity.isNew) {
-      this.newModels.add(model);
+    if(entity.isNew) {
+      this.newEntities.add(entity);
     }
-    // TODO think through inverses
-    this.inverseManager.register(model);
-    return model;
+    return entity;
   }
 
   /**
@@ -87,7 +83,7 @@ export default class Session extends Graph {
   remove(entity) {
     this.reifyClientId(entity);
     this.shadows.remove(entity);
-    this.newModels.remove(entity);
+    this.newEntities.remove(entity);
     return super(entity);
   }
 
@@ -113,14 +109,13 @@ export default class Session extends Graph {
     // if the model is new, deleting should essentially just
     // remove the object from the session
     if(model.isNew) {
-      var newModels = this.newModels;
-      newModels.remove(model);
+      var newEntities = this.newEntities;
+      newEntities.remove(model);
     } else {
-      this.modelWillBecomeDirty(model);
+      this.touch(model);
     }
     model.isDeleted = true;
     this.collectionManager.modelWasDeleted(model);
-    this.inverseManager.unregister(model);
   }
 
   fetch(entity) {
@@ -314,23 +309,12 @@ export default class Session extends Graph {
     return adapter.remoteCall(context, name, params, shadow, opts, this);
   }
 
-  modelWillBecomeDirty(model) {
-    if(this._dirtyCheckingSuspended) {
-      return;
-    }
-    // Embedded models dirty their parents as well
-    if(model._embeddedParent) {
-      this.modelWillBecomeDirty(model._embeddedParent);
-    }
-    this.touch(model);
-  }
-
   get dirtyModels() {
     var models = new EntitySet(array_from(this.shadows).map(function(model) {
       return this.get(model);
     }, this));
 
-    this.newModels.forEach(function(model) {
+    this.newEntities.forEach(function(model) {
       models.add(model);
     });
 
@@ -352,7 +336,7 @@ export default class Session extends Graph {
   }
 
   newSession() {
-    var child = this.constructor.create({
+    var child = new this.constructor({
       parent: this,
       context: this.context,
       idManager: this.idManager
@@ -407,6 +391,13 @@ export default class Session extends Graph {
     @param {Entity} entity
   */
   touch(entity) {
+    if(this._dirtyCheckingSuspended) {
+      return;
+    }
+    // Embedded models dirty their parents as well
+    if(entity._embeddedParent) {
+      this.touch(entity._embeddedParent);
+    }
     console.assert(this.has(entity), `${entity} is not part of a session`);
     if(!entity.isNew) {
       var shadow = this.shadows.get(entity);
@@ -426,7 +417,6 @@ export default class Session extends Graph {
   get isDirty() {
     return this.dirtyModels.size > 0;
   }
-
 
   /**
     Merge in raw serialized data into this session
@@ -494,7 +484,7 @@ export default class Session extends Graph {
     // optimistically assume updates succeed, revert() call below
     // will revert this on failure
     this.markClean(model);
-    this.newModels.remove(model);
+    this.newEntities.remove(model);
     
     if(!flush) {
       flush = new Flush(this);
@@ -506,28 +496,6 @@ export default class Session extends Graph {
     }, function(error) {
       // TODO: handle new data
       this.revert(shadow);
-    });
-  }
-  
-  
-  // XXX: put this somewhere
-  /**
-    @private
-    
-    When merging a new version of a model, it may contains relationship data for
-    a relationship that it does not own. It is possible that this data could be
-    stale and we need to unload to pervent clobbering a client's changed to the
-    relationship.
-  */
-  _removeStaleRelationships(model, ancestor) {
-    if(!ancestor) {
-      return;
-    }
-    var adapter = this.context.configFor(model).get('adapter');
-    model.eachLoadedRelationship(function(name, relationship) {
-      if(ancestor.isFieldLoaded(name) && !adapter.isRelationshipOwner(relationship)) {
-        delete model._relationships[name];
-      }
     });
   }
   
@@ -569,7 +537,15 @@ export default class Session extends Graph {
     if(this.parent) {
       serverEntity = this.parent.merge(serverEntity, visited);
     }
-    this.reifyClientId(serverEntity);
+    // TODO clean this up
+    // We need to recurse to reify clientIds since we hit issues
+    // when updating the shadow
+    if(!serverEntity.clientId || serverEntity.isRelationship) {
+      this.reifyClientId(serverEntity);
+      for(var childEntity of serverEntity.entities()) {
+        this.reifyClientId(childEntity);
+      }
+    }
     
     var entity = this.fetch(serverEntity),
         shadow = this.shadows.get(serverEntity);
@@ -579,7 +555,7 @@ export default class Session extends Graph {
     // all new entities are a newer version.
     // NOTE: rev is also used to break merge recursion
     if(!serverEntity.rev) {
-      serverEntity.rev = entity.rev === null ? 1 : entity.rev + 1;
+      serverEntity.rev = (entity.rev === null || entity.rev === undefined) ? 1 : entity.rev + 1;
     }
     
     // Optimistically assume has seen client's version if no clientRev set
@@ -600,12 +576,12 @@ export default class Session extends Graph {
       return entity;
     }
     
-    
     var childrenToRecurse = [];
-    for(var entity of serverEntity.children) {
+    for(var childEntity of serverEntity.entities()) {
       // recurse on detached/embedded children entities
-      if(entity.isEmbedded || entity.isDetached) {
-        childrenToRecurse.push(child);
+      // TODO needs to be embedded in this relationship
+      if(childEntity.isLoaded && (childEntity.isEmbedded || childEntity.isDetached)) {
+        childrenToRecurse.push(childEntity);
       }
     }
     
@@ -618,12 +594,12 @@ export default class Session extends Graph {
       
       // TODO: move this check to update?
       if(!entity.isNew) {
-        this.newModels.remove(entity);
+        this.newEntities.remove(entity);
       }
     } else {
       this.suspendDirtyChecking(function() {
         entity = this._merge(entity, shadow, serverEntity);
-      });
+      }, this);
       
       if(entity.isDeleted) {
         this.remove(merged);
@@ -638,7 +614,7 @@ export default class Session extends Graph {
       }
     }
     
-    this._entityCacheFor(serverEntity).add(serverEntity);
+    this._cacheFor(serverEntity).add(serverEntity);
     
     // recurse on detached and embedded children
     childrenToRecurse.forEach(function(child) {
@@ -657,21 +633,18 @@ export default class Session extends Graph {
     console.assert(serverEntity.id || !shadow.id, `Expected ${entity} to have an id set`);
     // set id for new records
     entity.id = serverEntity.id;
-    entity.clientId = serverEntity.clientId;
+    if(!entity.clientId) {
+      entity.clientId = serverEntity.clientId;
+    } else {
+      console.assert(entity.clientId === serverEntity.clientId, "Client ids do not match");
+    }
     // copy the server revision
     entity.rev = serverEntity.rev;
     
     // TODO: move merging isDeleted into merge strategy
     // entity.isDeleted = serverEntity.isDeleted;
-    
-    // Reify child client ids before merging. This isn't semantically
-    // required, but many data structures that might be used in the merging
-    // process use client ids.
-    serverEntity.eachChild(function(child) {
-      this.reifyClientId(child);
-    }, this);
 
-    var strategy = this._mergeFor(serverEntity.typeKey);
+    var strategy = this._mergeFor(serverEntity);
     strategy.merge(entity, shadow, serverEntity, this);
 
     return entity;
@@ -703,9 +676,9 @@ export default class Session extends Graph {
         console.assert(this.has(original));
         this.shadows.update(original);
       }
-    } else if(entity.isNew) {
+    } else {
       // re-track the entity as a new entity
-      this.newModels.add(entity);
+      this.newEntities.add(entity);
     }
     
     return this.shadows.get(original);
@@ -730,6 +703,13 @@ export default class Session extends Graph {
   }
 
   _mergeFor(key) {
+    if(key.isRelationship) {
+      if(key.field.kind === 'hasMany') {
+        key = 'has-many';
+      } else {
+        key = 'belongs-to';
+      }
+    }
     return this.context.configFor(key).get('merge');
   }
 

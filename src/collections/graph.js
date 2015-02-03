@@ -39,19 +39,12 @@ export default class Graph extends EntitySet {
     TODO: OPTIMIZATION: re-use the model object if not associated with graph
   */
   adopt(entity) {
-    if(entity.isNew) {
-      var model = entity,
-          children = [];
-      model.eachChild(function(child) {
-        children.push(child);
-      });
-      model = this.update(model);
-      children.forEach(function(child) {
-        this.adopt(child);
-      }, this);
-      return model;
+    if(this.has(entity)) {
+      return this.get(entity);
+    } else if(entity.isNew) {
+      return this.update(entity);
     } else {
-      return this.fetch(model);
+      return this.fetch(entity);
     }
   }
 

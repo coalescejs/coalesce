@@ -1,17 +1,15 @@
-import EntityArray from '../collections/entity_array';  
+import Collection from './collection';  
 
 /**
   Represents a query.
   
   TODO session aliased methods
 */
-export default class Query extends EntityArray {
+export default class Query extends Collection {
   
-  constructor(session, type, params) {
-    this.session = session;
+  constructor(type, params) {
     this._type = type;
     this._params = params;
-    this._hints = {};
     super();
   }
   
@@ -27,8 +25,9 @@ export default class Query extends EntityArray {
     return this.constructor.clientId(this.type, this.params);
   }
   
+  // TODO consider using hash instead of stringified params
   static clientId(type, params) {
-    return type.typeKey + '$' + JSON.stringify(params);
+    return `$${type.typeKey}$${JSON.stringify(params)}`;
   }
   
 }

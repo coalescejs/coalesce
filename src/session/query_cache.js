@@ -9,8 +9,8 @@ export default class QueryCache extends PromiseCache {
 
   // for now we only add the model if some attributes are loaded,
   // eventually this will be on a per-attribute basis
-  shouldCache(model) {
-    return model.isPartiallyLoaded;
+  shouldCache(query) {
+    return query.isLoaded;
   }
 
 

@@ -65,7 +65,7 @@ export default class IdManager extends BaseClass {
   }
 
   _generateClientId(typeKey) {
-    return typeKey + (this.uuid++);
+    return `$${typeKey}${this.uuid++}`;
   }
 
 }

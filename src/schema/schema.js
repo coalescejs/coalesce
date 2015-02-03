@@ -1,3 +1,4 @@
+import Field from './field';
 import Attribute from './attribute';
 import Relationship from './relationship';
 
@@ -36,10 +37,9 @@ import Relationship from './relationship';
 */
 export default class Schema {
   
-  constructor(obj=null) {
-    if(obj) {
-      this.configure(obj);
-    }
+  constructor(context, typeKey) {
+    this.context = context;
+    this.typeKey = typeKey;
   }
   
   configure(obj) {
@@ -49,40 +49,56 @@ export default class Schema {
     var attributes = obj.attributes || {};
     for(var name in attributes) {
       if(!attributes.hasOwnProperty(name)) continue;
-      var field = new Attribute(name, attributes[name]);
+      var field = new Attribute(this, name, attributes[name]);
       this[name] = field;
     }
     var relationships = obj.relationships || {};
     for(var name in relationships) {
       if(!relationships.hasOwnProperty(name)) continue;
-      var field = new Relationship(name, relationships[name]);
+      var field = new Relationship(this, name, relationships[name]);
       this[name] = field;
     }
   }
   
+  apply(prototype) {
+    for(var field of this.ownFields()) {
+      field.defineProperty(prototype);
+    }
+  }
+  
+  *fields() {
+    for(var name in this) {
+      var field = this[name];
+      if(field instanceof Field) {
+        yield field;
+      }
+    }
+  }
+  
+  *ownFields() {
+    for(var field of this.fields()) {
+      if(this.hasOwnProperty(field.name)) {
+        yield field;
+      }
+    }
+  }
+  
   *relationships() {
-    for(var field of this) {
-      if(field.kind !== 'attribute') {
+    for(var field of this.fields()) {
+      if(field instanceof Relationship) {
         yield field;
       }
     }
   }
   
   *attributes() {
-    for(var field of this) {
-      if(field.kind === 'attribute') {
+    for(var field of this.fields()) {
+      if(field instanceof Attribute) {
         yield field;
       }
     }
   }
-  
-  apply(prototype) {
-    prototype.schema = this;
-    
-    for(var field of this) {
-      field.defineProperty(prototype);
-    }
-  }
 }
 
+Schema.prototype[Symbol.iterator] = Schema.prototype.fields;
 Schema.prototype.typeKey = null;

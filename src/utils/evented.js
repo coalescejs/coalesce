@@ -1,6 +1,7 @@
 
 // dead simple event implementation based on https://github.com/allouis/minivents/blob/master/minivents.js
 
+// TODO: this is totally broken since we are using on prototypes
 export default function (target) {
   var events = {};
   target = target || this;

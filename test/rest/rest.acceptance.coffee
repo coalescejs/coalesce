@@ -106,8 +106,8 @@ describe "rest acceptance scenarios", ->
     it 'creates a new comment within a child session', ->
       @server.r 'POST:/comments', -> comment: {client_id: comment.clientId, id: "3", message: "#2", post: "1"}
 
-      post = @session.merge @Post.create(id: "1", title: "brogrammer's guide to beer pong", comments: [])
-      @session.merge @Comment.create(id: "2", message: "yo", post: post)
+      post = new @session.merge @Post(id: "1", title: "brogrammer's guide to beer pong", comments: [])
+      new @session.merge @Comment(id: "2", message: "yo", post: post)
 
       childSession = @session.newSession()
       childPost = childSession.add(post)
@@ -171,7 +171,7 @@ describe "rest acceptance scenarios", ->
         profile: @Profile.create
           id: '2'
           bio: 'asd'
-          tags: [@Tag.create(id: '3', name: 'java')]
+          tags: [new @Tag(id: '3', name: 'java')]
 
       @session.deleteModel(user)
       @session.flush().then =>

@@ -1,11 +1,12 @@
 import Coalesce from '../namespace';
+import BaseClass from '../utils/base_class';
 
 /**
   Maintains a cache of entity-related promises
 
   @class PromiseCache
 */
-export default class PromiseCache {
+export default class PromiseCache extends BaseClass {
 
   constructor() {
     this._promises = {};

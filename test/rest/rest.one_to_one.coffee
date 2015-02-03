@@ -42,8 +42,8 @@ describe "rest with one->one relationship", ->
   it 'deletes one side', ->
     @server.r 'DELETE:/users/2', {}
 
-    profile = @Profile.create(id: "1", title: 'parent')
-    profile.user = @User.create(id: "2", name: 'wes', profile: profile)
+    profile = new @Profile(id: "1", title: 'parent')
+    profile.user = new @User(id: "2", name: 'wes', profile: profile)
     @session.merge profile
 
     @session.load('profile', 1).then (profile) =>
@@ -59,8 +59,8 @@ describe "rest with one->one relationship", ->
     @server.r 'DELETE:/profiles/1', {}
     @server.r 'DELETE:/users/2', {}
 
-    profile = @Profile.create(id: "1", title: 'parent')
-    profile.user = @User.create(id: "2", name: 'wes', profile: profile)
+    profile = new @Profile(id: "1", title: 'parent')
+    profile.user = new @User(id: "2", name: 'wes', profile: profile)
     @session.merge profile
 
     @session.load('profile', 1).then (profile) =>
@@ -107,7 +107,7 @@ describe "rest with one->one relationship", ->
     it 'creates child', ->
       @server.r 'PUT:/profiles/1', -> profiles: {id: 1, title: 'parent', user: {client_id: profile.user.clientId, id: 2, name: 'child', profile: 1}}
 
-      profile = @session.merge @Profile.create(id: "1", title: 'parent')
+      profile = new @session.merge @Profile(id: "1", title: 'parent')
 
       profile.user = @session.create 'user', name: 'child'
 
@@ -133,8 +133,8 @@ describe "rest with one->one relationship", ->
     it 'deletes parent', ->
       @server.r 'DELETE:/profiles/1', {}
 
-      profile = @Profile.create(id: "1", title: 'parent')
-      profile.user = @User.create(id: "2", name: 'wes')
+      profile = new @Profile(id: "1", title: 'parent')
+      profile.user = new @User(id: "2", name: 'wes')
       profile = @session.merge profile
 
       @session.deleteModel(profile)

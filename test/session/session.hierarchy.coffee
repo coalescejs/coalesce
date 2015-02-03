@@ -33,8 +33,8 @@ describe "Session", ->
     lazy 'sessionB', -> @context.newSession()
 
     beforeEach ->
-      @sessionA.merge @Post.create(id: "1", title: 'original')
-      @sessionB.merge @Post.create(id: "1", title: 'original')
+      new @sessionA.merge @Post(id: "1", title: 'original')
+      new @sessionB.merge @Post(id: "1", title: 'original')
 
     it 'updates are isolated', ->
       postA = null
@@ -59,7 +59,7 @@ describe "Session", ->
     lazy 'child', -> @parent.newSession()
 
     it '.flushIntoParent flushes updates immediately', ->
-      @parent.merge @Post.create(id: "1", title: 'original')
+      new @parent.merge @Post(id: "1", title: 'original')
 
       @child.load('post', 1).then (childPost) =>
 
@@ -72,7 +72,7 @@ describe "Session", ->
           f
 
     it '.flush waits for success before updating parent', ->
-      @parent.merge @Post.create(id: "1", title: 'original')
+      new @parent.merge @Post(id: "1", title: 'original')
 
       @child.load('post', 1).then (childPost) =>
 
@@ -86,14 +86,14 @@ describe "Session", ->
             expect(parentPost.title).to.eq('child version')
 
     it 'does not mutate parent session relationships', ->
-      post = @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
+      post = new @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post(id: "1"))])
       expect(post.comments.length).to.eq(1)
       @child.add(post)
       expect(post.comments.length).to.eq(1)
 
 
     it 'adds hasMany correctly', ->
-      parentPost = @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
+      parentPost = new @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post(id: "1"))])
       post = @child.add(parentPost)
       expect(post).to.not.eq(parentPost)
       expect(post.comments.length).to.eq(1)

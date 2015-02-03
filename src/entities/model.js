@@ -1,11 +1,13 @@
-import BaseClass from '../utils/base_class';
+import Entity from './entity';
 import copy from '../utils/copy';
 import fork from '../utils/fork';
 import isEqual from '../utils/is_equal';
 import Error from '../error';
 import ModelDiff from '../diff/model';
+import Schema from '../schema/schema';
+import {mixinObject} from '../utils/mixin';
 
-export default class Model extends BaseClass {
+export default class Model extends Entity {
 
   get id() {
     return getMeta.call(this, 'id');
@@ -48,33 +50,8 @@ export default class Model extends BaseClass {
   set errors(value) {
     return setMeta.call(this, 'errors', value);
   }
-
-  get isModel() {
-    return true;
-  }
-  
-  get graph() {
-    return this._graph;
-  }
-  
-  set graph(value) {
-    return this._graph = value;
-  }
-  
-  get session() {
-    if(this._graph && this._graph.isSession) {
-      return this._graph;
-    }
-    return null;
-  }
-  
-  set session(value) {
-    console.assert(!this._session || this._session === value, "Cannot re-assign a model's session");
-    this._session = value;
-  }
   
   constructor(fields) {
-    this._graph = null;
     this._meta = {
       id: null,
       clientId: null,
@@ -85,7 +62,6 @@ export default class Model extends BaseClass {
     }
     this._attributes = {};
     this._detachedRelationships = {};
-    this._suspendedRelationships = false;
 
     for(var name in fields) {
       if(!fields.hasOwnProperty(name)) continue;
@@ -138,14 +114,6 @@ export default class Model extends BaseClass {
     return !!this.errors;
   }
 
-  get isDetached() {
-    return !this.session;
-  }
-
-  get isManaged() {
-    return !!this.session;
-  }
-
   get isNew() {
     return !this.id;
   }
@@ -160,14 +128,6 @@ export default class Model extends BaseClass {
   
   set _embeddedParent(value) {
     this.__embeddedParent = value ? value.clientId : undefined;
-  }
-
-  get isDirty() {
-    if(this.session) {
-      return this.session.dirtyModels.contains(this);
-    } else {
-      return false;
-    }
   }
   
   /**
@@ -185,42 +145,30 @@ export default class Model extends BaseClass {
     }
   }
 
-  shouldTriggerLoad(key) {
-    return this.isField(key) && !this.isFieldLoaded(key);
-  }
-
-  isField(key) {
-    return !!this.fields.get(key)
-  }
-
   isFieldLoaded(key) {
-    return this.isNew || typeof this[key] !== 'undefined'
-  }
-
-  /**
-    Returns true if *any* fields are loaded on the model
-  */
-  get isPartiallyLoaded() {
-    var res = false;
-    this.fields.forEach(function(options, name) {
-      res = res || this.isFieldLoaded(name);
-    }, this);
-    return res;
+    if(this.isNew) {
+      return true;
+    }
+    var value = this[key];
+    if(value === undefined) {
+      return false;
+    }
+    if(value && value.isRelationship) {
+      return value.isLoaded;
+    }
+    return true;
   }
   
   /**
-    Returns true if *all* fields (including relationships) are loaded on the model.
+    A model is considered *loaded* if any field is loaded.
   */
   get isLoaded() {
-    var res = true;
-    this.fields.forEach(function(options, name) {
-      res = res && this.isFieldLoaded(name);
-    }, this);
-    return res;
-  }
-  
-  get attributes() {
-    return this._attributes;
+    for(var field of this.schema) {
+      if(this.isFieldLoaded(field.name)) {
+        return true;
+      }
+    }
+    return false;
   }
   
   /**
@@ -228,46 +176,39 @@ export default class Model extends BaseClass {
     
     Return the raw relationship object.
   */
-  getRelationshipEntity(name) {
+  getRelationship(name) {
     var field = this.schema[name],
-        graph = this.graph;
+        graph = this.graph,
+        entity;
+        
     if(!graph) {
-      return this._detachedRelationships[name];
-    }
-    
-    var clientId = field.class.clientId(this, field),
-        entity = graph.getByClientId(clientId);
-    
-    if(!entity) {
-      entity = new field.class(this, field);
-      graph.adopt(entity);
+      entity = this._detachedRelationships[name];
+      if(!entity) {
+        entity = this._detachedRelationships[name] = new field.class(this, field);
+      }
+    } else {
+      var clientId = field.class.clientId(this.clientId, field);
+      entity = graph.getByClientId(clientId);
+      if(!entity) {
+        entity = new field.class(this, field);
+        entity = graph.adopt(entity);
+      }
     }
     
     return entity;
   }
-    
-  
-  *relationshipEntities() {
-    for(var relationship in this.schema.relationships) {
-      yield this.getRelationshipEntity(relationship.name);
-    }
-  }
   
   *relationships() {
-    for(var entity in this.relationshipEntities) {
-      if(entity.isLoaded) {
-        yield entity;
+    for(var relationship of this.schema.relationships()) {
+      var instance = this.getRelationship(relationship.name);
+      if(instance) {
+        yield instance;
       }
     }
   }
   
-  /**
-    @private
-    
-    All child entities
-  */
-  *children() {
-    yield* this.relationshiprelationshipEntities;
+  *entities() {
+    yield* this.relationships();
   }
   
   metaWillChange(name) {
@@ -281,42 +222,20 @@ export default class Model extends BaseClass {
   attributeWillChange(name) {
     var session = this.session;
     if(session) {
-      session.modelWillBecomeDirty(this);
+      session.touch(this);
     }
   }
 
   attributeDidChange(name) {
 
   }
-
-  belongsToWillChange(name) {
-    if(this._suspendedRelationships) {
-      return;
-    }
-    var inverseModel = this[name],
-        session = this.session;
-    if(session && inverseModel) {
-      session.inverseManager.unregisterRelationship(this, name, inverseModel);
-    }
+  
+  relationshipWillChange(name) {
+    
   }
-
-  belongsToDidChange(name) {
-    if(this._suspendedRelationships) {
-      return;
-    }
-    var inverseModel = this[name],
-        session = this.session;
-    if(session && inverseModel) {
-      session.inverseManager.registerRelationship(this, name, inverseModel);
-    }
-  }
-
-  hasManyWillChange(name) {
-    // XXX: unregister all?
-  }
-
-  hasManyDidChange(name) {
-    // XXX: reregister
+  
+  relationshipDidChange(name) {
+    
   }
   
   static get parentType() {
@@ -369,34 +288,6 @@ export default class Model extends BaseClass {
   }
   
   /**
-    @private
-
-    The goal of this method is to temporarily disable specific observers
-    that take action in response to application changes.
-
-    This allows the system to make changes (such as materialization and
-    rollback) that should not trigger secondary behavior (such as setting an
-    inverse relationship or marking records as dirty).
-
-    The specific implementation will likely change as Ember proper provides
-    better infrastructure for suspending groups of observers, and if Array
-    observation becomes more unified with regular observers.
-  */
-  suspendRelationshipObservers(callback, binding) {
-    // could be nested
-    if(this._suspendedRelationships) {
-      return callback.call(binding || this);
-    }
-
-    try {
-      this._suspendedRelationships = true;
-      callback.call(binding || this);
-    } finally {
-      this._suspendedRelationships = false;
-    }
-  }
-  
-  /**
     Returns a copy with all properties unloaded except identifiers.
 
     @method unloadedCopy
@@ -411,45 +302,37 @@ export default class Model extends BaseClass {
 
   fork(graph) {
     var dest = graph.fetch(this);
-    this._forkTo(dest, graph);
-    return dest;
-  }
-
-  _forkTo(dest, graph) {
-    this._forkMeta(dest, graph);
-    this._forkAttributes(dest, graph);
-    this._forkRelationships(dest, graph);
-  }
-  
-  _forkMeta(dest, graph) {
     dest.__embeddedParent = this.__embeddedParent;
     dest._meta = fork(this._meta, graph);
-  }
-  
-  _forkAttributes(dest, graph) {
-    this.loadedAttributes.forEach(function(options, name) {
-      dest._attributes[name] = fork(this._attributes[name], graph);
-    }, this);
-  }
-  
-  _forkRelationships(dest, graph) {
-    this.eachLoadedRelationship(function(name, relationship) {
-      if(relationship.kind === 'hasMany') {
-        dest[name] = fork(this[name], graph);
-      } else {
-        dest[name] = this[name] && graph.adopt(this[name]);
+    dest._attributes = fork(this._attributes, graph);
+    // recurse on new relationships
+    // TODO only do this for owned relationships?
+    if(this.isNew) {
+      for(var relationship of this.relationships()) {
+        graph.adopt(relationship);
       }
-    }, this);
+    }
+    return dest;
+  }
+  
+  get schema() {
+    return this.constructor.schema;
   }
   
   static defineSchema(obj) {
-    this.schema = new Schema(obj);
+    console.assert(!this._isReified, "Cannot modify schema after context has been configured")
+    if(!this.hasOwnProperty('__schemaConfigs__')) {
+      this.__schemaConfigs__ = [];
+    }
+    this.__schemaConfigs__.push(obj);
   }
   
   diff(b) {
     return new ModelDiff(this, b);
   }
 }
+
+Model.prototype.isModel = true;
 
 /**
   The embedded parent of this model.
@@ -467,7 +350,7 @@ function sessionAlias(name) {
   };
 }
 
-Model.reopen({
+mixinObject(Model.prototype, {
   load: sessionAlias('loadModel'),
   refresh: sessionAlias('refresh'),
   deleteModel: sessionAlias('deleteModel'),
@@ -490,45 +373,39 @@ function setMeta(name, value) {
   return value;
 }
 
-
-
-
 /**
   @private
   
-  "reification" happens when the type is looked up on the context. This process
-  translates the String typeKeys into their corresponding classes.
+  "reification" happens when the type is looked up on the context. This is
+  where the schema is applied to the model class (defining properties etc.)
 */
 Model._isReified = false;
-Model.reify = function(context) {
+// TODO: should pass in schema here
+Model.reify = function(context, typeKey) {
   if(this._isReified) return;
-  
-  // no need to reify the root class
-  if(this === Model) {
-    return;
-  }
-  
-  console.assert(this.typeKey, "Model must have static 'typeKey' property set.");
-  
-  if(this.parentType && typeof this.parentType.reify === 'function') {
-    this.parentType.reify(context);
-  }
+  this.typeKey = typeKey;
   
   // eagerly set to break loops
   this._isReified = true;
   
-  this.relationships.forEach(function(relationship) {
-    if(!relationship.type) {
-      relationship.type = context.typeFor(relationship.typeKey);
+  var schema;
+  if(this.parentType && this.parentType !== Model && typeof this.parentType.reify === 'function') {
+    var parentSchema = this.parentType.reify(context);
+    schema = Object.create(parentSchema);
+    schema.typeKey = typeKey;
+  } else {
+    schema = new Schema(context, typeKey);
+  }
+  this.schema = schema;
+  
+  var configs = this.__schemaConfigs__;
+  // todo allow config to be specified on context
+  if(configs) {
+    for(var config of configs) {
+      schema.configure(config);
     }
-    if(!relationship.type) {
-      throw new Error("Could not find a type for '" + relationship.name + "' with typeKey '" + relationship.typeKey + "'");
-    }
-    if(!relationship.type.typeKey) {
-      throw new Error("Relationship '" + relationship.name + "' has no typeKey");
-    }
-    if(!relationship.typeKey) {
-      relationship.typeKey = relationship.type.typeKey;
-    }
-  });
+  }
+  schema.apply(this.prototype);
+  
+  return schema;
 }

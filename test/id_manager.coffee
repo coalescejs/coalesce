@@ -1,34 +1,30 @@
-`import Model from 'coalesce/entities/model'`
 `import IdManager from 'coalesce/id_manager'`
+`import Context from 'coalesce/context/default'`
+`import {post} from './support/configs'`
 
 describe 'IdManager', ->
 
   subject -> new IdManager()
 
-  lazy 'Post', ->
-    `class Post extends Model {}`
-    Post.defineSchema
-      typeKey: 'post'
-      attributes:
-        title: {type: 'string'}
-    Post
+  lazy 'context', -> new Context(post())
+  lazy 'Post', -> @context.typeFor('post')
 
   describe '.reifyClientId', ->
 
     it 'sets clientId on new record', ->
-      post = @Post.create(title: 'new post')
+      post = new @Post(title: 'new post')
       expect(post.clientId).to.be.null
       @subject.reifyClientId(post)
       expect(post.clientId).to.not.be.null
 
 
     it 'should set existing clientId on detached model', ->
-      post = @Post.create(title: 'new post', id: "1")
+      post = new @Post(title: 'new post', id: "1")
       expect(post.clientId).to.be.null
       @subject.reifyClientId(post)
       expect(post.clientId).to.not.be.null
 
-      detached = @Post.create(title: 'different instance', id: "1")
+      detached = new @Post(title: 'different instance', id: "1")
       expect(detached.clientId).to.be.null
       @subject.reifyClientId(detached)
       expect(detached.clientId).to.eq(post.clientId)

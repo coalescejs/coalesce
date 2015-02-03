@@ -7,38 +7,12 @@ import fork from '../utils/fork';
 export default class EntityArray extends ObservableArray {
   
   replace(idx, amt, objects) {
-    if(this.session) {
+    if(this.graph) {
       objects = objects.map(function(model) {
-        return this.session.adopt(model);
+        return this.graph.adopt(model);
       }, this);
     }
     super(idx, amt, objects);
-  }
-  
-  arrayContentWillChange(index, removed, added) {
-    for (var i=index; i<index+removed; i++) {
-      var model = this.objectAt(i);
-      var session = this.session;
-
-      if(session) {
-        session.collectionManager.unregister(this, model);
-      }
-    }
-
-    super(index, removed, added);
-  }
-
-  arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
-
-    for (var i=index; i<index+added; i++) {
-      var model = this.objectAt(i);
-      var session = this.session;
-
-      if(session) {
-        session.collectionManager.register(this, model);
-      }
-    }
   }
 
   removeObject(obj) {

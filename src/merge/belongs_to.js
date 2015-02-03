@@ -19,9 +19,8 @@ export default class BelongsToMerge extends Base {
     var oursValue = ours.get(),
         ancestorValue = ancestor.get(),
         theirsValue = theirs.get();
-    
     if(isEqual(oursValue, ancestorValue)) {
-      ours.set(session.merge(theirsValue));
+      ours.set(theirsValue && session.adopt(theirsValue));
     }
     return ours;
   }

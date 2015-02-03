@@ -39,8 +39,8 @@ describe "relationships", ->
   context 'one->many', ->
 
     it 'belongsTo updates inverse', ->
-      post = @session.create('post')
-      comment = @session.create('comment')
+      post = new @session('post')
+      comment = new @session('comment')
       comment.post = post
       expect(post.comments.toArray()).to.eql([comment])
       comment.post = null
@@ -48,8 +48,8 @@ describe "relationships", ->
 
 
     it 'belongsTo updates inverse on delete', ->
-      post = @session.create('post')
-      comment = @session.create('comment')
+      post = new @session('post')
+      comment = new @session('comment')
       comment.post = post
       expect(post.comments.toArray()).to.eql([comment])
       @session.deleteModel comment
@@ -57,9 +57,9 @@ describe "relationships", ->
 
 
     it 'belongsTo updates inverse on delete when initially added unloaded', ->
-      post = @session.merge @session.build 'post', id: 1, comments: [@Comment.create(id: 2)]
+      post = new @session.merge @session.build 'post', id: 1, comments: [@Comment(id: 2)]
       unloadedComment = post.comments[0]
-      comment = @session.merge @session.build 'comment', id: 2, post: @Post.create(id: 1)
+      comment = new @session.merge @session.build 'comment', id: 2, post: @Post(id: 1)
       unloadedComment.post = post
       expect(post.comments.toArray()).to.eql([unloadedComment])
       @session.deleteModel unloadedComment
@@ -67,7 +67,7 @@ describe "relationships", ->
 
 
     it 'belongsTo updates inverse when set during create', ->
-      comment = @session.create('comment', post: @session.create('post'))
+      comment = new @session.create('comment', post: @session('post'))
       post = comment.post
       expect(post.comments.toArray()).to.eql([comment])
       comment.post = null
@@ -75,16 +75,16 @@ describe "relationships", ->
 
 
     it 'belongsTo adds object to session', ->
-      post = @session.merge(@Post.create(id: '1'))
-      comment = @session.merge(@Comment.create(id: '2'))
+      post = new @session.merge(@Post(id: '1'))
+      comment = new @session.merge(@Comment(id: '2'))
 
-      comment.post = @Post.create(id: '1')
+      comment.post = new @Post(id: '1')
       expect(comment.post).to.eq(post)
 
 
     it 'hasMany updates inverse', ->
-      post = @session.create('post')
-      comment = @session.create('comment')
+      post = new @session('post')
+      comment = new @session('comment')
       post.comments.addObject(comment)
       expect(comment.post).to.eq(post)
       post.comments.removeObject(comment)
@@ -92,8 +92,8 @@ describe "relationships", ->
 
 
     it 'hasMany updates inverse on delete', ->
-      post = @session.create('post')
-      comment = @session.create('comment')
+      post = new @session('post')
+      comment = new @session('comment')
       post.comments.addObject(comment)
       expect(comment.post).to.eq(post)
       @session.deleteModel post
@@ -101,8 +101,8 @@ describe "relationships", ->
 
 
     it 'hasMany updates inverse on create', ->
-      post = @session.create('post', comments: [])
-      comment = @session.create('comment')
+      post = new @session('post', comments: [])
+      comment = new @session('comment')
       post.comments.addObject(comment)
       expect(comment.post).to.eq(post)
       @session.deleteModel post
@@ -110,15 +110,15 @@ describe "relationships", ->
 
 
     it 'hasMany adds to session', ->
-      post = @session.merge(@Post.create(id: '1', comments: []))
-      comment = @session.merge(@Comment.create(id: '2', post: null))
+      post = new @session.merge(@Post(id: '1', comments: []))
+      comment = new @session.merge(@Comment(id: '2', post: null))
 
-      post.comments.addObject @Comment.create(id: '2')
+      post.comments.addObject new @Comment(id: '2')
       expect(post.comments[0]).to.eq(comment)
 
 
     it 'hasMany content can be set directly', ->
-      post = @session.create 'post', comments: [@Comment.create(id: '2')]
+      post = new @session.create 'post', comments: [@Comment(id: '2')]
       expect(post.comments.length).to.eq(1)
       expect(post.comments[0].id).to.eq('2')
 
@@ -128,8 +128,8 @@ describe "relationships", ->
     lazy 'context', -> new Context(userWithProfile())
 
     it 'updates inverse', ->
-      profile = @session.create('profile')
-      user = @session.create('user')
+      profile = new @session('profile')
+      user = new @session('user')
       profile.user = user
       expect(user.profile).to.eq(profile)
       profile.user = null
@@ -137,8 +137,8 @@ describe "relationships", ->
 
 
     it 'updates inverse on delete', ->
-      profile = @session.create('profile')
-      user = @session.create('user')
+      profile = new @session('profile')
+      user = new @session('user')
       profile.user = user
       expect(user.profile).to.eq(profile)
       @session.deleteModel profile
@@ -151,9 +151,9 @@ describe "relationships", ->
 
     it 'updates inverse on delete', ->
 
-      group = @session.create('group')
-      user = @session.create('user')
-      member = @session.create('member', group: group, user: user)
+      group = new @session('group')
+      user = new @session('user')
+      member = new @session('member', group: group, user: user)
 
       expect(member.user).to.eq(user)
       expect(member.group).to.eq(group)

@@ -19,7 +19,7 @@ describe "rest with metadata", ->
   it 'saves', ->
     @server.r 'POST:/posts', -> meta: {traffic: 'heavy'}, posts: {client_id: post.clientId, id: 1, title: 'mvcc ftw'}
 
-    post = @session.create('post')
+    post = new @session('post')
     post.title = 'mvcc ftw'
 
     @session.flush().then (result) =>
@@ -32,7 +32,7 @@ describe "rest with metadata", ->
   it 'updates', ->
     @server.r 'PUT:/posts/1', -> meta: {traffic: 'heavy'}, posts: {id: 1, title: 'updated'}
 
-    @session.merge @Post.create(id: "1", title: 'test')
+    new @session.merge @Post(id: "1", title: 'test')
 
     @session.load('post', 1).then (post) =>
       expect(post.title).to.eq('test')
@@ -46,7 +46,7 @@ describe "rest with metadata", ->
   it 'updates multiple times', ->
     @server.r 'PUT:/posts/1', -> meta: {traffic: 'heavy'}, posts: {id: 1, title: 'updated'}
 
-    post = @session.merge @Post.create(id: "1", title: 'test')
+    post = new @session.merge @Post(id: "1", title: 'test')
 
     expect(post.title).to.eq('test')
     post.title = 'updated'
@@ -67,7 +67,7 @@ describe "rest with metadata", ->
   it 'deletes', ->
     @server.r 'DELETE:/posts/1', meta: {traffic: 'heavy'}
 
-    @session.merge @Post.create(id: "1", title: 'test')
+    new @session.merge @Post(id: "1", title: 'test')
 
     @session.load('post', 1).then (post) =>
       expect(post.id).to.eq("1")
@@ -82,7 +82,7 @@ describe "rest with metadata", ->
   it 'refreshes', ->
     @server.r 'GET:/posts/1', meta: {traffic: 'lighter'}, posts: {id: 1, title: 'something new'}
 
-    @session.merge @Post.create(id: "1", title: 'test')
+    new @session.merge @Post(id: "1", title: 'test')
 
     @session.load(@Post, 1).then (post) =>
       expect(post.title).to.eq('test')

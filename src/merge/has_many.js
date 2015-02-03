@@ -20,7 +20,7 @@ export default class HasManyMerge extends Base {
       // TODO: think about merging the actual object, not
       // returning the entire value
       return theirs.map(function(model) {
-        return session.fetch(model);
+        return session.adopt(model);
       });
     }
     

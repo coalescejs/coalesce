@@ -1,11 +1,11 @@
 `import Model from 'coalesce/entities/model'`
-`import HasManyArray from 'coalesce/collections/has_many_array'`
+`import HasMany from 'coalesce/entities/has_many'`
 `import Container from 'coalesce/context/container'`
 
 describe 'hasMany', ->
   
   it 'accepts custom collectionType option', ->
-    `class CustomArray extends HasManyArray {}`
+    `class CustomArray extends HasMany {}`
     
     `class User extends Model {}`
     User.defineSchema

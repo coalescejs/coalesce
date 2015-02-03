@@ -1,61 +1,101 @@
+import Relationship from './relationship';
+
 // TODO: entityWillChange/entityDidChange
-export default class BelongsTo {
-  
-  constructor(model, field) {
-    this._owner = model.clientId;
-    this._field = field;
-  }
-  
-  get field() {
-    return this._field;
-  }
-  
-  get owner() {
-    return this.graph.get(this._owner);
-  }
-  
-  get clientId() {
-    return this.constructor.clientId(owner, field);
-  }
+export default class BelongsTo extends Relationship {
   
   get isLoaded() {
     return this._value !== undefined;
   }
   
   get() {
-    return this.graph.get(this._value);
+    if(this.isDetached) {
+      return this._value;
+    } else {
+      return this._value && this.graph.getByClientId(this._value);
+    }
   }
   
   set(model) {
-    this._value = model.clientId;
-  }
-  
-  static clientId(field, model) {
-    return `${model.clientId}$${field.name}`;
-  }
-  
-  get context() {
-    return this.session.context;
-  }
-  
-  // TODO get raw relationship
-  getInverse(model) {
-    console.assert(model.constructor === this.field.type);
-    var inverseType = this.field.type;
-
-    if (this.field.inverse !== undefined) {
-      return inverseType.schema.get(this.field.inverse);
+    var session = this.session,
+        owner = this.owner;
+        
+    if(owner) {
+      owner.relationshipWillChange(this.field.name);
     }
     
-    for(var relationship of inverseType.schema.relationships) {
-      if(relationship.type === this.field.type) {
-        return relationship;
+    if(session) {
+      session.touch(this);
+      this.suspendInverseUpdates(() => {
+        var inverse = this.inverse;
+        if(inverse) {
+          inverse.inverseWillRemove(this);
+        }
+      });
+    }
+    
+    this._set(model);
+    
+    if(session) {
+      this.suspendInverseUpdates(() => {
+        var inverse = this.inverse;
+        if(inverse) {
+          inverse.inverseDidAdd(this);
+        }
+      });
+    }
+    
+    if(owner) {
+      owner.relationshipDidChange(this.field.name);
+    }
+    
+    return model;
+  }
+  
+  _set(model) {
+    if(this.isDetached) {
+      return this._value = model;
+    } else {
+      if(model) {
+        model = this.graph.adopt(model);
       }
+      return this._value = model && model.clientId;
     }
-    
-    return null;
   }
   
+  get inverse() {
+    var model = this.get();
+    if(!model) {
+      return;
+    }
+    var inverse = this.inverseFor(model);
+    if(inverse) {
+      return inverse;
+    }
+  }
+  
+  *entities() {
+    var model = this.get();
+    if(model) {
+      yield model;
+    }
+  }
+  
+  inverseWillRemove(inverse) {
+    if(this._suspendInverseUpdates) return;
+    this.set(null);
+  }
+  
+  inverseDidAdd(inverse) {
+    if(this._suspendInverseUpdates) return;
+    this.set(inverse.owner);
+  }
+  
+  fork(graph) {
+    var dest = graph.fetch(this),
+        value = this.get();
+    if(this.isLoaded) {
+      dest.set(value);
+    }
+    return dest;
+  }
 }
-
-Base.prototype._value = null;

@@ -10,7 +10,6 @@ import IdManager from './id_manager';
 
 import EntityArray from './collections/entity_array';
 import EntitySet from './collections/entity_set';
-import HasManyArray from './collections/has_many_array';
 
 import MergeStrategy from './merge/base';
 import ModelMerge from './merge/model';
@@ -38,7 +37,6 @@ import RevisionSerializer from './serializers/revision';
 import StringSerializer from './serializers/string';
 
 import CollectionManager from './session/collection_manager';
-import InverseManager from './session/inverse_manager';
 import Session from './session/session';
 import QueryCache from './session/query_cache';
 import ModelCache from './session/model_cache';
@@ -54,7 +52,6 @@ Coalesce.IdManager = IdManager;
 
 Coalesce.EntityArray = EntityArray;
 Coalesce.EntitySet = EntitySet;
-Coalesce.HasManyArray = HasManyArray;
 
 Coalesce.MergeStrategy = MergeStrategy;
 Coalesce.ModelMerge = ModelMerge;
@@ -84,7 +81,6 @@ Coalesce.RevisionSerializer = RevisionSerializer;
 Coalesce.StringSerializer = StringSerializer;
 
 Coalesce.CollectionManager = CollectionManager;
-Coalesce.InverseManager = InverseManager;
 Coalesce.Session = Session;
 Coalesce.QueryCache = QueryCache;
 Coalesce.ModelCache = ModelCache;

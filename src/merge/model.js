@@ -19,9 +19,9 @@ import {dasherize} from '../utils/inflector';
 export default class ModelMerge extends Base {
 
   merge(ours, ancestor, theirs, session, opts) {
-    ours.eachAttribute(function(name, attribute) {
-      this.mergeAttribute(ours, ancestor, theirs, session, attribute);
-    }, this);
+    for(var field of ours.schema.attributes()) {
+      this.mergeAttribute(ours, ancestor, theirs, session, field);
+    }
     return ours;
   }
 
