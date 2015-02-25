@@ -17,8 +17,6 @@ import Store from '../store';
 
 var uuid = 1;
 
-var sessionStorageKey = "___session_collections"
-
 export default class Session {
 
   constructor({adapter, idManager, container, parent}) {
@@ -48,7 +46,8 @@ export default class Session {
     this._dirtyCheckingSuspended = false;
     this.name = "session" + uuid++;
 
-    this.store = new Store("Coalesce");
+    this.sessionStorageKey = "___session_collections";
+    this.store = new Store("CoalesceSession");
   }
 
   /**
@@ -968,9 +967,9 @@ export default class Session {
     var sessionSerializer = this.adapter.container.lookup('serializer:session');
     var serializedSession = sessionSerializer.serialize(this);
 
-    serializedSession["_id"] = sessionStorageKey;
+    // serializedSession["_id"] = ;
 
-    return this.store.set(serializedSession);
+    return this.store.set(serializedSession, this.sessionStorageKey);
   }
 
   /**
@@ -985,7 +984,7 @@ export default class Session {
     var session = this,
         sessionSerializer = this.adapter.container.lookup('serializer:session');
 
-    return this.store.get(sessionStorageKey).then(function(serializedSessionData){
+    return this.store.get(this.sessionStorageKey).then(function(serializedSessionData){
       return sessionSerializer.deserialize(session, serializedSessionData);
     });
   }
@@ -997,7 +996,7 @@ export default class Session {
     @return {Promise}
   */
   clearStorage(){
-    return this.store.remove(sessionStorageKey);
+    return this.store.clear();
   }
   
   toString() {

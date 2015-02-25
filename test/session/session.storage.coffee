@@ -31,22 +31,21 @@ describe "Session Storage", ->
     it 'returns a promise', ->
 
       promise = session.saveToStorage()
-      expect(promise).to.be.an.instanceOf(Promise)
+      expect(promise).to.be.an.instanceOf(Dexie.Promise)
 
-    it 'promises a session', ->
+    it 'promises a session key', ->
 
       post = @Post.create(id: "1", title: 'test')
       session.merge(post)
-      session.saveToStorage().then (sesh) ->
-        expect(sesh).to.be.an.instanceOf(Session)
-        expect(sesh).to.eq(session)
+      session.saveToStorage().then (key) ->
+        expect(key).to.eq(session.sessionStorageKey)
 
   describe '.loadFromStorage', ->
 
     it 'returns a promise', ->
 
       promise = session.loadFromStorage()
-      expect(promise).to.be.an.instanceOf(Promise)
+      expect(promise).to.be.an.instanceOf(Dexie.Promise)
 
     it 'promises a session', ->
 
@@ -59,5 +58,5 @@ describe "Session Storage", ->
     it 'returns a promise', ->
 
       promise = session.clearStorage()
-      expect(promise).to.be.an.instanceOf(Promise)
+      expect(promise).to.be.an.instanceOf(Dexie.Promise)
 

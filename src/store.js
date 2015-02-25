@@ -9,7 +9,9 @@ export default class Store {
 
     constructor(db_name) {
         this.db = new Dexie(db_name);
-        this.db.version(1).stores({store: "_id"});
+        this.db.version(1).stores({
+            sessionstore: ",models,newModels,shadows,uuidStart"
+        });
 
         this.db.on('error', function(err) {
             // Catch all uncatched DB-related errors and exceptions
@@ -28,7 +30,7 @@ export default class Store {
       @return {Promise}
     */
     get(key) {
-        return this.db.store.get(key);
+        return this.db.sessionstore.get(key);
     }
 
     /**
@@ -38,8 +40,8 @@ export default class Store {
       @param {Object} value 
       @return {Promise}
     */
-    set(object) {
-        return this.db.store.put(object);
+    set(object, key) {
+        return this.db.sessionstore.put(object, key);
     }
 
     /**
@@ -50,6 +52,10 @@ export default class Store {
       @return {Promise}
     */
     remove(id) {
-        return this.db.store.where('_id').equals(id).delete();
+        return this.db.sessionstore.delete(id);
+    }
+
+    clear(){
+      return this.db.sessionstore.clear();
     }
 }
