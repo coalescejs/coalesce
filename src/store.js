@@ -10,7 +10,7 @@ export default class Store {
     constructor(db_name) {
         this.db = new Dexie(db_name);
         this.db.version(1).stores({
-            sessionstore: ",models,newModels,shadows,uuidStart"
+            sessionstore: ",-"
         });
 
         this.db.on('error', function(err) {
