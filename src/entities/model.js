@@ -299,6 +299,15 @@ export default class Model extends Entity {
       clientId: this.clientId
     });
   }
+  
+  /**
+    Copy only data that cannot be retrieved from the parent session during
+    property access.
+  */
+  lazyCopy(childSession) {
+    console.assert(!childSession.has(this), "Model already exists in child session");
+    return session.add(this.unloadedCopy());
+  }
 
   fork(graph) {
     var dest = graph.fetch(this);
@@ -351,7 +360,7 @@ function sessionAlias(name) {
 }
 
 mixinObject(Model.prototype, {
-  load: sessionAlias('loadModel'),
+  load: sessionAlias('load'),
   refresh: sessionAlias('refresh'),
   deleteModel: sessionAlias('deleteModel'),
   remoteCall: sessionAlias('remoteCall'),

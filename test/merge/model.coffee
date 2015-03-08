@@ -2,7 +2,7 @@
 `import Model from 'coalesce/entities/model'`
 `import Context from 'coalesce/context/default'`
 
-describe.only 'ModelMerge', ->
+describe 'ModelMerge', ->
 
   lazy 'context', ->
     `class User extends Model {}`

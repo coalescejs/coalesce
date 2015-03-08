@@ -9,11 +9,11 @@ import BaseClass from '../utils/base_class';
 export default class PromiseCache extends BaseClass {
 
   constructor() {
-    this._promises = {};
+    this.clear();
   }
 
   add(entity, promise=null) {
-    if(this.shouldCache(entity)) {
+    if(this.shouldCache(entity) || promise) {
       if(!promise) {
         promise = Coalesce.Promise.resolve(entity);
       }
@@ -24,6 +24,10 @@ export default class PromiseCache extends BaseClass {
 
   remove(entity) {
     delete this._promises[entity.clientId];
+  }
+  
+  clear() {
+    this._promises = {};
   }
 
   getPromise(entity) {
@@ -40,7 +44,7 @@ export default class PromiseCache extends BaseClass {
   // for now we only add the entity if some attributes are loaded,
   // eventually this will be on a per-attribute basis
   shouldCache(entity) {
-    return true;
+    return entity.isLoaded;
   }
 
   shouldInvalidate(entity) {

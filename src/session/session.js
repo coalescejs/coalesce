@@ -152,7 +152,7 @@ export default class Session extends Graph {
   */
   load(entity, opts) {
     // BACK-COMPAT: load used to be the same as find
-    if(!entity.isModel) {
+    if(!entity.isEntity) {
       return this.find.apply(this, arguments);
     }
     
@@ -160,11 +160,11 @@ export default class Session extends Graph {
     if(this.parent) {
       promise = this.parent.load(entity, opts);
     } else {
-      console.assert(entity.id, "Cannot load a entity without an id");
+      console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
       // TODO: this should be done on a per-attribute bases
       var cache = this._cacheFor(entity),
           adapter = this._adapterFor(entity);
-        
+      
       if(!opts || opts.skipCache !== false) {  
         promise = cache.getPromise(entity)
       }
@@ -213,7 +213,7 @@ export default class Session extends Graph {
     if (typeof queryOrId === 'object') {
       return this.query(type, query, opts);
     }
-    var model = this.fetchById(type, id);
+    var model = this.fetchById(type, queryOrId);
     return this.load(model, opts);
   }
   
@@ -237,14 +237,13 @@ export default class Session extends Graph {
   */
   fetchQuery(type, params) {
     type = this._typeFor(type);
-    var key = Query.key(type, params),
-        query = this.queries[key];
-    
-    if(!query) {
-      query = this.queries[key] = this.buildQuery(type, params);
+    var clientId = Query.clientId(type, params),
+        entity = this.getByClientId(clientId);
+    if(!entity) {
+      entity = new Query(type, params);
+      entity = this.adopt(entity);
     }
-    
-    return query;
+    return entity;
   }
 
   /**
@@ -267,7 +266,7 @@ export default class Session extends Graph {
     if(!res && this.parent) {
       res = this.parent.get(entity);
       if(res) {
-        res = this.fetch(res);
+        return res.lazyCopy(this);
       }
     }
     return res;
@@ -283,7 +282,7 @@ export default class Session extends Graph {
     if(!res && this.parent) {
       res = this.parent.getByClientId(clientId);
       if(res) {
-        res = this.fetch(res);
+        return res.lazyCopy(this);
       }
     }
     return res;
@@ -356,7 +355,6 @@ export default class Session extends Graph {
     return cache.remove(entity);
   }
   
-  
   /**
     Invalidate the cache for all queries corresponding to a particular Type.
 
@@ -364,10 +362,9 @@ export default class Session extends Graph {
     @param {Type} type Type to invalidate
   */
   invalidateQueries(type) {
-    // XXX: TODO
     var type = this._typeFor(type),
         queryCache = this._queryCacheFor(type);
-    queryCache.removeAll(type);
+    queryCache.clear();
   }
 
   /**
@@ -535,7 +532,7 @@ export default class Session extends Graph {
   */
   merge(serverEntity) {
     if(this.parent) {
-      serverEntity = this.parent.merge(serverEntity, visited);
+      serverEntity = this.parent.merge(serverEntity);
     }
     // TODO clean this up
     // We need to recurse to reify clientIds since we hit issues
@@ -579,7 +576,7 @@ export default class Session extends Graph {
     var childrenToRecurse = [];
     for(var childEntity of serverEntity.entities()) {
       // recurse on detached/embedded children entities
-      // TODO needs to be embedded in this relationship
+      // TODO needs to be embedded only in this relationship
       if(childEntity.isLoaded && (childEntity.isEmbedded || childEntity.isDetached)) {
         childrenToRecurse.push(childEntity);
       }
@@ -661,7 +658,7 @@ export default class Session extends Graph {
   */
   revert(original) {
     if(this.parent) {
-      original = this.parent.revert(serverEntity);
+      original = this.parent.revert(original);
     }
     
     this.reifyClientId(original);
@@ -671,17 +668,17 @@ export default class Session extends Graph {
         
     if(!entity.isNew) {
       var shadow = this.shadows.get(original);
-      if(!original.rev || shadow.rev <= original) {
+      if(!original.rev || shadow && shadow.rev <= original) {
         // "rollback" shadow to the original
         console.assert(this.has(original));
         this.shadows.update(original);
       }
+      return this.shadows.get(original);
     } else {
       // re-track the entity as a new entity
       this.newEntities.add(entity);
+      return this.newEntities.get(original);
     }
-    
-    return this.shadows.get(original);
   }
   
   _typeFor(key) {
@@ -689,14 +686,23 @@ export default class Session extends Graph {
   }
   
   _cacheFor(key) {
-    if(key.isQuery || key.isRelationship) {
-      return this.context.configFor(key.type).get('queryCache');
+    if(key.isEntity && !key.isModel) {
+      return this._queryCacheFor(key.type);
+    } else {
+      return this._modelCacheFor(key);
     }
+  }
+  
+  _queryCacheFor(key) {
+    return this.context.configFor(key).get('queryCache');
+  }
+  
+  _modelCacheFor(key) {
     return this.context.configFor(key).get('modelCache');
   }
   
   _adapterFor(key) {
-    if(key.isQuery || key.isRelationship) {
+    if(key.isEntity && !key.isModel) {
       key = key.type;
     }
     return this.context.configFor(key).get('adapter');

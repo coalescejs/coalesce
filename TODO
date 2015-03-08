@@ -1,0 +1,5 @@
+
+* Child sessions need to update dirty relationships as well was models during flush
+
+
+* Older versions of Coalesce used `add` to add models from parent sessions to child sessions. Now the correct way is to use `fetch`. Come up with a clean migration path.

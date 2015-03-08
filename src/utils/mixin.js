@@ -12,6 +12,6 @@ export {mixinObject};
 
 export default function(targetClass, sourceClass) {
   class Extended extends targetClass {};
-  mixinObject(targetClass.prototype, sourceClass.prototype);
+  mixinObject(Extended.prototype, sourceClass.prototype);
   return Extended;
 }

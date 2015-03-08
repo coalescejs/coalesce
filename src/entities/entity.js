@@ -42,6 +42,11 @@ export default class Entity {
     }
   }
   
+  lazyCopy(childSession) {
+    console.assert(!childSession.has(this), "Model already exists in child session");
+    return this.fork(childSession);
+  }
+
 }
 
 Entity.prototype._graph = null;

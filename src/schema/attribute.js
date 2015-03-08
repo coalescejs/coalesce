@@ -15,6 +15,7 @@ export default class Attribute extends Field {
       get: function() {
         var value = this._attributes[name];
         // TODO: explore prototypical inheritance here
+        // TODO: deal with entity attributes (need to fork)
         if(!this.isNew && value === undefined && this.__parent) {
           value = this._attributes[name] = this.__parent._attributes[name];
         }

@@ -21,11 +21,19 @@ export default class Query extends Collection {
     return this._type;
   }
   
+  get typeKey() {
+    return this.type.typeKey;
+  }
+  
   get clientId() {
     return this.constructor.clientId(this.type, this.params);
   }
   
-  // TODO consider using hash instead of stringified params
+  unloadedCopy() {
+    return new this.constructor(this.type, this.params);
+  }
+  
+  // TODO consider using hash digest instead of stringified params
   static clientId(type, params) {
     return `$${type.typeKey}$${JSON.stringify(params)}`;
   }

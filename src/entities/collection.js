@@ -10,4 +10,15 @@ export default class Collection extends mixin(EntityArray, Entity) {
     }
   }
   
+  fork(graph) {
+    var dest = graph.fetch(this);
+    if(this.isLoaded) {
+      var models = this.map(function(model) {
+        return graph.adopt(model);
+      });
+      dest.replace(0, dest.length, models);
+    }
+    return dest;
+  }
+  
 }
