@@ -6,6 +6,7 @@ export default class Graph extends EntitySet {
     console.assert(!entity.graph || entity.graph === this, "Entity already belongs to a different graph, consider using fork() instead");
     console.assert(!this._get(entity) || this._get(entity) === entity, "An equivalent entity already exists in the graph");
     super(entity);
+    if(entity.graph === this) return this;
     entity.graph = this;
     return this;
   }

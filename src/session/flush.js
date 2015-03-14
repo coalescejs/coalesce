@@ -22,11 +22,11 @@ export default class Flush {
   }
   
   then(...args) {
-    return this.promise.then.apply(this.promise, ...args);
+    return this.promise.then.apply(this.promise, args);
   }
   
   catch(...args) {
-    return this.promise.catch.apply(this.promise, ...args);
+    return this.promise.catch.apply(this.promise, args);
   }
   
   add(model, opts) {
@@ -42,10 +42,8 @@ export default class Flush {
     var shadow = this.session.shadows.get(model);
     // take a snapshot of the mode/shadow in this state
     model = model.fork(this.models);
-    this.models.add(model);
     if(shadow) {
       shadow = shadow.fork(this.shadows);
-      this.shadows.add(shadow);
     }
     
     if(model.isEmbedded) {

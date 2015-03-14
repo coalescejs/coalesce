@@ -27,11 +27,11 @@ export default class Operation {
   }
   
   then(...args) {
-    return this.promise.then.apply(this.promise, ...args);
+    return this.promise.then.apply(this.promise, args);
   }
   
   catch(...args) {
-    return this.promise.catch.apply(this.promise, ...args);
+    return this.promise.catch.apply(this.promise, args);
   }
   
   addChild(child) {
@@ -106,11 +106,11 @@ export default class Operation {
     
     if(model.isNew) {
       // if the model is new, all relationships are considered dirty
-      model.eachRelationship(function(name, relationship) {
+      for(var relationship of model.schema.relationships()) {
         if(adapter.isRelationshipOwner(relationship)) {
-          rels.push({name: name, type: relationship.kind, relationship: relationship, oldValue: null});
+          rels.push({name: relationship.name, type: relationship.kind, relationship: relationship, oldValue: null});
         }
-      }, this);
+      }
     } else {
       // otherwise we check the diff to see if the relationship has changed,
       // in the case of a delete this won't really matter since it will
@@ -137,9 +137,9 @@ class PersistOperation extends Operation {
         model = this.model,
         shadow = this.shadow,
         opts = this.opts;
-            
+    
     if(this.force || this.isDirty) {
-      return adapter.persist(model, shadow, null, opts, session);
+      return adapter.persist(model, shadow, opts, session);
     } else {
       return Coalesce.Promise.resolve(model);
     }

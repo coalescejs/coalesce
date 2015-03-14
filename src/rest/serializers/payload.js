@@ -40,8 +40,13 @@ export default class PayloadSerializer extends Serializer {
         context = opts.context,
         xhr = opts.xhr;
 
-    if(context && typeof context === 'string') {
-      result.context = [];
+    if(context) {
+      if(typeof context === 'string') {
+        result.context = [];
+      } else if(context.isQuery) {
+        result.context = context.unloadedCopy();
+        result.add(result.context);
+      }
     }
 
     /**
@@ -51,7 +56,8 @@ export default class PayloadSerializer extends Serializer {
     */
     function checkForContext(model) {
       if(context) {
-        if(typeof context === 'string' && typeKey === context) {
+        if(typeof context === 'string' && typeKey === context ||
+          context.isQuery && context.typeKey === typeKey) {
           // context is a typeKey (e.g. for a query)
           result.context.push(model);
         } else if(context.isModel && context.isEqual(model)) {

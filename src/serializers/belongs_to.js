@@ -1,5 +1,7 @@
 import Serializer from './base';
 
+import BelongsTo from '../entities/belongs_to';
+
 /**
   @namespace serializers
   @class BelongsToSerializer
@@ -43,7 +45,7 @@ export default class BelongsToSerializer extends Serializer {
   }
   
   createEntity() {
-    return new this.typeFor(this.typeKey);
+    return new BelongsTo();
   }
 
 }

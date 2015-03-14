@@ -2,18 +2,18 @@
 `import Model from 'coalesce/entities/model'`
 
 describe "rest with simple model", ->
-
-  lazy 'Post', ->
+  
+  lazy 'context', ->
     `class Post extends Model {}`
     Post.defineSchema
       attributes:
         title: {type: 'string'}
     Post
-  lazy 'context', ->
     new Context
       types:
-        post: @Post
+        post: Post
   lazy 'session', -> @context.newSession()
+  lazy 'Post', -> @context.typeFor('post')
 
   it 'loads', ->
     @server.r 'GET:/posts/1', posts: {id: 1, title: 'mvcc ftw'}
@@ -26,7 +26,7 @@ describe "rest with simple model", ->
   it 'saves', ->
     @server.r 'POST:/posts', -> posts: {client_id: post.clientId, id: 1, title: 'mvcc ftw'}
 
-    post = new @session('post')
+    post = @session.create('post')
     post.title = 'mvcc ftw'
 
     @session.flush().then =>
@@ -38,7 +38,7 @@ describe "rest with simple model", ->
   it 'updates', ->
     @server.r 'PUT:/posts/1', -> posts: {id: 1, title: 'updated'}
 
-    new @session.merge @Post(id: "1", title: 'test')
+    @session.merge new @Post(id: "1", title: 'test')
 
     @session.load('post', 1).then (post) =>
       expect(post.title).to.eq('test')
@@ -51,7 +51,7 @@ describe "rest with simple model", ->
   it 'updates multiple times', ->
     @server.r 'PUT:/posts/1', -> posts: {id: 1, title: 'updated'}
 
-    post = new @session.merge @Post(id: "1", title: 'test')
+    post = @session.merge new @Post(id: "1", title: 'test')
 
     expect(post.title).to.eq('test')
     post.title = 'updated'
@@ -74,7 +74,7 @@ describe "rest with simple model", ->
   it 'deletes', ->
     @server.r 'DELETE:/posts/1', {}
 
-    new @session.merge @Post(id: "1", title: 'test')
+    @session.merge new @Post(id: "1", title: 'test')
 
     @session.load('post', 1).then (post) =>
       expect(post.id).to.eq("1")
@@ -88,8 +88,8 @@ describe "rest with simple model", ->
   it 'deletes multiple times in multiple flushes', ->
     @server.r 'DELETE:/posts/1', {}
 
-    post1 = new @session.merge @Post(id: "1", title: 'thing 1')
-    post2 = new @session.merge @Post(id: "2", title: 'thing 2')
+    post1 = @session.merge new @Post(id: "1", title: 'thing 1')
+    post2 = @session.merge new @Post(id: "2", title: 'thing 2')
 
     @session.deleteModel post1
 
@@ -108,7 +108,7 @@ describe "rest with simple model", ->
         expect(post2.isDeleted).to.be.true
         
   it 'creates, deletes, creates, deletes', ->
-    post1 = new @session('post')
+    post1 = @session.create('post')
     post1.title = 'thing 1'
     
     @server.r 'POST:/posts', -> posts: {client_id: post1.clientId, id: 1, title: 'thing 1'}
@@ -121,7 +121,7 @@ describe "rest with simple model", ->
         
       @session.flush().then =>
         expect(post1.isDeleted).to.be.true
-        post2 = new @session('post')
+        post2 = @session.create('post')
         post2.title = 'thing 2'
         
         @server.r 'POST:/posts', -> posts: {client_id: post2.clientId, id: 2, title: 'thing 2'}
@@ -145,7 +145,7 @@ describe "rest with simple model", ->
   it 'refreshes', ->
     @server.r 'GET:/posts/1', posts: {id: 1, title: 'something new'}
 
-    new @session.merge @Post(id: "1", title: 'test')
+    @session.merge new @Post(id: "1", title: 'test')
 
     @session.load(@Post, 1).then (post) =>
       expect(post.title).to.eq('test')
@@ -160,8 +160,8 @@ describe "rest with simple model", ->
       expect(xhr.url).to.contain('q=aardvarks')
       posts: [{id: 1, title: 'aardvarks explained'}, {id: 2, title: 'aardvarks in depth'}]
 
-    @session.find('post', {q: 'aardvarks'}).then (models) =>
-      expect(models.length).to.eq(2)
+    @session.find('post', {q: 'aardvarks'}).then (query) =>
+      expect(query.length).to.eq(2)
       expect(@server.h).to.eql(['GET:/posts'])
 
 
@@ -183,7 +183,7 @@ describe "rest with simple model", ->
     @server.r 'GET:/posts/1', (xhr) =>
       expect(xhr.url).to.contain('fdsavcxz')
       posts: {id: 1, title: 'mvcc ftw'}
-    @session.load(@Post, 1, params: {invite_token: 'fdsavcxz'}).then (post) =>
+    @session.find(@Post, 1, params: {invite_token: 'fdsavcxz'}).then (post) =>
       expect(post.id).to.eq("1")
       expect(post.title).to.eq('mvcc ftw')
       expect(@server.h).to.eql(['GET:/posts/1'])

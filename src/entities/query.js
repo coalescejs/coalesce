@@ -39,3 +39,5 @@ export default class Query extends Collection {
   }
   
 }
+
+Query.prototype.isQuery = true;

@@ -10,6 +10,11 @@ export default class Collection extends mixin(EntityArray, Entity) {
     }
   }
   
+  // TODO: this definition of isLoaded breaks down for child sessions
+  get isLoaded() {
+    return this.rev && this.rev > 0
+  }
+  
   fork(graph) {
     var dest = graph.fetch(this);
     if(this.isLoaded) {

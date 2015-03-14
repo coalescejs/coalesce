@@ -1,5 +1,6 @@
 import Field from './field';
 import isEqual from '../utils/is_equal';
+import {dasherize} from '../utils/inflector';
 
 import BelongsTo from '../entities/belongs_to';
 import HasMany from '../entities/has_many';
@@ -63,6 +64,10 @@ export default class Relationship extends Field {
   
   get type() {
     return this.context.typeFor(this.typeKey);
+  }
+  
+  get serializerKey() {
+    return this._serializerKey || (this._serializerKey = dasherize(this.kind));
   }
   
   get ownerType() {

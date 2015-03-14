@@ -1,5 +1,6 @@
 import Field from './field';
 import Attribute from './attribute';
+import Meta from './meta';
 import Relationship from './relationship';
 
 /**
@@ -40,6 +41,34 @@ export default class Schema {
   constructor(context, typeKey) {
     this.context = context;
     this.typeKey = typeKey;
+    
+    this.configureDefaults();
+  }
+  
+  configureDefaults() {
+    // default meta fields
+    this.id = new Meta(this, 'id', {
+      writable: true,
+      type: 'id'
+    });
+    this.clientId = new Meta(this, 'clientId', {
+      writable: true,
+      type: 'string'
+    });
+    this.rev = new Meta(this, 'rev', {
+      writable: true,
+      type: 'revision'
+    });
+    this.clientRev = new Meta(this, 'clientRev', {
+      writable: true,
+      type: 'revision'
+    });
+    this.isDeleted = new Meta(this, 'isDeleted', {
+      writable: false
+    });
+    this.errors = new Meta(this, 'errors', {
+      writable: false
+    });
   }
   
   configure(obj) {
@@ -94,6 +123,14 @@ export default class Schema {
   *attributes() {
     for(var field of this.fields()) {
       if(field instanceof Attribute) {
+        yield field;
+      }
+    }
+  }
+  
+  *meta() {
+    for(var field of this.fields()) {
+      if(field instanceof Meta) {
         yield field;
       }
     }

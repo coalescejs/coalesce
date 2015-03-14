@@ -150,11 +150,14 @@ export default class Session extends Graph {
 
     @returns {Promise}
   */
-  load(entity, opts) {
+  load(entity, opts={}) {
     // BACK-COMPAT: load used to be the same as find
     if(!entity.isEntity) {
       return this.find.apply(this, arguments);
     }
+    
+    // For a load operation, by default we don't serialize params
+    defaults(opts, {serialize: false});
     
     var promise;
     if(this.parent) {
@@ -165,7 +168,7 @@ export default class Session extends Graph {
       var cache = this._cacheFor(entity),
           adapter = this._adapterFor(entity);
       
-      if(!opts || opts.skipCache !== false) {  
+      if(!opts.skipCache) {  
         promise = cache.getPromise(entity)
       }
 
@@ -197,7 +200,7 @@ export default class Session extends Graph {
     @params {Entity} entity the entity to refresh
     @return {Promise}
   */
-  refresh(entity, opts) {
+  refresh(entity, opts={}) {
     defaults(opts, {skipCache: true});
     return this.load(entity, opts);
   }
@@ -209,11 +212,11 @@ export default class Session extends Graph {
     
     @returns {Promise}
   */
-  find(type, queryOrId, opts) {
-    if (typeof queryOrId === 'object') {
-      return this.query(type, query, opts);
+  find(type, paramsOrId, opts) {
+    if (typeof paramsOrId === 'object') {
+      return this.query(type, paramsOrId, opts);
     }
-    var model = this.fetchById(type, queryOrId);
+    var model = this.fetchById(type, paramsOrId);
     return this.load(model, opts);
   }
   
@@ -488,9 +491,9 @@ export default class Session extends Graph {
       flush.performLater();
     }
         
-    return flush.add(model, opts).then(function(serverEntity) {
+    return flush.add(model, opts).then((serverEntity) => {
       this.merge(serverEntity);
-    }, function(error) {
+    }, (error) => {
       // TODO: handle new data
       this.revert(shadow);
     });

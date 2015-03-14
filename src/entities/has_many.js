@@ -25,7 +25,6 @@ export default class HasMany extends mixin(Query, Relationship) {
   
   set(models) {
     var session = this.session;
-    this.isLoaded = true;
     if(this.session) {
       models = models.map(function(model) {
         return session.adopt(model);
@@ -112,5 +111,3 @@ export default class HasMany extends mixin(Query, Relationship) {
   }
   
 }
-
-HasMany.prototype.isLoaded = false;

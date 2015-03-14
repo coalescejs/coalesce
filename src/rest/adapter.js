@@ -140,7 +140,7 @@ export default class RestAdapter extends Adapter {
       serialize: false,
       deserializer: 'payload',
     });
-    return this.invoke(query.typeKey, null, query.params, null, opts, session);
+    return this.invoke(query, null, query.params, null, opts, session);
   }
   
   persist(entity, shadow, opts, session) {
@@ -239,18 +239,7 @@ export default class RestAdapter extends Adapter {
       return true;
     }
     var diff = entity.diff(shadow);
-    for(var i = 0; i < diff.length; i++) {
-      var d = diff[i];
-      if(d.type !== 'attr') {
-        // not dirty if the entity doesn't own the relationship
-        if(this.isRelationshipOwner(d.relationship)) {
-          return true;
-        }
-      } else {
-        return true;
-      }
-    }
-    return false;
+    return diff.length > 0;
   }
 
 
@@ -270,6 +259,8 @@ export default class RestAdapter extends Adapter {
     var typeKey, id;
     if(typeof context === 'string') {
       typeKey = context;
+    } else if(context.isQuery) {
+      typeKey = context.typeKey;
     } else {
       typeKey = context.typeKey;
       id = context.id;

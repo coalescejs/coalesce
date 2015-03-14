@@ -4,10 +4,11 @@ export default class ModelDiff extends Array {
 
   constructor(a, b) {
     
-    for(var name in a.attributes) {
+    // TODO: come up with better public .attributes api
+    for(var name in a._attributes) {
       
       var av = a[name],
-          bv = b[name];
+          bv = b && b[name];
           
       if(!isEqual(av, bv)) {
         this.push({name: name, value: av});

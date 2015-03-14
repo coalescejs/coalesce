@@ -1,6 +1,8 @@
 import isEmpty from '../utils/is_empty';
 import Serializer from './base';
 
+import Query from '../entities/query';
+
 /**
   @class QuerySerializer
 */
@@ -17,7 +19,7 @@ export default class QuerySerializer extends Serializer {
       return serializer.deserialize(hash, opts);
     }, this);
     
-    var query = this.createEntity();
+    var query = this.createEntity(opts);
     query.replace(0, 0, models);
     return query;
   }
@@ -36,8 +38,8 @@ export default class QuerySerializer extends Serializer {
     }
   }
   
-  createEntity() {
-    return new this.typeFor(this.typeKey);
+  createEntity(opts) {
+    return new Query(opts.type.typeKey, opts.params);
   }
   
 }

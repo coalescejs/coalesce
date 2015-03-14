@@ -9,49 +9,8 @@ import {mixinObject} from '../utils/mixin';
 
 export default class Model extends Entity {
 
-  get id() {
-    return getMeta.call(this, 'id');
-  }
-  set id(value) {
-    return setMeta.call(this, 'id', value);
-  }
-
-  get clientId() {
-    return getMeta.call(this, 'clientId');
-  }
-  set clientId(value) {
-    return setMeta.call(this, 'clientId', value);
-  }
-
-  get rev() {
-    return getMeta.call(this, 'rev');
-  }
-  set rev(value) {
-    return setMeta.call(this, 'rev', value);
-  }
-
-  get clientRev() {
-    return getMeta.call(this, 'clientRev');
-  }
-  set clientRev(value) {
-    return setMeta.call(this, 'clientRev', value);
-  }
-
-  get isDeleted() {
-    return getMeta.call(this, 'isDeleted');
-  }
-  set isDeleted(value) {
-    return setMeta.call(this, 'isDeleted', value);
-  }
-
-  get errors() {
-    return getMeta.call(this, 'errors');
-  }
-  set errors(value) {
-    return setMeta.call(this, 'errors', value);
-  }
-  
   constructor(fields) {
+    // default meta values
     this._meta = {
       id: null,
       clientId: null,
@@ -368,19 +327,6 @@ mixinObject(Model.prototype, {
   invalidate: sessionAlias('invalidate'),
   touch: sessionAlias('touch')
 });
-
-function getMeta(name) {
-  return this._meta[name];
-}
-
-function setMeta(name, value) {
-  var oldValue = this._meta[name];
-  if(oldValue === value) return oldValue;
-  this.metaWillChange(name);
-  this._meta[name] = value;
-  this.metaDidChange(name);
-  return value;
-}
 
 /**
   @private

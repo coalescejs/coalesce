@@ -1,5 +1,4 @@
 import Serializer from './base';
-import {singularize, camelize, underscore, dasherize} from '../utils/inflector';
 
 var clone = _.clone;
 
@@ -14,35 +13,14 @@ export default class ModelSerializer extends Serializer {
     this._keyCache = {};
   }
 
-  keyFor(name, type, opts) {
+  keyFor(field) {
     var key;
-    if(key = this._keyCache[name]) {
+    if(key = this._keyCache[field.name]) {
       return key;
     }
 
-    key = opts && opts.key || this.keyForType(name, type, opts);
-    this._keyCache[name] = key;
+    key = this._keyCache[name] = field.key;
     return key;
-  }
-
-  keyForType(name, type, opts) {
-    return underscore(name);
-  }
-
-  /**
-    @private
-
-    Determines the singular root name for a particular type.
-
-    This is an underscored, lowercase version of the model name.
-    For example, the type `App.UserGroup` will have the root
-    `user_group`.
-
-    @param {Coalesce.Model subclass} type
-    @returns {String} name of the root element
-  */
-  rootForType(type) {
-    return type.typeKey;
   }
 
   serialize(model) {
@@ -56,47 +34,44 @@ export default class ModelSerializer extends Serializer {
   }
 
   addMeta(serialized, model) {
-    this.addField(serialized, model, 'id', 'id');
-    this.addField(serialized, model, 'clientId', 'string');
-    this.addField(serialized, model, 'rev', 'revision');
-    this.addField(serialized, model, 'clientRev', 'revision');
+    for(var meta of model.schema.meta()) {
+      this.addField(serialized, model, meta);
+    }
   }
 
   addAttributes(serialized, model) {
-    model.eachLoadedAttribute(function(name, attribute) {
-      // do not include transient properties
-      if(attribute.transient) return;
-      this.addField(serialized, model, name, attribute.type, attribute);
-    }, this);
+    for(var attribute of model.schema.attributes()) {
+      this.addField(serialized, model, attribute);
+    }
   }
 
   addRelationships(serialized, model) {
-    model.eachLoadedRelationship(function(name, relationship) {
-      // we dasherize the kind for lookups for consistency
-      var kindKey = dasherize(relationship.kind);
-      this.addField(serialized, model, name, kindKey, relationship);
-    }, this);
+    for(var relationship of model.schema.relationships()) {
+      this.addField(serialized, model, relationship);
+    }
   }
 
-  addField(serialized, model, name, type, opts) {
-    var key = this.keyFor(name, type, opts),
+  addField(serialized, model, field) {
+    var name = field.name,
+        key = this.keyFor(field),
         value = model[name],
         serializer;
 
-    if(type) {
-      serializer = this.serializerFor(type);
+    if(!model.isFieldLoaded(name) || !field.writable) return;
+
+    if(field.type) {
+      serializer = this.serializerFor(field.serializerKey);
     }
     if(serializer) {
-      value = serializer.serialize(value, opts);
+      value = serializer.serialize(value);
     }
     if(value !== undefined) {
       serialized[key] = value;
     }
   }
 
-  deserialize(hash, opts) {
+  deserialize(hash, opts={}) {
     var model = this.createModel();
-
     this.extractIdentifiers(model, hash, opts);
     
     // OPTIMIZATION: extract directly to graph
@@ -112,55 +87,56 @@ export default class ModelSerializer extends Serializer {
   }
   
   extractIdentifiers(model, hash, opts) {
-    this.extractField(model, hash, 'id', 'id');
-    this.extractField(model, hash, 'clientId', 'string');
+    this.extractField(model, hash, model.schema.id, opts);
+    this.extractField(model, hash, model.schema.clientId, opts);
     this.idManager.reifyClientId(model);
   }
 
   extractMeta(model, hash, opts) {
-    this.extractField(model, hash, 'rev', 'revision');
-    this.extractField(model, hash, 'clientRev', 'revision');
-    this.extractField(model, hash, 'errors', 'errors');
+    this.extractField(model, hash, model.schema.rev, opts);
+    this.extractField(model, hash, model.schema.clientRev, opts);
+    this.extractField(model, hash, model.schema.errors, opts);
   }
 
   extractAttributes(model, hash, opts) {
-    model.eachAttribute(function(name, attribute) {
+    for(var attribute of model.schema.attributes()) {
+      // TODO: PERFORMANCE: should not clone here
       opts = clone(opts);
       opts.field = attribute;
-      this.extractField(model, hash, name, attribute.type, opts);
-    }, this);
+      this.extractField(model, hash, attribute, opts);
+    }
   }
 
   extractRelationships(model, hash, opts) {
-    model.eachRelationship(function(name, relationship) {
-      // we dasherize the kind for lookups for consistency
-      var kindKey = dasherize(relationship.kind);
+    for(var relationship of model.schema.relationships()) {
+      // TODO: PERFORMANCE: should not clone here
       opts = clone(opts);
       opts.field = relationship;
-      this.extractField(model, hash, name, kindKey, opts);
-    }, this);
+      this.extractField(model, hash, relationship, opts);
+    }
   }
 
-  extractField(model, hash, name, type, opts) {
-    var key = this.keyFor(name, type, opts),
+  extractField(model, hash, field, opts) {
+    var key = this.keyFor(field),
         value = hash[key],
         serializer;
     if(typeof value === 'undefined') {
       return;
     }
-    if(type) {
-      serializer = this.serializerFor(type);
+    if(field.type) {
+      serializer = this.serializerFor(field.serializerKey);
     }
     if(serializer) {
       value = serializer.deserialize(value, opts);
     }
     if(typeof value !== 'undefined') {
-      model[name] = value;
+      model[field.name] = value;
     }
   }
 
   createModel() {
-    return this.typeFor(this.typeKey).create();
+    var klass = this.typeFor(this.typeKey);
+    return new klass();
   }
 
   typeFor(typeKey) {
