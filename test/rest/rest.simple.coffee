@@ -18,6 +18,7 @@ describe "rest", ->
         typeKey: 'post'
         attributes:
           title: {type: 'string'}
+          subtitle: {type: 'string'}
       @App.Post = @Post = Post
 
       @container.register 'model:post', @Post
@@ -44,9 +45,25 @@ describe "rest", ->
 
 
     it 'updates', ->
-      adapter.r['PUT:/posts/1'] = -> posts: {id: 1, title: 'updated'}
+      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
+        expect(hash.data.post.hasOwnProperty('subtitle')).to.be.false
+        return posts: {id: 1, title: 'updated'}
 
       session.merge @Post.create(id: "1", title: 'test')
+
+      session.load('post', 1).then (post) ->
+        expect(post.title).to.eq('test')
+        post.title = 'updated'
+        session.flush().then ->
+          expect(post.title).to.eq('updated')
+          expect(adapter.h).to.eql(['PUT:/posts/1'])
+          
+    it 'only updates changed fields', ->
+      adapter.r['PUT:/posts/1'] = (url, type, hash) ->
+        expect(hash.data.post.hasOwnProperty('subtitle')).to.be.false
+        return posts: {id: 1, title: 'updated'}
+
+      session.merge @Post.create(id: "1", title: 'test', subtitle: 'deltas')
 
       session.load('post', 1).then (post) ->
         expect(post.title).to.eq('test')

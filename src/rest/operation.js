@@ -118,7 +118,7 @@ export default class Operation {
     } else if(dirtyType === "created") {
       promise = adapter._contextualizePromise(adapter._create(model), model);
     } else if(dirtyType === "updated") {
-      promise = adapter._contextualizePromise(adapter._update(model), model);
+      promise = adapter._contextualizePromise(adapter._update(model, shadow), model);
     } else if(dirtyType === "deleted") {
       promise = adapter._contextualizePromise(adapter._deleteModel(model), model);
     }

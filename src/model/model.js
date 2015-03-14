@@ -216,6 +216,10 @@ export default class Model extends BaseClass {
   isFieldLoaded(key) {
     return this.isNew || typeof this[key] !== 'undefined'
   }
+  
+  unloadField(key) {
+    return this[key] = undefined;
+  }
 
   get anyFieldsLoaded() {
     var res = false;

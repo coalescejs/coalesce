@@ -137,15 +137,35 @@ export default class RestAdapter extends Adapter {
     return this._remoteCall(model, null, null, opts);
   }
 
-  update(model, opts, session) {
-    return this._mergeAndContextualizePromise(this._update(model, opts), session, model, opts);
+  update(model, shadow, opts, session) {
+    return this._mergeAndContextualizePromise(this._update(model, shadow, opts), session, model, opts);
   }
   
-  _update(model, opts) {
+  _update(model, shadow, opts) {
     opts = opts || {};
     _.defaults(opts, {
       type: 'PUT'
     });
+    /**
+      DELTA SUPPORT: for this simple backport of delta support, we added access
+      to the shadow in this method. The delta is equivalent to the diff of the model
+      and the shadow. This simple logic below unloads all attributes that
+      are not part of the delta so that they are not sent down to the server.
+      
+      This method could be overridden in a custom adapter to give more fine-grained
+      logic (including relationships).
+    */
+    var diff = model.diff(shadow);
+    model.eachLoadedAttribute(function(name) {
+      var isChanged = _.indexOf(diff, function(diff) {
+        return diff.type === 'attr' && diff.name === name;
+      }) !== -1;
+      
+      if(!isChanged) {
+        model.unloadField(name);
+      }
+    });
+    
     return this._remoteCall(model, null, model, opts);
   }
   
