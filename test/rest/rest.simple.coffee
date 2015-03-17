@@ -61,6 +61,7 @@ describe "rest", ->
     it 'only updates changed fields', ->
       adapter.r['PUT:/posts/1'] = (url, type, hash) ->
         expect(hash.data.post.hasOwnProperty('subtitle')).to.be.false
+        expect(hash.data.post.hasOwnProperty('updated')).to.be.true
         return posts: {id: 1, title: 'updated'}
 
       session.merge @Post.create(id: "1", title: 'test', subtitle: 'deltas')
