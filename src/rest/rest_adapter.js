@@ -157,7 +157,7 @@ export default class RestAdapter extends Adapter {
     */
     var diff = model.diff(shadow);
     model.eachLoadedAttribute(function(name) {
-      var isChanged = _.indexOf(diff, function(diff) {
+      var isChanged = _.findIndex(diff, function(diff) {
         return diff.type === 'attr' && diff.name === name;
       }) !== -1;
       
