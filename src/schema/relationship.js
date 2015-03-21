@@ -35,9 +35,9 @@ export default class Relationship extends Field {
     // TODO lookup from context
     if(options.class) {
       this.class = options.class;
-    } else if(options.kind == 'belongsTo') {
+    } else if(options.kind === 'belongsTo') {
       this.class = BelongsTo;
-    } else if(options.kind == 'hasMany') {
+    } else if(options.kind === 'hasMany') {
       this.class = HasMany;
     }
   }
@@ -70,6 +70,19 @@ export default class Relationship extends Field {
     return this._serializerKey || (this._serializerKey = dasherize(this.kind));
   }
   
+  get owner() {
+    if(this._owner) {
+      return this._owner;
+    }
+    
+    // by default, belongsTo own the relationship
+    return this._owner = this.embedded || this.kind === 'belongsTo';
+  }
+  
+  set owner(value) {
+    return this._owner = value;
+  }
+  
   get ownerType() {
     return this.context.typeFor(this.schema.typeKey);
   }
@@ -96,3 +109,5 @@ export default class Relationship extends Field {
   }
   
 }
+
+Relationship.prototype.isRelationship = true;

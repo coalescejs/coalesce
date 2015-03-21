@@ -36,13 +36,13 @@ export default class Entity {
   
   get isDirty() {
     if(this.session) {
-      return this.session.dirtyModels.contains(this);
+      return this.session.isEntityDirty(this);
     } else {
       return false;
     }
   }
   
-  lazyCopy(childSession) {
+  lazyFork(childSession) {
     console.assert(!childSession.has(this), "Model already exists in child session");
     return this.fork(childSession);
   }

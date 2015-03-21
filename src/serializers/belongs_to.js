@@ -9,7 +9,7 @@ import BelongsTo from '../entities/belongs_to';
 export default class BelongsToSerializer extends Serializer {
 
   deserialize(serialized, opts) {
-    var entity = this.createEntity();
+    var entity = this.createEntity(opts);
     
     if(!serialized) {
       entity.set(serialized)
@@ -37,14 +37,17 @@ export default class BelongsToSerializer extends Serializer {
     
     if(opts.embedded) {
       var serializer = this.serializerFor(opts.field.typeKey);
-      return serializer.serialize(model);
+      return serializer.serialize(value);
     }
     
     var idSerializer = this.serializerFor('id');
-    return idSerializer.serialize(model.id);
+    return idSerializer.serialize(value.id);
   }
   
-  createEntity() {
+  createEntity(opts) {
+    /*
+      We avoid the constructor. The constructor is applied inside Model.setRelationship
+    */
     return new BelongsTo();
   }
 

@@ -1,12 +1,11 @@
 `import EntitySet from 'coalesce/collections/entity_set'`
+`import Graph from 'coalesce/collections/graph'`
 `import Model from 'coalesce/entities/model'`
 `import Context from 'coalesce/context/default'`
 
 describe 'Model', ->
 
-  session = null
-
-  beforeEach ->
+  lazy 'context', ->
     `class User extends Model {}`
     User.defineSchema
       attributes:
@@ -14,16 +13,17 @@ describe 'Model', ->
         raw: {}
         createdAt: {type: 'date'}
     User.typeKey = 'user'
-    @User = User
     
-    @context = new Context
+    new Context
       types:
         user: User
-    session = @context.newSession()
+
+  lazy 'User', -> @context.typeFor('user')
+  lazy 'session', -> @context.newSession()
 
   describe '.id', ->
     
-    it 'triggers metaWillChange and metaDidChange', ->
+    xit 'triggers metaWillChange and metaDidChange', ->
       user = new @User()
       willHit = false
       didHit = false
@@ -37,7 +37,7 @@ describe 'Model', ->
       
   describe '.errors', ->
     
-    it 'triggers metaWillChange and metaDidChange', ->
+    xit 'triggers metaWillChange and metaDidChange', ->
       user = new @User()
       willHit = false
       didHit = false
@@ -51,54 +51,29 @@ describe 'Model', ->
 
   describe '.isDirty', ->      
 
-    it 'returns false when detached', ->
+    it 'is false when detached', ->
       expect(new @User().isDirty).to.be.false
 
-    it 'returns true when dirty', ->
-      user = null
-      Object.defineProperty session, 'dirtyModels',
-        get: -> new EntitySet([user])
-
-      user = new @User()
-      user.session = session
+    it 'is true when dirty', ->
+      user = @session.merge new @User(id: '1', name: 'lilg')
+      user.name = 'bigg'
       expect(user.isDirty).to.be.true
 
-    it 'returns false when untouched', ->
-      Object.defineProperty session, 'dirtyModels',
-        get: -> new EntitySet
-
-      user = new @User()
-      user.session = session
+    it 'is false when untouched', ->
+      user = @session.merge new @User(id: '1', name: 'lilg')
       expect(user.isDirty).to.be.false
 
 
-  describe '.diff', ->
-
-    it 'detects differences in complex object attributes', ->
-      left = new @User
-        raw: {test: 'a'}
-      right = new @User
-        raw: {test: 'b'}
-
-      expect(left.diff(right)).to.eql([ { type: 'attr', name: 'raw' } ])
-
-    it 'detects no difference in complex object attributes', ->
-      left = new @User
-        raw: {test: 'a'}
-      right = new @User
-        raw: {test: 'a'}
-
-      expect(left.diff(right)).to.eql([])
-
-
-  describe '.copy', ->
+  describe '.fork', ->
+  
+    lazy 'graph', -> new Graph()
   
     it 'copies dates', ->
       
       date = new Date(2014, 7, 22)
       user = new @User
         createdAt: date
-      copy = user.copy()
+      copy = user.fork(@graph)
       expect(user.createdAt.getTime()).to.eq(copy.createdAt.getTime())
         
 
@@ -107,7 +82,7 @@ describe 'Model', ->
       user = new @User
         raw: {test: {value: 'a'}}
 
-      copy = user.copy()
+      copy = user.fork(@graph)
 
       expect(user).to.not.eq(copy)
       expect(user.raw).to.not.eq(copy.raw)
@@ -119,7 +94,7 @@ describe 'Model', ->
       user = new @User
         raw: ['a', 'b', 'c']
 
-      copy = user.copy()
+      copy = user.fork(@graph)
 
       expect(user).to.not.eq(copy)
       expect(user.raw).to.not.eq(copy.raw)
@@ -127,7 +102,7 @@ describe 'Model', ->
       
   describe '.attributes', ->
     
-    it 'returns map of attributes', ->
+    xit 'returns map of attributes', ->
       attrs = @User.attributes
       expect(attrs.size).to.eq(3)
       
@@ -139,25 +114,27 @@ describe 'Model', ->
       Admin.defineSchema
         attributes:
           role: {type: 'string'}
+      Admin.reify(@context, 'admin')
       @Admin = Admin
       `class Guest extends User {}`
       Guest.defineSchema
         attributes:
           anonymous: {type: 'boolean'}
+      Guest.reify(@context, 'guest')
       @Guest = Guest
     
     it 'can add fields', ->
-      expect(@Admin.fields.get('role')).to.exist
+      expect(@Admin.schema.role).to.exist
       
     it 'inherits fields from parent', ->
-      expect(@Admin.fields.get('name')).to.exist
+      expect(@Admin.schema.name).to.exist
     
     it 'does not modify the parent fields', ->
-      expect(@User.fields.get('role')).to.not.exist
+      expect(@User.schema.role).to.not.exist
           
     it 'can share common parent class', ->
       @Admin.attributes
-      expect(@Guest.attributes.get('anonymous')).to.not.be.undefined
+      expect(@Guest.schema.anonymous).to.not.be.undefined
       
           
       

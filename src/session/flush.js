@@ -29,62 +29,64 @@ export default class Flush {
     return this.promise.catch.apply(this.promise, args);
   }
   
-  add(model, opts) {
+  add(entity, opts) {
     var op;
-    if(op = this.ops[model.client]) {
+    if(op = this.ops[entity.clientId]) {
       return op;
     }
     
-    if(model.session !== this.session) {
-      model = this.session.getModel(model);
+    if(entity.session !== this.session) {
+      entity = this.session.getModel(entity);
     }
     
-    var shadow = this.session.shadows.get(model);
+    var shadow = this.session.shadows.get(entity);
     // take a snapshot of the mode/shadow in this state
-    model = model.fork(this.models);
+    entity = entity.fork(this.models);
     if(shadow) {
       shadow = shadow.fork(this.shadows);
     }
     
-    if(model.isEmbedded) {
-      op = this.ops[model.clientId] = new EmbeddedOperation(
+    var embeddedParent = this.embeddedParent(entity);
+    if(embeddedParent) {
+      op = this.ops[entity.clientId] = new EmbeddedOperation(
         this,
-        model,
+        entity,
         shadow,
         opts
       );
-      op.embeddedParent = this.add(model._embeddedParent);
+      var parentOp = this.add(embeddedParent);
+      parentOp.addEmbeddedChild(op);
     } else {
-      op = this.ops[model.clientId] = new PersistOperation(
+      op = this.ops[entity.clientId] = new PersistOperation(
         this,
-        model,
+        entity,
         shadow,
         opts
       );
     }
     
-    // all children that are part of a relationship that owned by
-    // this model should be saved first
-    var rels = op.dirtyRelationships;
-    for(var i = 0; i < rels.length; i++) {
-      var d = rels[i];
-      var name = d.name;
-      var parentModel = model[name] || d.oldValue;
-      // embedded children should not be dependencies
-      var isEmbeddedRel = this._isEmbeddedRelationship(model.constructor, name);
-      if(parentModel && !isEmbeddedRel) {
-        var parentOp = this.add(parentModel);
-        parentOp.addChild(op);
-      }
+    for(var embedded of entity.embeddedEntities()) {
+      this.add(embedded);
+    }
+    
+    for(var required of entity.requiredEntities()) {
+      var requiredOp = this.add(required);
+      requiredOp.addChild(op);
     }
     
     return op;
   }
   
-  remove(model) {
-    delete this.ops[model.clientId];
-    this.models.remove(model);
-    this.shadows.remove(model);
+  embeddedParent(entity) {
+    // TODO: unify the notion of "embeddedness"
+    return entity.isModel && entity._embeddedParent ||
+      entity.isRelationship && entity.owner;
+  }
+  
+  remove(entity) {
+    delete this.ops[entity.clientId];
+    this.models.remove(entity);
+    this.shadows.remove(entity);
   }
   
   performLater() {
@@ -109,9 +111,9 @@ export default class Flush {
       // the session for error resolution
       var failures = pending.map(function(op) {
         // TODO: fail with special error 
-        var model = op.fail();
-        session.merge(model);
-        return model;
+        var entity = op.fail();
+        session.merge(entity);
+        return entity;
       });
       return results.concat(failures);
     });
@@ -124,19 +126,15 @@ export default class Flush {
     var results = this.results,
         pending = this.pending;
     pending.push(op)
-    op.then(function(model) {
-      results.push(model);
+    op.then(function(entity) {
+      results.push(entity);
       remove(pending, op);
-      return model;
-    }, function(model) {
-      results.push(model);
+      return entity;
+    }, function(entity) {
+      results.push(entity);
       remove(pending, op);
-      throw model;
+      throw entity;
     });
-  }
-  
-  _isEmbeddedRelationship(type, name) {
-    return type.fields.get(name).embedded;
   }
   
 }

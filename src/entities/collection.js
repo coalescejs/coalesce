@@ -1,5 +1,6 @@
 import EntityArray from '../collections/entity_array';  
 import Entity from './entity';
+import CollectionDiff from '../diff/collection';
 import mixin from '../utils/mixin';
 
 export default class Collection extends mixin(EntityArray, Entity) {
@@ -8,11 +9,6 @@ export default class Collection extends mixin(EntityArray, Entity) {
     for(var i = 0; i < this.length; i++) {
       yield this.objectAt(i);
     }
-  }
-  
-  // TODO: this definition of isLoaded breaks down for child sessions
-  get isLoaded() {
-    return this.rev && this.rev > 0
   }
   
   fork(graph) {
@@ -26,4 +22,11 @@ export default class Collection extends mixin(EntityArray, Entity) {
     return dest;
   }
   
+  diff(b) {
+    return new CollectionDiff(this, b);
+  }
+  
 }
+
+// collections must be explicitly marked as loaded
+Collection.prototype.isLoaded = false;

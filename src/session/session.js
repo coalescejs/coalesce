@@ -269,7 +269,7 @@ export default class Session extends Graph {
     if(!res && this.parent) {
       res = this.parent.get(entity);
       if(res) {
-        return res.lazyCopy(this);
+        return res.lazyFork(this);
       }
     }
     return res;
@@ -285,7 +285,7 @@ export default class Session extends Graph {
     if(!res && this.parent) {
       res = this.parent.getByClientId(clientId);
       if(res) {
-        return res.lazyCopy(this);
+        return res.lazyFork(this);
       }
     }
     return res;
@@ -478,24 +478,28 @@ export default class Session extends Graph {
   }
   
   /**
-    Persist a single model down to the server
+    Persist a single entity down to the server
   */
-  persist(model, opts, flush=null) {    
+  persist(entity, opts, flush=null) {    
     // optimistically assume updates succeed, revert() call below
     // will revert this on failure
-    this.markClean(model);
-    this.newEntities.remove(model);
+    this.markClean(entity);
+    this.newEntities.remove(entity);
     
     if(!flush) {
       flush = new Flush(this);
       flush.performLater();
     }
         
-    return flush.add(model, opts).then((serverEntity) => {
-      this.merge(serverEntity);
+    return flush.add(entity, opts).then((serverEntity) => {
+      if(serverEntity) {
+        return this.merge(serverEntity);
+      } else {
+        return entity;
+      }
     }, (error) => {
       // TODO: handle new data
-      this.revert(shadow);
+      throw this.revert(shadow);
     });
   }
   
@@ -504,15 +508,15 @@ export default class Session extends Graph {
     
     @return {Promise}
   */
-  flush(models=this.dirtyModels) {
+  flush(entities=this.dirtyModels) {
     // XXX: move this
-    this.emit('willFlush', models);
+    this.emit('willFlush', entities);
     
     var flush = new Flush(this);
     flush.performLater();
     
-    models.forEach(function(model) {
-      this.persist(model, null, flush);
+    entities.forEach(function(entity) {
+      this.persist(entity, null, flush);
     }, this);
 
     return flush;
@@ -549,6 +553,10 @@ export default class Session extends Graph {
     
     var entity = this.fetch(serverEntity),
         shadow = this.shadows.get(serverEntity);
+    
+    // Unloaded entities do not have any data to merge, nor should they
+    // have versioning information
+    if(!serverEntity.isLoaded) return entity;
         
     // Some backends will not return versioning information. In this
     // case we just fabricate our own server versioning, assuming that
@@ -564,7 +572,7 @@ export default class Session extends Graph {
     }
     
     // Have we already seen this version?
-    if(entity.rev >= serverEntity.rev) {
+    if(entity.rev && entity.rev >= serverEntity.rev) {
       return entity;
     }
     

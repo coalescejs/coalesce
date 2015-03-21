@@ -8,110 +8,26 @@ import array_from from '../utils/array_from';
 var defaults = _.defaults;
 
 /**
-  The REST adapter allows your store to communicate with an HTTP server by
-  transmitting JSON via XHR. Most Coalesce.js apps that consume a JSON API
-  should use the REST adapter.
-
-  This adapter is designed around the idea that the JSON exchanged with
-  the server should be conventional.
+  The JSON API adapter allows your store to communicate with an HTTP server by
+  transmitting JSON via XHR.
+  
+  This adapter is built around the JSON API Standard: http://jsonapi.org/
 
   ## JSON Structure
 
-  The REST adapter expects the JSON returned from your server to follow
-  these conventions.
+  See: http://jsonapi.org/format/
 
-  ### Object Root
-
-  The JSON payload should be an object that contains the record inside a
-  root property. For example, in response to a `GET` request for
-  `/posts/1`, the JSON should look like this:
-
-  ```js
-  {
-    "post": {
-      "title": "I'm Running to Reform the W3C's Tag",
-      "author": "Yehuda Katz"
-    }
-  }
-  ```
-
-  ### Conventional Names
-
-  Attribute names in your JSON payload should be the camelCased versions of
-  the attributes in your Coalesce.js models.
-
-  For example, if you have a `Person` entity:
-
-  ```js
-  App.Person = Coalesce.Model.extend({
-    firstName: Coalesce.attr('string'),
-    lastName: Coalesce.attr('string'),
-    occupation: Coalesce.attr('string')
-  });
-  ```
-
-  The JSON returned should look like this:
-
-  ```js
-  {
-    "person": {
-      "firstName": "Barack",
-      "lastName": "Obama",
-      "occupation": "President"
-    }
-  }
-  ```
-
-  ## Customization
-
-  ### Endpoint path customization
-
-  Endpoint paths can be prefixed with a `namespace` by setting the namespace
-  property on the adapter:
-
-  ```js
-  Coalesce.RestAdapter.reopen({
-    namespace: 'api/1'
-  });
-  ```
-  Requests for `App.Person` would now target `/api/1/people/1`.
-
-  ### Host customization
-
-  An adapter can target other hosts by setting the `host` property.
-
-  ```js
-  Coalesce.RestAdapter.reopen({
-    host: 'https://api.example.com'
-  });
-  ```
-
-  ### Headers customization
-
-  Some APIs require HTTP headers, e.g. to provide an API key. An array of
-  headers can be added to the adapter which are passed with every request:
-
-  ```js
-   Coalesce.RestAdapter.reopen({
-    headers: {
-      "API_KEY": "secret key",
-      "ANOTHER_HEADER": "Some header value"
-    }
-  });
-  ```
-
-  @class RestAdapter
+  @class JsonApiAdapter
   @constructor
-  @namespace rest
   @extends Adapter
 */
-export default class RestAdapter extends Adapter {
+export default class JsonApiAdapter extends Adapter {
   constructor() {
     super(...arguments);
     this._pendingOps = {};
     this.middleware = [
       new BuildRequest(this),
-      new Sideload(this),
+      new ProcessPayload(this),
       new Serialize(this),
       new PerformRequest(this)
     ]
@@ -146,7 +62,6 @@ export default class RestAdapter extends Adapter {
   persist(entity, shadow, opts, session) {
     // TODO once we coalesce operations, handle embedded models here and
     // contextualize the parent's promise
-    var promise;
     if(entity.isNew) {
       return  this.create(entity, opts, session);
     } else if(entity.isDeleted) {
@@ -232,14 +147,6 @@ export default class RestAdapter extends Adapter {
       opts.serializerOptions.context = opts.serializerOptions.context.typeKey;
     }
     return opts;
-  }
-  
-  isDirty(entity, shadow) {
-    if(entity.isDeleted || entity.isNew) {
-      return true;
-    }
-    var diff = entity.diff(shadow);
-    return diff.length > 0;
   }
 
 
@@ -449,7 +356,7 @@ export default class RestAdapter extends Adapter {
       };
 
       Coalesce.ajax(hash);
-    }, "Coalesce: RestAdapter#ajax " + type + " to " + url);
+    }, "Coalesce: JsonApiAdapter#ajax " + type + " to " + url);
   }
 
   /**
@@ -535,6 +442,12 @@ class Serialize extends Middleware {
     }
 
     return next().then(function(data){
+      // allow an empty response
+      // TODO could clean this up
+      if(!data || _.isEmpty(data)) {
+        return null;
+      }
+      
       if(opts.deserialize !== false) {
         return serializer.deserialize(data, serializerOptions);
       }
@@ -601,9 +514,9 @@ class Serialize extends Middleware {
 /**
   @private
 
-  Sideload the contents of the promise into the session.
+  Handles the payload. Merges in the `included` models.
 */
-class Sideload extends Middleware {
+class ProcessPayload extends Middleware {
   call(next, {opts, session}) {
     if(opts && opts.deserialize === false) {
       return next();

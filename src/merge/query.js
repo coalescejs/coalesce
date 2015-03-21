@@ -1,6 +1,6 @@
 import Base from './base';
 import isEqual from '../utils/is_equal';
-import QueryDiff from '../diff/query';
+import CollectionDiff from '../diff/collection';
 
 var find = _.find;
 
@@ -17,8 +17,8 @@ export default class QueryMerge extends Base {
 
   merge(ours, ancestor, theirs, session) {
 
-    var oursDiff = new QueryDiff(ours, ancestor),
-        theirsDiff = new QueryDiff(theirs, ancestor),
+    var oursDiff = new CollectionDiff(ours, ancestor),
+        theirsDiff = new CollectionDiff(theirs, ancestor),
         indexTransform = 0,
         oursDiffIndex = 0,
         theirsDiffIndex = 0,

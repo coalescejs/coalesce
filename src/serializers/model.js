@@ -54,7 +54,8 @@ export default class ModelSerializer extends Serializer {
   addField(serialized, model, field) {
     var name = field.name,
         key = this.keyFor(field),
-        value = model[name],
+        // if the field is a relationship, we want to retrieve the raw entity
+        value = field.isRelationship ? model.getRelationship(name) : model[name],
         serializer;
 
     if(!model.isFieldLoaded(name) || !field.writable) return;
@@ -63,7 +64,7 @@ export default class ModelSerializer extends Serializer {
       serializer = this.serializerFor(field.serializerKey);
     }
     if(serializer) {
-      value = serializer.serialize(value);
+      value = serializer.serialize(value, field);
     }
     if(value !== undefined) {
       serialized[key] = value;
@@ -89,7 +90,6 @@ export default class ModelSerializer extends Serializer {
   extractIdentifiers(model, hash, opts) {
     this.extractField(model, hash, model.schema.id, opts);
     this.extractField(model, hash, model.schema.clientId, opts);
-    this.idManager.reifyClientId(model);
   }
 
   extractMeta(model, hash, opts) {
@@ -130,7 +130,12 @@ export default class ModelSerializer extends Serializer {
       value = serializer.deserialize(value, opts);
     }
     if(typeof value !== 'undefined') {
-      model[field.name] = value;
+      if(field.isRelationship) {
+        // the raw entity is deserialized, so we use setRelationship
+        model.setRelationship(field.name, value);
+      } else {
+        model[field.name] = value;
+      }
     }
   }
 

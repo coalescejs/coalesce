@@ -1,8 +1,3 @@
-function guidFor(entity) {
-  console.assert(entity.clientId, "Entity must have a clientId set");
-  return entity.clientId;
-}
-
 import array_from from '../utils/array_from';
 // XXX: this is just needed since payload extends this class, should eventually
 // change that
@@ -19,6 +14,11 @@ import fork from '../utils/fork';
   @class EntitySet
 */
 export default class EntitySet extends BaseClass {
+  
+  guidFor(entity) {
+    console.assert(entity.clientId, "Entity must have a clientId set");
+    return entity.clientId;
+  }
 
   constructor(iterable) {
     this._size = 0;
@@ -52,7 +52,7 @@ export default class EntitySet extends BaseClass {
     var guid;
 
     for (var i=0; i < len; i++){
-      guid = guidFor(this[i]);
+      guid = this.guidFor(this[i]);
       delete this[guid];
       delete this[i];
     }
@@ -64,7 +64,7 @@ export default class EntitySet extends BaseClass {
 
   add(obj) {
 
-    var guid = guidFor(obj),
+    var guid = this.guidFor(obj),
         idx  = this[guid],
         len  = this._size;
 
@@ -86,7 +86,7 @@ export default class EntitySet extends BaseClass {
 
   delete(obj) {
 
-    var guid = guidFor(obj),
+    var guid = this.guidFor(obj),
         idx  = this[guid],
         len = this._size,
         isFirst = idx === 0,
@@ -99,7 +99,7 @@ export default class EntitySet extends BaseClass {
       if (idx < len-1) {
         last = this[len-1];
         this[idx] = last;
-        this[guidFor(last)] = idx;
+        this[this.guidFor(last)] = idx;
       }
 
       delete this[guid];
@@ -112,7 +112,7 @@ export default class EntitySet extends BaseClass {
   }
 
   has(obj) {
-    return this[guidFor(obj)]>=0;
+    return this[this.guidFor(obj)]>=0;
   }
 
   copy(deep=false) {
@@ -120,7 +120,7 @@ export default class EntitySet extends BaseClass {
     ret._size = loc;
     while(--loc>=0) {
       ret[loc] = deep ? this[loc].copy() : this[loc];
-      ret[guidFor(this[loc])] = loc;
+      ret[this.guidFor(this[loc])] = loc;
     }
     return ret;
   }
@@ -130,7 +130,7 @@ export default class EntitySet extends BaseClass {
     ret._size = loc;
     while(--loc>=0) {
       ret[loc] = fork(this[loc], graph);
-      ret[guidFor(this[loc])] = loc;
+      ret[this.guidFor(this[loc])] = loc;
     }
     return ret;
   }
@@ -150,7 +150,7 @@ export default class EntitySet extends BaseClass {
   }
   
   get(entity) {
-    var idx = this[guidFor(entity)];
+    var idx = this[this.guidFor(entity)];
     if(idx === undefined) return;
     return this[idx];
   }
@@ -207,7 +207,8 @@ var aliases = {
   'contains': 'has',
   'addObject': 'add',
   'removeObject': 'delete',
-  'getModel': 'get'
+  'getModel': 'get',
+  'getForClientId': 'getByClientId'
 }
 
 for(var alias in aliases) {

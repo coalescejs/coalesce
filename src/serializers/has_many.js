@@ -1,12 +1,12 @@
 import isEmpty from '../utils/is_empty';
-import QuerySerializer from './query';
+import CollectionSerializer from './collection';
 
 import HasMany from '../entities/has_many';
 
 /**
   @class HasManySerializer
 */
-export default class HasManySerializer extends QuerySerializer {
+export default class HasManySerializer extends CollectionSerializer {
   
   deserialize(serialized, opts) {
     opts = {
@@ -16,11 +16,11 @@ export default class HasManySerializer extends QuerySerializer {
     return super(serialized, opts)
   }
 
-  // TODO: make this work, for now we just return a query which still populates
-  // since the hasMany field definition's `set` method
-  // createEntity() {
-  //   return new HasMany();
-  // }
-
+  createEntity(opts) {
+    /*
+      We avoid the constructor. The constructor is applied inside Model.setRelationship
+    */
+    return new HasMany();
+  }
   
 }

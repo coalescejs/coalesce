@@ -72,7 +72,7 @@ describe 'ModelMerge', ->
 
 
   it 'keeps ours if only modified in ours', ->
-    post = @session.merge new @Post(id: '1', title: 'titleA', body: 'bodyA', user: new @User(id: '2', posts: [new @Post(id: '1')]), comments: [new @Comment(id: '3', user: new @User(id: '2'), post: @Post(id: '1'))])
+    post = @session.merge new @Post(id: '1', title: 'titleA', body: 'bodyA', user: new @User(id: '2', posts: [new @Post(id: '1')]), comments: [new @Comment(id: '3', user: new @User(id: '2'), post: new @Post(id: '1'))])
     @session.create @Comment, post: post
     expect(post.comments.length).to.eq(2)
     newData = new @Post(id: '1', title: 'titleA', body: 'bodyA', user: new @User(id: '2', posts: [new @Post(id: '1')]), comments: [new @Comment(id: '3', user: new @User(id: '2'), post: @Post(id: '1'))])

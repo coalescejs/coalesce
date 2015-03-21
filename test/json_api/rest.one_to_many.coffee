@@ -19,7 +19,7 @@ describe "rest with one->many relationship", ->
       expect(post.comments.length).to.eq(1)
       comment = post.comments[0]
       expect(comment.body).to.be.undefined
-
+      expect(comment.isLoaded).to.be.false
       comment.load().then =>
         expect(@server.h).to.eql(['GET:/posts/1', 'GET:/comments/2'])
         expect(comment.body).to.eq('first')
@@ -27,16 +27,17 @@ describe "rest with one->many relationship", ->
 
 
   it 'creates', ->
-    @server.r 'POST:/posts', -> posts: {client_id: post.clientId, id: 1, title: 'topological sort', comments: []}
+    @server.r 'POST:/posts', ->
+      return posts: {client_id: post.clientId, id: 1, title: 'topological sort', comments: []}
     @server.r 'POST:/comments', (xhr) ->
       data = JSON.parse(xhr.requestBody)
       expect(data.comment.post).to.eq(1)
       return comments: {client_id: comment.clientId, id: 2, body: 'seems good', post: 1}
 
-    post = new @session('post')
+    post = @session.create('post')
     post.title = 'topological sort'
 
-    comment = new @session('comment')
+    comment = @session.create('comment')
     comment.body = 'seems good'
     comment.post = post
 
@@ -54,12 +55,12 @@ describe "rest with one->many relationship", ->
       expect(@server.h).to.eql(['POST:/posts', 'POST:/comments'])
       
   
-  it 'creates and server can return additional children', ->
+  it.only 'creates and server can return additional children', ->
     @server.r 'POST:/posts', ->
       comments: [{id: 2, post: 1, body: 'seems good'}]
       posts: {client_id: post.clientId, id: 1, title: 'topological sort', comments: [2]}
 
-    post = new @session('post')
+    post = @session.create('post')
     post.title = 'topological sort'
 
     @session.flush().then =>

@@ -2,8 +2,7 @@
 import Coalesce from './namespace';
 
 import Context from './context/default';
-import ActiveModelContext from './active_model/context';
-import RestContext from './rest/context';
+import JsonapiContext from './jsonapi/context';
 
 import Adapter from './adapter';
 import IdManager from './id_manager';
@@ -16,14 +15,6 @@ import ModelMerge from './merge/model';
 
 import Model from './entities/model';
 import Errors from './errors';
-
-import RestErrorsSerializer from './rest/serializers/errors';
-import PayloadSerializer from './rest/serializers/payload';
-import Payload from './rest/payload';
-import RestAdapter from './rest/adapter';
-
-import ActiveModelAdapter from './active_model/adapter';
-import ActiveModelSerializer from './active_model/serializers/model';
 
 import Serializer from './serializers/base';
 import BelongsToSerializer from './serializers/belongs_to';
@@ -45,6 +36,11 @@ import isEqual from './utils/is_equal';
 
 import {pluralize, singularize} from './utils/inflector';
 
+import JsonApiErrorsSerializer from './json_api/serializers/errors';
+import JsonApiPayloadSerializer from './json_api/serializers/payload';
+import JsonApiPayload from './json_api/payload';
+import JsonApiAdapter from './json_api/adapter';
+
 Coalesce.Context = Context;
 
 Coalesce.Adapter = Adapter;
@@ -58,16 +54,6 @@ Coalesce.ModelMerge = ModelMerge;
 
 Coalesce.Model = Model;
 Coalesce.Errors = Errors;
-
-Coalesce.RestContext = RestContext;
-Coalesce.RestErrorsSerializer = RestErrorsSerializer;
-Coalesce.PayloadSerializer = PayloadSerializer;
-Coalesce.Payload = Payload;
-Coalesce.RestAdapter = RestAdapter;
-
-Coalesce.ActiveModelContext = ActiveModelContext;
-Coalesce.ActiveModelAdapter = ActiveModelAdapter;
-Coalesce.ActiveModelSerializer = ActiveModelSerializer;
 
 Coalesce.Serializer = Serializer;
 Coalesce.BelongsToSerializer = BelongsToSerializer;
@@ -89,5 +75,11 @@ Coalesce.pluralize = pluralize;
 Coalesce.singularize = singularize;
 
 Coalesce.isEqual = isEqual;
+
+Coalesce.JsonApiContext = JsonApiContext;
+Coalesce.JsonApiErrorsSerializer = JsonApiErrorsSerializer;
+Coalesce.JsonApiPayloadSerializer = JsonApiPayloadSerializer;
+Coalesce.JsonApiPayload = JsonApiPayload;
+Coalesce.JsonApiAdapter = JsonApiAdapter;
 
 export default Coalesce;

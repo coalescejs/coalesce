@@ -2,10 +2,10 @@ import Entity from './entity';
 
 export default class Relationship extends Entity {
   
-  constructor(owner, field) {
+  attach(owner, field) {
+    console.assert(!this.owner && !this._field, "relationship is already attached");
     this.owner = owner;
     this._field = field;
-    this._suspendInverseUpdates = false;
   }
   
   get clientId() {
@@ -80,6 +80,22 @@ export default class Relationship extends Entity {
       this.owner,
       this.field
     );
+  }
+  
+  *embeddedEntities() {
+    if(this.field.embedded) {
+      yield* this.entities();
+    }
+  }
+  
+  *requiredEntities() {
+    if(!this.field.embedded && this.field.owner) {
+      for(var entity of this.entities()) {
+        if(entity.isNew) {
+          yield entity;
+        }
+      }
+    }
   }
   
   static clientId(ownerClientId, field) {

@@ -17,15 +17,5 @@ export default class Adapter extends BaseClass {
   remoteCall(context, name, data, opts, session) {
     throw new Error(`${this} does not support remoteCall()`);
   }
-  
-  isDirty(entity, shadow) {
-    return true;
-  }
-  
-  isRelationshipOwner(relationship) {
-    return relationship.embedded ||
-      relationship.kind === 'belongsTo' && relationship.owner !== false ||
-      relationship.kind === 'hasMany' && relationship.owner === true;
-  }
 
 }

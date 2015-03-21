@@ -1,22 +1,12 @@
-import Query from './query';
+import Collection from './collection';
 import Relationship from './relationship';
 import mixin from '../utils/mixin';
 
-export default class HasMany extends mixin(Query, Relationship) {
+export default class HasMany extends mixin(Collection, Relationship) {
   
-  constructor(owner, field) {
-    super(field.type, {}); // TODO think through params
-    this.owner = owner;
-    this._field = field;
+  constructor(owner=null, field=null) {
+    this.attach(owner, field);
     this._suspendInverseUpdates = false;
-  }
-  
-  get field() {
-    return this._field;
-  }
-  
-  get context() {
-    return this._field.context;
   }
   
   get() {
@@ -30,6 +20,7 @@ export default class HasMany extends mixin(Query, Relationship) {
         return session.adopt(model);
       });
     }
+    this.isLoaded = true;
     this.replace(0, this.length, models);
   }
   
@@ -86,7 +77,7 @@ export default class HasMany extends mixin(Query, Relationship) {
       }
       
       if(this.embedded) {
-        inverseModel._embeddedParent = model;
+        inverseModel._embeddedParent = this;
       }
     }
     

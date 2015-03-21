@@ -119,10 +119,10 @@ export default class Model extends Entity {
   }
   
   /**
-    A model is considered *loaded* if any field is loaded.
+    A model is considered *loaded* if any attribute is loaded
   */
   get isLoaded() {
-    for(var field of this.schema) {
+    for(var field of this.schema.attributes()) {
       if(this.isFieldLoaded(field.name)) {
         return true;
       }
@@ -133,7 +133,7 @@ export default class Model extends Entity {
   /**
     @private
     
-    Return the raw relationship object.
+    Return the raw relationship entity rather than the value.
   */
   getRelationship(name) {
     var field = this.schema[name],
@@ -157,6 +157,28 @@ export default class Model extends Entity {
     return entity;
   }
   
+  /**
+    @private
+    
+    Set the raw relationship entity.
+  */
+  setRelationship(name, value) {
+    var field = this.schema[name],
+        graph = this.graph,
+        entity;
+    
+    console.assert(!!value, "value cannot be blank");
+    console.assert(value.isEntity && value.isRelationship, "value must be a valid relationship");
+        
+    value.attach(this, field);
+        
+    if(!graph) {
+      return this._detachedRelationships[name] = value;
+    } else {
+      return graph.update(value);
+    }
+  }
+  
   *relationships() {
     for(var relationship of this.schema.relationships()) {
       var instance = this.getRelationship(relationship.name);
@@ -168,6 +190,21 @@ export default class Model extends Entity {
   
   *entities() {
     yield* this.relationships();
+  }
+  
+  *embeddedEntities() {
+    // TODO: think through "embeddedness" in relation to relationships
+    for(var rel of this.relationships()) {
+      if(rel.field.owner) {
+        yield rel;
+      }
+    }
+  }
+  
+  *requiredEntities() {
+    // no required entities, only relatinships have required enitities
+    // and inside a flush these dependencies will be applied to the same
+    // operation since relationships are embedded within the model
   }
   
   metaWillChange(name) {
@@ -202,51 +239,6 @@ export default class Model extends Entity {
   }
   
   /**
-    Traverses the object graph rooted at this model, invoking the callback.
-  */
-  eachRelatedModel(callback, binding, cache) {
-    if(!cache) cache = new Set();
-    if(cache.has(this)) return;
-    cache.add(this);
-    callback.call(binding || this, this);
-
-    this.eachLoadedRelationship(function(name, relationship) {
-      if(relationship.kind === 'belongsTo') {
-        var child = this[name];
-        if(!child) return;
-        this.eachRelatedModel.call(child, callback, binding, cache);
-      } else if(relationship.kind === 'hasMany') {
-        var children = this[name];
-        children.forEach(function(child) {
-          this.eachRelatedModel.call(child, callback, binding, cache);
-        }, this);
-      }
-    }, this);
-  }
-  
-  /**
-    Given a callback, iterates over each child (1-level deep relation).
-
-    @param {Function} callback the callback to invoke
-    @param {any} binding the value to which the callback's `this` should be bound
-  */
-  eachChild(callback, binding) {
-    this.eachLoadedRelationship(function(name, relationship) {
-      if(relationship.kind === 'belongsTo') {
-        var child = this[name];
-        if(child) {
-          callback.call(binding, child);
-        }
-      } else if(relationship.kind === 'hasMany') {
-        var children = this[name];
-        children.forEach(function(child) {
-          callback.call(binding, child);
-        }, this);
-      }
-    }, this);
-  }
-  
-  /**
     Returns a copy with all properties unloaded except identifiers.
 
     @method unloadedCopy
@@ -258,21 +250,16 @@ export default class Model extends Entity {
       clientId: this.clientId
     });
   }
-  
-  /**
-    Copy only data that cannot be retrieved from the parent session during
-    property access.
-  */
-  lazyCopy(childSession) {
-    console.assert(!childSession.has(this), "Model already exists in child session");
-    return session.add(this.unloadedCopy());
-  }
 
   fork(graph) {
     var dest = graph.fetch(this);
     dest.__embeddedParent = this.__embeddedParent;
     dest._meta = fork(this._meta, graph);
-    dest._attributes = fork(this._attributes, graph);
+    // keep the data around for fields that are loaded in
+    // the destination, but unloaded in this
+    for(var key in this._attributes) {
+      dest._attributes[key] = fork(this._attributes[key]);
+    }
     // recurse on new relationships
     // TODO only do this for owned relationships?
     if(this.isNew) {
@@ -283,12 +270,21 @@ export default class Model extends Entity {
     return dest;
   }
   
+  /**
+    Copy only data that cannot be retrieved from the parent session during
+    property access.
+  */
+  lazyFork(childSession) {
+    console.assert(!childSession.has(this), "Model already exists in child session");
+    return session.add(this.unloadedCopy());
+  }
+  
   get schema() {
     return this.constructor.schema;
   }
   
   static defineSchema(obj) {
-    console.assert(!this._isReified, "Cannot modify schema after context has been configured")
+    console.assert(!this.hasOwnProperty('_isReified'), "Cannot modify schema after context has been configured")
     if(!this.hasOwnProperty('__schemaConfigs__')) {
       this.__schemaConfigs__ = [];
     }
@@ -337,7 +333,7 @@ mixinObject(Model.prototype, {
 Model._isReified = false;
 // TODO: should pass in schema here
 Model.reify = function(context, typeKey) {
-  if(this._isReified) return;
+  if(this.hasOwnProperty('_isReified') && this._isReified) return this.schema;
   this.typeKey = typeKey;
   
   // eagerly set to break loops

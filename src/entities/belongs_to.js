@@ -2,6 +2,11 @@ import Relationship from './relationship';
 
 // TODO: entityWillChange/entityDidChange
 export default class BelongsTo extends Relationship {
+
+  constructor(owner=null, field=null) {
+    this.attach(owner, field);
+    this._suspendInverseUpdates = false;
+  }
   
   get isLoaded() {
     return this._value !== undefined;
@@ -42,6 +47,10 @@ export default class BelongsTo extends Relationship {
           inverse.inverseDidAdd(this);
         }
       });
+    }
+    
+    if(this.embedded) {
+      inverseModel._embeddedParent = this;
     }
     
     if(owner) {

@@ -218,12 +218,11 @@ describe 'ModelSerializer', ->
       it 'deserializes relationship', ->
         expect(@deserialized.post).to.not.be.null
         
-      context.only 'with null', ->
+      context 'with null', ->
         
         lazy 'data', -> id: 1, post: null
         
         it 'deserializes as empty relationship', ->
-          debugger
           expect(@deserialized.post).to.be.null
           
       context 'when embedded', ->
@@ -234,7 +233,7 @@ describe 'ModelSerializer', ->
         it 'deserializes relationship', ->
           expect(@deserialized.post).to.not.be.null
           
-        context.only 'with null', ->
+        context 'with null', ->
           lazy 'data', -> id: 1, post: null
           
           it 'deserializes as empty relationship', ->
@@ -258,7 +257,7 @@ describe 'ModelSerializer', ->
         lazy 'data', -> id: 1, comments: null
         
         it 'deserializes as empty relationship', ->
-          expect(=> @deserialized.comments.length).to.throw(Error);
+          expect(@deserialized.comments.length).to.eq(0)
           
       context 'when embedded', ->
         

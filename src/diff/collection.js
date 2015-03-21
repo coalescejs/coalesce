@@ -1,7 +1,7 @@
 import ArrayDiff from '../utils/array_diff';
 import isEqual from '../utils/is_equal';
 
-export default class QueryDiff extends Array {
+export default class CollectionDiff extends Array {
   
   constructor(a, b) {
     var diff = new ArrayDiff(a, b, isEqual);
