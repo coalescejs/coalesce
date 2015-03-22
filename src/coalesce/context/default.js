@@ -27,17 +27,17 @@ import IdManager from '../id_manager';
   Default context with sensible default configuration
 */
 export default class Context extends Base {
-  
+
   newSession() {
     return this.container.lookup('session:default');
   }
-  
+
   get session() {
     return this.container.lookup('session:main');
   }
-  
+
   _setupContainer() {
-    super();
+    super._setupContainer();
     var container = this.container;
     container.register('model:errors', Errors);
     this._setupSession(container);
@@ -46,27 +46,27 @@ export default class Context extends Base {
     this._setupMergeStrategies(container);
     this._setupCaches(container);
   }
-  
+
   _setupSession(container) {
     container.register('session:default',  container.lookupFactory('session:application') || Session, {singleton: false});
     container.register('session:main', container.lookupFactory('session:application') || Session);
     container.register('idManager:default', IdManager);
   }
-  
+
   _setupInjections(container) {
     container.typeInjection('session', 'context', 'context:main');
     container.typeInjection('serializer', 'context', 'context:main');
     container.typeInjection('merge', 'context', 'context:main');
     container.typeInjection('adapter', 'context', 'context:main');
-    
+
     container.typeInjection('serializer', 'idManager', 'idManager:default');
     container.typeInjection('session', 'idManager', 'idManager:default');
     container.typeInjection('adapter', 'idManager', 'idManager:default');
   }
-  
+
   _setupSerializers(container) {
     container.register('serializer:default', ModelSerializer);
-    
+
     container.register('serializer:belongs-to', BelongsToSerializer);
     container.register('serializer:boolean', BooleanSerializer);
     container.register('serializer:date', DateSerializer);
@@ -76,16 +76,16 @@ export default class Context extends Base {
     container.register('serializer:revision', RevisionSerializer);
     container.register('serializer:string', StringSerializer);
   }
-  
+
   _setupMergeStrategies(container) {
     container.register('merge:default', ModelMerge);
     container.register('merge:belongs-to', BelongsToMerge);
     container.register('merge:has-many', HasManyMerge);
   }
-  
+
   _setupCaches(container) {
     container.register('queryCache:default', QueryCache);
     container.register('modelCache:default', ModelCache);
   }
-  
+
 }

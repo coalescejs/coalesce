@@ -1,7 +1,7 @@
 `import {postWithComments} from '../support/configs'`
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 
-describe "RestAdapter", ->
+describe "JsonApiAdapter", ->
 
   lazy 'context', -> new Context(postWithComments())
   lazy 'Post', -> @context.typeFor('post')

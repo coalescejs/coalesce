@@ -1,4 +1,4 @@
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 `import {userWithProfile, userWithEmbeddedProfile} from '../support/configs'`
 
 describe "rest with one->one relationship", ->

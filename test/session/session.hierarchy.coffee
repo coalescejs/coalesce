@@ -1,5 +1,5 @@
 # Use rest adapter for now
-`import Adapter from 'coalesce/rest/adapter'`
+`import Adapter from 'coalesce/json_api/adapter'`
 `import {postWithComments} from '../support/configs'`
 `import Context from 'coalesce/context/default'`
 

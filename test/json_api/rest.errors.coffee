@@ -1,4 +1,4 @@
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 `import Errors from 'coalesce/errors'`
 
 `import {post} from '../support/configs'`

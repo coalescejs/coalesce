@@ -31,7 +31,7 @@ export default class Session extends Graph {
   /**
     Instantiates a model but does *not* add it to the session. This is equivalent
     to calling `create` on the model's class itself.
-    
+
     @method create
     @param {String} type the typeKey of the model
     @param {Object} hash the initial attributes of the model
@@ -45,7 +45,7 @@ export default class Session extends Graph {
 
   /**
     Creates a model within the session.
-    
+
     @method create
     @param {String} type the typeKey of the model
     @param {Object} hash the initial attributes of the model
@@ -55,16 +55,16 @@ export default class Session extends Graph {
     var model = this.build(type, hash);
     return this.adopt(model);
   }
-  
+
   adopt(entity) {
     this.reifyClientId(entity);
-    return super(entity);
+    return super.adopt(entity);
   }
 
   add(entity) {
     console.assert(!entity.session, "Entity is already associated with a session");
     this.reifyClientId(entity);
-    super(entity);
+    super.add(entity);
     if(entity.isNew) {
       this.newEntities.add(entity);
     }
@@ -84,15 +84,15 @@ export default class Session extends Graph {
     this.reifyClientId(entity);
     this.shadows.remove(entity);
     this.newEntities.remove(entity);
-    return super(entity);
+    return super.remove(entity);
   }
 
   update(entity) {
     this.reifyClientId(entity);
     // TODO: this is kinda ugly
     var wasDeleted = this.fetch(entity).isDeleted;
-    
-    var res = super(entity);
+
+    var res = super.update(entity);
 
     // handle deletion
     if(entity.isDeleted) {
@@ -101,7 +101,7 @@ export default class Session extends Graph {
         this.deleteModel(entity);
       }
     }
-    
+
     return res;
   }
 
@@ -120,7 +120,7 @@ export default class Session extends Graph {
 
   fetch(entity) {
     this.reifyClientId(entity);
-    return super(entity);
+    return super.fetch(entity);
   }
 
   /**
@@ -143,7 +143,7 @@ export default class Session extends Graph {
 
     return model;
   }
-  
+
 
   /**
     Loads data for an entity.
@@ -155,10 +155,10 @@ export default class Session extends Graph {
     if(!entity.isEntity) {
       return this.find.apply(this, arguments);
     }
-    
+
     // For a load operation, by default we don't serialize params
     defaults(opts, {serialize: false});
-    
+
     var promise;
     if(this.parent) {
       promise = this.parent.load(entity, opts);
@@ -167,8 +167,8 @@ export default class Session extends Graph {
       // TODO: this should be done on a per-attribute bases
       var cache = this._cacheFor(entity),
           adapter = this._adapterFor(entity);
-      
-      if(!opts.skipCache) {  
+
+      if(!opts.skipCache) {
         promise = cache.getPromise(entity)
       }
 
@@ -182,7 +182,7 @@ export default class Session extends Graph {
         cache.add(entity, promise);
       }
     }
-    
+
     promise = promise.then((serverEntity) => {
       return this.merge(serverEntity);
     }, (error) => {
@@ -192,11 +192,11 @@ export default class Session extends Graph {
 
     return promise;
   }
-  
+
   /**
     Convenience wrapper around load which ensures that the adapter
     will be hit.
-    
+
     @params {Entity} entity the entity to refresh
     @return {Promise}
   */
@@ -207,9 +207,9 @@ export default class Session extends Graph {
 
   /**
     @deprecated
-    
+
     Delegates to either `query` or `load` based on the parameter types
-    
+
     @returns {Promise}
   */
   find(type, paramsOrId, opts) {
@@ -219,21 +219,21 @@ export default class Session extends Graph {
     var model = this.fetchById(type, paramsOrId);
     return this.load(model, opts);
   }
-  
+
   /**
     @private
-    
+
     Build a query instance
   */
   buildQuery(type, params) {
     type = this._typeFor(type);
     return new Query(this, type, params);
   }
-  
+
   /**
     Similar to `fetch`, this method returns a cached local result of the query
     without a trip to the server.
-    
+
     @param {Type} type the type to query against
     @param {object} params the query parameters
     @return {Query}
@@ -260,12 +260,12 @@ export default class Session extends Graph {
   query(type, params, opts) {
     var type = this._typeFor(type),
         query = this.fetchQuery(type, params);
-        
+
     return this.load(query, opts);
   }
 
   get(entity) {
-    var res = super(entity);
+    var res = super.get(entity);
     if(!res && this.parent) {
       res = this.parent.get(entity);
       if(res) {
@@ -281,7 +281,7 @@ export default class Session extends Graph {
   }
 
   getByClientId(clientId) {
-    var res = super(clientId);
+    var res = super.getByClientId(clientId);
     if(!res && this.parent) {
       res = this.parent.getByClientId(clientId);
       if(res) {
@@ -302,7 +302,7 @@ export default class Session extends Graph {
     if(opts && opts.deserializationContext && typeof opts.deserializationContext !== 'string') {
       opts.deserializationContext = opts.deserializationContext.typeKey;
     }
-    
+
     var shadow;
     if(context && context.isModel) {
       shadow = this.shadows.get(context);
@@ -357,7 +357,7 @@ export default class Session extends Graph {
     var cache = this._cacheFor(entity);
     return cache.remove(entity);
   }
-  
+
   /**
     Invalidate the cache for all queries corresponding to a particular Type.
 
@@ -385,7 +385,7 @@ export default class Session extends Graph {
   }
 
   /**
-    Mark an entity as dirty. 
+    Mark an entity as dirty.
 
     @method touch
     @param {Entity} entity
@@ -444,7 +444,7 @@ export default class Session extends Graph {
     // flush all local updates to the parent session
     var dirty = this.dirtyModels,
         parent = this.parent;
-    
+
     dirty.forEach(function(model) {
       // XXX: we want to do this, but we need to think about
       // revision numbers. The parent's clientRev needs to tbe
@@ -455,10 +455,10 @@ export default class Session extends Graph {
       // if(parentModel) {
       //   this.merge(parentModel);
       // }
-      
+
       // update the values of a corresponding model in the parent session
       // if a corresponding model doesn't exist, its added to the parent session
-      parent.update(model); 
+      parent.update(model);
     }, this);
   }
 
@@ -476,21 +476,21 @@ export default class Session extends Graph {
     this.updateParent();
     return this.flush();
   }
-  
+
   /**
     Persist a single entity down to the server
   */
-  persist(entity, opts, flush=null) {    
+  persist(entity, opts, flush=null) {
     // optimistically assume updates succeed, revert() call below
     // will revert this on failure
     this.markClean(entity);
     this.newEntities.remove(entity);
-    
+
     if(!flush) {
       flush = new Flush(this);
       flush.performLater();
     }
-        
+
     return flush.add(entity, opts).then((serverEntity) => {
       if(serverEntity) {
         return this.merge(serverEntity);
@@ -502,26 +502,26 @@ export default class Session extends Graph {
       throw this.revert(shadow);
     });
   }
-  
+
   /**
     Sends all local changes down to the server
-    
+
     @return {Promise}
   */
   flush(entities=this.dirtyModels) {
     // XXX: move this
     this.emit('willFlush', entities);
-    
+
     var flush = new Flush(this);
     flush.performLater();
-    
+
     entities.forEach(function(entity) {
       this.persist(entity, null, flush);
     }, this);
 
     return flush;
   }
-  
+
   /**
     Merges new data for an entity into this session.
 
@@ -550,14 +550,14 @@ export default class Session extends Graph {
         this.reifyClientId(childEntity);
       }
     }
-    
+
     var entity = this.fetch(serverEntity),
         shadow = this.shadows.get(serverEntity);
-    
+
     // Unloaded entities do not have any data to merge, nor should they
     // have versioning information
     if(!serverEntity.isLoaded) return entity;
-        
+
     // Some backends will not return versioning information. In this
     // case we just fabricate our own server versioning, assuming that
     // all new entities are a newer version.
@@ -565,17 +565,17 @@ export default class Session extends Graph {
     if(!serverEntity.rev) {
       serverEntity.rev = (entity.rev === null || entity.rev === undefined) ? 1 : entity.rev + 1;
     }
-    
+
     // Optimistically assume has seen client's version if no clientRev set
     if(!serverEntity.clientRev) {
       serverEntity.clientRev = (shadow || entity).clientRev;
     }
-    
+
     // Have we already seen this version?
     if(entity.rev && entity.rev >= serverEntity.rev) {
       return entity;
     }
-    
+
     // If a entity comes in with a clientRev that is lower than the
     // shadow it is to be merged against, then the common ancestor is
     // no longer tracked. In this scenario we currently just toss out.
@@ -583,7 +583,7 @@ export default class Session extends Graph {
       console.warn(`Not merging stale entity ${serverEntity}`)
       return entity;
     }
-    
+
     var childrenToRecurse = [];
     for(var childEntity of serverEntity.entities()) {
       // recurse on detached/embedded children entities
@@ -592,14 +592,14 @@ export default class Session extends Graph {
         childrenToRecurse.push(childEntity);
       }
     }
-    
+
     // If there is no shadow, then no merging is necessary and we just
     // update the session with the new data
     if(!shadow) {
       this.suspendDirtyChecking(function() {
         entity = this.update(serverEntity);
       });
-      
+
       // TODO: move this check to update?
       if(!entity.isNew) {
         this.newEntities.remove(entity);
@@ -608,7 +608,7 @@ export default class Session extends Graph {
       this.suspendDirtyChecking(function() {
         entity = this._merge(entity, shadow, serverEntity);
       }, this);
-      
+
       if(entity.isDeleted) {
         this.remove(merged);
       } else {
@@ -621,9 +621,9 @@ export default class Session extends Graph {
         this.shadows.update(serverEntity);
       }
     }
-    
+
     this._cacheFor(serverEntity).add(serverEntity);
-    
+
     // recurse on detached and embedded children
     childrenToRecurse.forEach(function(child) {
       this.merge(child);
@@ -631,10 +631,10 @@ export default class Session extends Graph {
 
     return entity;
   }
-  
+
   /**
     @private
-    
+
     Do the actual merging.
   */
   _merge(entity, shadow, serverEntity) {
@@ -648,7 +648,7 @@ export default class Session extends Graph {
     }
     // copy the server revision
     entity.rev = serverEntity.rev;
-    
+
     // TODO: move merging isDeleted into merge strategy
     // entity.isDeleted = serverEntity.isDeleted;
 
@@ -657,13 +657,13 @@ export default class Session extends Graph {
 
     return entity;
   }
-  
+
   /**
     Invoked when a server operation fails and the shadow needs to be
     reverted back to an earlier version.
-    
+
     TODO: check to see if we still need a shadow after reverting
-    
+
     @method revert
     @param {entity} original The original version of the entity
   */
@@ -671,12 +671,12 @@ export default class Session extends Graph {
     if(this.parent) {
       original = this.parent.revert(original);
     }
-    
+
     this.reifyClientId(original);
-    
+
     var entity = this.get(original);
     console.assert(!!entity, "Cannot revert non-existant entity");
-        
+
     if(!entity.isNew) {
       var shadow = this.shadows.get(original);
       if(!original.rev || shadow && shadow.rev <= original) {
@@ -691,11 +691,11 @@ export default class Session extends Graph {
       return this.newEntities.get(original);
     }
   }
-  
+
   _typeFor(key) {
     return this.context.typeFor(key);
   }
-  
+
   _cacheFor(key) {
     if(key.isEntity && !key.isModel) {
       return this._queryCacheFor(key.type);
@@ -703,15 +703,15 @@ export default class Session extends Graph {
       return this._modelCacheFor(key);
     }
   }
-  
+
   _queryCacheFor(key) {
     return this.context.configFor(key).get('queryCache');
   }
-  
+
   _modelCacheFor(key) {
     return this.context.configFor(key).get('modelCache');
   }
-  
+
   _adapterFor(key) {
     if(key.isEntity && !key.isModel) {
       key = key.type;
@@ -737,7 +737,7 @@ export default class Session extends Graph {
     }
     return res;
   }
-  
+
 }
 
 Session.prototype.isSession = true;

@@ -1,4 +1,4 @@
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 
 `import {post} from '../support/configs'`
 `import {delay} from '../support/async'`

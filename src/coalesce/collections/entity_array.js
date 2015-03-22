@@ -5,14 +5,14 @@ import Coalesce from '../namespace';
 import fork from '../utils/fork';
 
 export default class EntityArray extends ObservableArray {
-  
+
   replace(idx, amt, objects) {
     if(this.graph) {
       objects = objects.map(function(model) {
         return this.graph.adopt(model);
       }, this);
     }
-    super(idx, amt, objects);
+    super.replace(idx, amt, objects);
   }
 
   removeObject(obj) {
@@ -31,9 +31,9 @@ export default class EntityArray extends ObservableArray {
     }
     return false;
   }
-  
+
   copy() {
-    return super(true);
+    return super.copy(true);
   }
 
 }

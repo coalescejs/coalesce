@@ -6,7 +6,7 @@ import fork from '../utils/fork';
 
 /**
   An unordered collection of unique entities.
-  
+
   Uniqueness is determined by the `clientId`. If a entity is added and an
   equivalent entity already exists in the EntitySet, the existing entity will be
   overwritten.
@@ -14,7 +14,7 @@ import fork from '../utils/fork';
   @class EntitySet
 */
 export default class EntitySet extends BaseClass {
-  
+
   guidFor(entity) {
     console.assert(entity.clientId, "Entity must have a clientId set");
     return entity.clientId;
@@ -26,7 +26,7 @@ export default class EntitySet extends BaseClass {
       this.addObjects(iterable);
     }
   }
-  
+
   get size() {
     return this._size;
   }
@@ -124,7 +124,7 @@ export default class EntitySet extends BaseClass {
     }
     return ret;
   }
-  
+
   fork(graph) {
     var C = this.constructor, ret = new C(), loc = this._size;
     ret._size = loc;
@@ -134,7 +134,7 @@ export default class EntitySet extends BaseClass {
     }
     return ret;
   }
-  
+
   forEach(callbackFn, thisArg = undefined) {
     for (var i=0; i < this._size; i++) {
       callbackFn.call(thisArg, this[i], this[i], this);
@@ -148,7 +148,7 @@ export default class EntitySet extends BaseClass {
     }
     return `EntitySet<${array.join(',')}>`;
   }
-  
+
   get(entity) {
     var idx = this[this.guidFor(entity)];
     if(idx === undefined) return;
@@ -160,7 +160,7 @@ export default class EntitySet extends BaseClass {
     if(idx === undefined) return;
     return this[idx];
   }
-  
+
   *values() {
     for (var i=0; i < this._size; i++) {
       yield this[i];
@@ -182,7 +182,7 @@ export default class EntitySet extends BaseClass {
     }
     return this;
   }
-  
+
   removeObjects(iterable) {
     if(typeof iterable.forEach === 'function') {
       iterable.forEach(function(item) {
@@ -195,7 +195,7 @@ export default class EntitySet extends BaseClass {
     }
     return this;
   }
-  
+
   toArray() {
     return array_from(this);
   }

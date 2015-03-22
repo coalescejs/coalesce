@@ -2,14 +2,13 @@
   "name": "coalesce",
   "private": true,
   "devDependencies": {
-    "loader": "stefanpenner/loader.js#1.0.0",
-    "chai": "~1.9.1",
-    "jquery": "~2.1.1",
-    "mocha": "~2.1.0",
+    "chai": "~2.1.2",
+    "jquery": "~2.1.3",
+    "mocha": "~2.2.1",
     "mocha-lazy-bdd": "~0.0.5",
-    "sinonjs": "~1.10.2"
+    "sinonjs": "~1.12.2"
   },
   "dependencies": {
-    "lodash": "~2.4.1"
+    "lodash": "~3.5.0"
   }
 }

@@ -1,5 +1,5 @@
 `import Model from 'coalesce/entities/model'`
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 
 `import {postWithComments, groupWithMembersWithUsers} from '../support/configs'`
 `import {delay} from '../support/async'`

@@ -10,16 +10,12 @@ var defaults = _.defaults;
 /**
   The JSON API adapter allows your store to communicate with an HTTP server by
   transmitting JSON via XHR.
-  
+
   This adapter is built around the JSON API Standard: http://jsonapi.org/
 
   ## JSON Structure
 
   See: http://jsonapi.org/format/
-
-  @class JsonApiAdapter
-  @constructor
-  @extends Adapter
 */
 export default class JsonApiAdapter extends Adapter {
   constructor() {
@@ -32,7 +28,7 @@ export default class JsonApiAdapter extends Adapter {
       new PerformRequest(this)
     ]
   }
-  
+
   load(entity, opts, session) {
     if(entity.isModel) {
       return this._loadModel(entity, opts, session);
@@ -40,7 +36,7 @@ export default class JsonApiAdapter extends Adapter {
       return this._loadQuery(entity, opts, session);
     }
   }
-  
+
   _loadModel(entity, opts, session) {
     opts = opts || {};
     defaults(opts, {
@@ -48,7 +44,7 @@ export default class JsonApiAdapter extends Adapter {
     });
     return this.invoke(entity, null, null, null, opts, session);
   }
-  
+
   _loadQuery(query, opts, session) {
     opts = opts || {};
     defaults(opts, {
@@ -58,7 +54,7 @@ export default class JsonApiAdapter extends Adapter {
     });
     return this.invoke(query, null, query.params, null, opts, session);
   }
-  
+
   persist(entity, shadow, opts, session) {
     // TODO once we coalesce operations, handle embedded models here and
     // contextualize the parent's promise
@@ -70,7 +66,7 @@ export default class JsonApiAdapter extends Adapter {
       return this.update(entity, shadow, opts, session);
     }
   }
-  
+
   update(entity, shadow, opts, session) {
     opts = opts || {};
     defaults(opts, {
@@ -120,7 +116,7 @@ export default class JsonApiAdapter extends Adapter {
     });
     return this.invoke(context, name, data, shadow, opts, session)
   }
-  
+
   /**
     Executes a request and invokes the middleware chain
   */
@@ -130,16 +126,16 @@ export default class JsonApiAdapter extends Adapter {
         middleware = this.middleware,
         middlewareIndex = 0,
         next;
-    
+
     next = function() {
       console.assert(middlewareIndex < middleware.length, "End of middleware chain reached");
       var nextMiddleware = middleware[middlewareIndex++];
       return nextMiddleware.call(next, env);
     }
-    
+
     return next();
   }
-  
+
   _normalizeOptions(opts) {
     opts = opts || {};
     // make sure that the context is a typeKey instead of a type
@@ -391,11 +387,11 @@ export default class JsonApiAdapter extends Adapter {
 
     return hash;
   }
-  
+
   serializerFor(key) {
     return this.context.configFor(key).get('serializer');
   }
-  
+
   serializerForContext(context) {
     return 'payload';
   }
@@ -403,16 +399,16 @@ export default class JsonApiAdapter extends Adapter {
 }
 
 class Middleware {
-  
+
   constructor(adapter) {
     this.adapter = adapter;
   }
-  
+
   //entity, shadow, session, opts
   call(next, env) {
     return next();
   }
-  
+
 }
 
 /**
@@ -423,19 +419,19 @@ class Middleware {
 class Serialize extends Middleware {
   call(next, env) {
     this.serialize(env);
-    
+
     return this.deserializePromise(next, env);
   }
-  
+
   deserializePromise(next, {opts, context}) {
     var adapter = this.adapter,
         serializer = opts.deserializer || opts.serializer,
         serializerOptions = opts.serializerOptions || {};
-    
+
     if(!serializer && context) {
       serializer = adapter.serializerForContext(context);
     }
-    
+
     if(serializer) {
       serializer = adapter.serializerFor(serializer);
       defaults(serializerOptions, {context: context});
@@ -447,11 +443,11 @@ class Serialize extends Middleware {
       if(!data || _.isEmpty(data)) {
         return null;
       }
-      
+
       if(opts.deserialize !== false) {
         return serializer.deserialize(data, serializerOptions);
       }
-      
+
       return data;
     }, function(xhr) {
       if(opts.deserialize !== false) {
@@ -461,9 +457,9 @@ class Serialize extends Middleware {
         } else {
           data = {};
         }
-        
+
         serializerOptions = defaults(serializerOptions, {context: context, xhr: xhr});
-        
+
         // TODO: handle other errors codes such as 409
         // determine serializer behavior off of xhr response code
         if(xhr.status === 422) {
@@ -488,20 +484,20 @@ class Serialize extends Middleware {
       throw xhr;
     });
   }
-  
+
   serialize(env) {
     var adapter = this.adapter,
         opts = env.opts,
         data = env.data;
-        
+
     if(opts.serialize !== false) {
       var serializer = opts.serializer,
           serializerOptions = opts.serializerOptions || {};
-          
+
       if(!serializer && context) {
         serializer = this.adapter.serializerForContext(context);
       }
-      
+
       if(serializer && data) {
         serializer = this.adapter.serializerFor(serializer);
         serializerOptions = defaults(serializerOptions, {context: context});
@@ -514,7 +510,7 @@ class Serialize extends Middleware {
 /**
   @private
 
-  Handles the payload. Merges in the `included` models.
+  Handles the payload. "Sideloads" the models in the payloads `included` member.
 */
 class ProcessPayload extends Middleware {
   call(next, {opts, session}) {
@@ -524,11 +520,9 @@ class ProcessPayload extends Middleware {
 
     function mergePayload(deserialized) {
       if(deserialized.isPayload) {
-        // TODO: could optimize this and not merge the context
-        // since the session does that anyways
-        deserialized.forEach(function(entity) {
-          session.merge(entity);
-        });
+        for(var includedEntity of deserialized.included()) {
+          session.merge(includedEntity);
+        }
         return deserialized.context;
       }
       return deserialized;
@@ -539,11 +533,11 @@ class ProcessPayload extends Middleware {
     }, function(deserialized) {
       throw mergePayload(deserialized);
     });
-  }  
+  }
 }
 
 class BuildRequest extends Middleware {
-  
+
   call(next, env) {
     var opts = env.opts,
         context = env.context,
@@ -554,7 +548,7 @@ class BuildRequest extends Middleware {
     } else {
       env.url = this.adapter.buildUrlFromContext(context, name);
     }
-    
+
     if(opts.params) {
       env.data = env.data || {};
       env.data = defaults(env.data, opts.params);
@@ -563,7 +557,7 @@ class BuildRequest extends Middleware {
     env.method = opts.type || "POST";
     return next();
   }
-  
+
 }
 
 class PerformRequest extends Middleware {

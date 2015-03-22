@@ -2,7 +2,7 @@
 import Coalesce from './namespace';
 
 import Context from './context/default';
-import JsonapiContext from './jsonapi/context';
+import JsonApiContext from './json_api/context';
 
 import Adapter from './adapter';
 import IdManager from './id_manager';

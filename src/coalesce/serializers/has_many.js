@@ -7,13 +7,13 @@ import HasMany from '../entities/has_many';
   @class HasManySerializer
 */
 export default class HasManySerializer extends CollectionSerializer {
-  
+
   deserialize(serialized, opts) {
     opts = {
       graph: opts.graph,
       type: opts.field.type
     };
-    return super(serialized, opts)
+    return super.deserialize(serialized, opts)
   }
 
   createEntity(opts) {
@@ -22,5 +22,5 @@ export default class HasManySerializer extends CollectionSerializer {
     */
     return new HasMany();
   }
-  
+
 }

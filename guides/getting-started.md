@@ -33,7 +33,7 @@ var posts = session.query('posts');
 
 Aside from the models themselves, Adapters are the central point of configuration for your application. The implementation of the Adapter dictates the type of backend your application interfaces with and the behavior of your session. Things such as *url structure*, *caching behavior*, and *serialization* are generally configured on the adapter.
 
-By default, Coalesce uses the `RestAdapter` implementation that is included. TO use a custom default adapter for all types in an application, specify it at the root of the configuration object:
+By default, Coalesce uses the `JsonApiAdapter` implementation that is included. TO use a custom default adapter for all types in an application, specify it at the root of the configuration object:
 
 ```javascript
 var context = new Context({

@@ -4,7 +4,7 @@
 `import Context from 'coalesce/context/default'`
 `import Query from 'coalesce/entities/query'`
 # Use rest adapter for now
-`import Adapter from 'coalesce/rest/adapter'`
+`import Adapter from 'coalesce/json_api/adapter'`
 
 describe "Session", ->
 

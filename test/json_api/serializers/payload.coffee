@@ -1,6 +1,6 @@
 `import Model from 'coalesce/entities/model'`
 `import ModelSerializer from 'coalesce/serializers/model'`
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 
 describe 'PayloadSerializer', ->
 

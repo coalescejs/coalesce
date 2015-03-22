@@ -1,8 +1,8 @@
-`import Context from 'coalesce/rest/context'`
+`import Context from 'coalesce/json_api/context'`
 `import Model from 'coalesce/entities/model'`
 
-describe "rest with simple model", ->
-  
+describe "JSON API Simple", ->
+
   lazy 'context', ->
     `class Post extends Model {}`
     Post.defineSchema
@@ -15,7 +15,7 @@ describe "rest with simple model", ->
   lazy 'session', -> @context.newSession()
   lazy 'Post', -> @context.typeFor('post')
 
-  it 'loads', ->
+  it.only 'loads', ->
     @server.r 'GET:/posts/1', posts: {id: 1, title: 'mvcc ftw'}
     @session.load(@Post, 1).then (post) =>
       expect(post.id).to.eq("1")
@@ -106,40 +106,40 @@ describe "rest with simple model", ->
       @session.flush().then =>
         expect(post1.isDeleted).to.be.true
         expect(post2.isDeleted).to.be.true
-        
+
   it 'creates, deletes, creates, deletes', ->
     post1 = @session.create('post')
     post1.title = 'thing 1'
-    
+
     @server.r 'POST:/posts', -> posts: {client_id: post1.clientId, id: 1, title: 'thing 1'}
     @session.flush().then =>
       expect(post1.id).to.eq('1')
       expect(post1.title).to.eq('thing 1')
       @session.deleteModel(post1)
-      
+
       @server.r 'DELETE:/posts/1', {}
-        
+
       @session.flush().then =>
         expect(post1.isDeleted).to.be.true
         post2 = @session.create('post')
         post2.title = 'thing 2'
-        
+
         @server.r 'POST:/posts', -> posts: {client_id: post2.clientId, id: 2, title: 'thing 2'}
-        
+
         @session.flush().then =>
-        
+
           @server.r 'DELETE:/posts/1', -> throw 'not found'
           @server.r 'DELETE:/posts/2', {}
-        
+
           expect(post2.id).to.eq('2')
           expect(post2.title).to.eq('thing 2')
           @session.deleteModel(post2)
-          
+
           @session.flush().then =>
             expect(post2.isDeleted).to.be.true
             expect(@server.h).to.eql(['POST:/posts', 'DELETE:/posts/1', 'POST:/posts', 'DELETE:/posts/2'])
-      
-      
+
+
 
 
   it 'refreshes', ->
@@ -178,7 +178,7 @@ describe "rest with simple model", ->
       @session.flush().then =>
         expect(@server.h).to.eql(['GET:/posts/1', 'PUT:/posts/1'])
         expect(post.title).to.eq('no more fsm')
-        
+
   it 'loads with parameter', ->
     @server.r 'GET:/posts/1', (xhr) =>
       expect(xhr.url).to.contain('fdsavcxz')
@@ -187,4 +187,3 @@ describe "rest with simple model", ->
       expect(post.id).to.eq("1")
       expect(post.title).to.eq('mvcc ftw')
       expect(@server.h).to.eql(['GET:/posts/1'])
-    

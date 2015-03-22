@@ -1,4 +1,0 @@
---compilers em:ember-script/register
---reporter list
---recursive
---timeout 3000
