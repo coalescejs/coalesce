@@ -60,7 +60,7 @@ Model.reopen({
             cache.remove(model);
           }
         });
-        if(dirty || cache.length > 0) {
+        if(dirty || cache.size > 0) {
           diffs.push({type: 'hasMany', name: name, relationship: relationship});
         }
       }
