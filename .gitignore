@@ -7,7 +7,6 @@ Gemfile.lock
 tmp
 bower_components
 
-dist
 staging
 
 docs
