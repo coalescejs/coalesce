@@ -1,7 +1,7 @@
 `import setup from './_shared'`
 `import Model from 'coalesce/model/model'`
 `import ModelSerializer from 'coalesce/serializers/model'`
-`import {postWithComments} from '../support/schemas'`
+`import {postWithComments, groupWithMembersWithUsers} from '../support/schemas'`
 
 describe "rest", ->
 
@@ -388,3 +388,30 @@ describe "rest", ->
           session.flush().then ->
             expect(adapter.h).to.eql(['DELETE:/posts/1'])
             expect(post.isDeleted).to.be.true
+
+      it 'existing parent creates multiple children in multiple flushes', ->
+        groupWithMembersWithUsers.apply(this);
+
+        adapter.r['GET:/users/1'] = users: {id: 1,  name: 'parent', groups: [], members: [] }, groups: [], members: []
+
+        # exsiting parent
+        session.load('user', 1).then (user) ->
+          
+          adapter.r['POST:/groups'] = -> groups: {client_id: 1, id: 1, name: 'child 1', user_id: 1}
+
+          session.create('group', name: 'child 1', user: user)
+
+          session.flush().then ->
+            
+            expect(user.groups.length).to.eq(1)
+            expect(user.members.length).to.eq(0)
+
+            adapter.r['POST:/members'] = -> members: {client_id: 1, id: 1, role: 'child 2', user_id: 1}
+
+            session.create('member', role: 'child 2', user: user)
+
+            session.flush().then ->
+              expect(user.groups.length).to.eq(1)
+              expect(user.members.length).to.eq(1)
+
+
