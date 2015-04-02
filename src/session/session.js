@@ -915,7 +915,7 @@ export default class Session {
     dest.id = model.id;
     dest.clientId = model.clientId;
     // copy the server revision
-    dest.rev = model.rev;
+    dest.rev = model.clientRev;
     
     // TODO: move merging isDeleted into merge strategy
     // dest.isDeleted = model.isDeleted;
