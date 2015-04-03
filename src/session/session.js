@@ -943,8 +943,8 @@ export default class Session {
   }
 
   _containsRev(modelA, modelB) {
-    if(!modelA.rev) return false;
-    if(!modelB.rev) return false;
+    if(modelA.rev !== 0 && !modelA.rev) return false;
+    if(modelB.rev !== 0 && !modelB.rev) return false;
     return modelA.rev >= modelB.rev;
   }
 
