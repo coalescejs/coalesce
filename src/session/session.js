@@ -19,7 +19,7 @@ var uuid = 1;
 
 export default class Session {
 
-  constructor({adapter, idManager, container, parent}) {
+  constructor({adapter, idManager, container, parent, store}) {
     this.adapter = adapter;
     this.idManager = idManager;
     this.container = container;
@@ -47,7 +47,7 @@ export default class Session {
     this.name = "session" + uuid++;
 
     this.sessionStorageKey = "___session_collections";
-    this.store = new Store("CoalesceSession");
+    this.store = store;
   }
 
   /**

@@ -9,6 +9,7 @@ export default class Adapter extends BaseClass {
   constructor() {
     this.configs = {};
     this.container = this.setupContainer(this.container);
+    this.store = this.container.lookup("store:main");
     this.serializerFactory = new SerializerFactory(this.container);
   }
 
@@ -27,7 +28,8 @@ export default class Adapter extends BaseClass {
     return new Session({
       adapter: this,
       idManager: this.idManager,
-      container: this.container
+      container: this.container,
+      store: this.store
     });
   }
 

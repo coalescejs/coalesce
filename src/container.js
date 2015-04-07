@@ -3,6 +3,7 @@ import Container from './container/container';
 import Session from './session/session';
 
 import IdManager from './id_manager';
+import Store from './store';
 
 import BelongsToSerializer from './serializers/belongs_to';
 import BooleanSerializer from './serializers/boolean';
@@ -33,6 +34,7 @@ function setupContainer(container) {
 }
 
 function setupSession(container) {
+  container.register('store:main', container.lookupFactory('store:application') || Store);
   container.register('adapter:main', container.lookupFactory('adapter:application') || RestAdapter);
   container.register('session:base',  Session);
   container.register('session:main', container.lookupFactory('session:application') || Session);
@@ -44,6 +46,8 @@ function setupInjections(container) {
   container.typeInjection('serializer', 'idManager', 'id-manager:main');
   container.typeInjection('session', 'idManager', 'id-manager:main');
   container.typeInjection('adapter', 'idManager', 'id-manager:main');
+  container.typeInjection('session', 'store', 'store:main');
+  container.typeInjection('adapter', 'store', 'store:main');
 }
 
 function setupSerializers(container) {

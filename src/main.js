@@ -5,6 +5,7 @@ import {setupContainer} from './container';
 import Container from './container';
 
 import Adapter from './adapter';
+import Store from './store';
 import IdManager from './id_manager';
 
 import ModelArray from './collections/model_array';
@@ -53,6 +54,7 @@ Coalesce.setupContainer = setupContainer;
 
 Coalesce.Adapter = Adapter;
 Coalesce.IdManager = IdManager;
+Coalesce.Store = Store;
 
 Coalesce.ModelArray = ModelArray;
 Coalesce.ModelSet = ModelSet;

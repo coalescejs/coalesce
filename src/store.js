@@ -1,16 +1,17 @@
 import Coalesce from './namespace';
+import BaseClass from './utils/base_class';
 
 /**
   Abstracts indexedDB interaction
 
   @class Store
 */
-export default class Store {
+export default class Store extends BaseClass  {
 
-    constructor(db_name) {
-        this.db = new Dexie(db_name);
+    constructor() {
+        this.db = new Dexie('CoalesceDefaultStore');
         this.db.version(1).stores({
-            sessionstore: ",-"
+            SessionStore: ",-"
         });
 
         this.db.on('error', function(err) {
@@ -20,6 +21,8 @@ export default class Store {
 
 
         this.db.open(); // After this line, database is ready to use.
+
+        this.store = this.db.SessionStore;
     }
 
     /**
@@ -30,7 +33,7 @@ export default class Store {
       @return {Promise}
     */
     get(key) {
-        return this.db.sessionstore.get(key);
+        return this.store.get(key);
     }
 
     /**
@@ -41,7 +44,7 @@ export default class Store {
       @return {Promise}
     */
     set(object, key) {
-        return this.db.sessionstore.put(object, key);
+        return this.store.put(object, key);
     }
 
     /**
@@ -52,10 +55,10 @@ export default class Store {
       @return {Promise}
     */
     remove(id) {
-        return this.db.sessionstore.delete(id);
+        return this.store.delete(id);
     }
 
     clear(){
-      return this.db.sessionstore.clear();
+      return this.store.clear();
     }
 }
