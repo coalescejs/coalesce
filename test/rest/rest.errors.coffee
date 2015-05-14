@@ -15,7 +15,18 @@ describe "rest", ->
   context 'simple model with errors', ->
 
     beforeEach ->
-      
+      `class User extends Model {}`
+      User.defineSchema
+        typeKey: 'user'
+        attributes:
+          name: {type: 'string'}
+        relationships:
+          posts:
+            kind: 'hasMany'
+            type: 'post'
+
+      @App.User = @User = User
+
       `class Post extends Model {}`
       Post.defineSchema
         typeKey: 'post'
@@ -23,9 +34,32 @@ describe "rest", ->
           title: {type: 'string'}
           category: {type: 'string'}
           createdAt: {type: 'date'}
+        relationships:
+          comments:
+            kind: 'hasMany'
+            type: 'comment'
+          user:
+            kind: 'belongsTo'
+            type: 'user'
+
       @App.Post = @Post = Post
 
+
+      `class Comment extends Model {}`
+      Comment.defineSchema
+        typeKey: 'comment'
+        attributes:
+          body: {type: 'string'}
+        relationships:
+          post:
+            kind: 'belongsTo'
+            type: 'post'
+            
+      @App.Comment = @Comment = Comment
+
+      @container.register 'model:user', @User
       @container.register 'model:post', @Post
+      @container.register 'model:comment', @Comment
 
 
     context 'on update', ->
@@ -116,12 +150,27 @@ describe "rest", ->
 
     context 'on create', ->
       it 'handles 422', ->
+
+        user = session.merge @User.create(id: "1", name: 'craig')
+
         adapter.r['POST:/posts'] = ->
           throw status: 422, responseText: JSON.stringify(errors: {title: 'is lamerz'})
 
-        post = session.create 'post', title: 'errorz'
-        session.flush().then null, ->
+        post = session.create 'post', title: 'errorz', user: user
+
+        comment = session.create 'comment', body: 'some comments here', post: post
+
+        session.flush().then null, (models) ->
+
           expect(post.errors.title).to.eq('is lamerz')
+
+          # Checking that there are no dup posts in the models argument passed to the rejected method
+          postCount = 0
+          models.forEach (m) ->
+            if m.clientId == post.clientId
+              postCount++
+
+          expect(1).to.eq(postCount)
           
       it 'handle arbitrary errors', ->
         adapter.r['POST:/posts'] = ->
