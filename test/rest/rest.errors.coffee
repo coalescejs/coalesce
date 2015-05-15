@@ -197,11 +197,20 @@ describe "rest", ->
 
         post1 = session.create 'post', title: 'bad post'
         post2 = session.create 'post', title: 'another bad post'
+
+        comment1 = session.create 'comment', body: 'some comments here', post: post1
+        comment2 = session.create 'comment', body: 'another comments heres', post: post2
+
         session.flush().then null, ->
           expect(session.newModels.has(post1)).to.be.true
           expect(session.newModels.has(post2)).to.be.true
           expect(post1.isNew).to.be.true
           expect(post2.isNew).to.be.true
+
+          expect(session.newModels.has(comment1)).to.be.true
+          expect(session.newModels.has(comment2)).to.be.true
+          expect(comment1.isNew).to.be.true
+          expect(comment2.isNew).to.be.true
 
       it 'merges payload with latest client changes against latest client version', ->
         adapter.r['POST:/posts'] = (url, type, hash) ->

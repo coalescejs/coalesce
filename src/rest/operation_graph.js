@@ -37,7 +37,17 @@ export default class OperationGraph {
         return model;
       }, function(model) {
         results.push(model);
+
+        // Need to add this operations children models to results so they are 
+        // merged back in
+        if(op.children.size > 0) {
+        	array_from(op.children).forEach(function(childOp){
+        		results.push(childOp.model);
+        	});
+        }
+
         _.remove(pending, op);
+
         throw model;
       });
 

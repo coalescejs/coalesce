@@ -229,6 +229,10 @@ export default class Model extends BaseClass {
     return res;
   }
 
+  printToConsole(){
+  	console.log(this)	
+  }
+
   /**
     Defines the attributes and relationships on the model.
     
