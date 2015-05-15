@@ -198,8 +198,24 @@ describe "rest", ->
         post1 = session.create 'post', title: 'bad post'
         post2 = session.create 'post', title: 'another bad post'
 
-        comment1 = session.create 'comment', body: 'some comments here', post: post1
-        comment2 = session.create 'comment', body: 'another comments heres', post: post2
+        session.flush().then null, ->
+          expect(session.newModels.has(post1)).to.be.true
+          expect(session.newModels.has(post2)).to.be.true
+          expect(post1.isNew).to.be.true
+          expect(post2.isNew).to.be.true
+
+      it 'handle errors with multiple creates/children and suceeds after multiple retries', ->        
+        adapter.r['POST:/posts'] = ->
+          throw status: 0
+
+        adapter.r['POST:/comments'] = (url, type, hash) ->
+            comment: {body: hash.data.comment.body, id: hash.data.comment.body, client_id: hash.data.comment.client_id, client_rev: hash.data.comment.client_rev}
+
+        post1 = session.create 'post', title: 'bad post'
+        post2 = session.create 'post', title: 'another bad post'
+
+        comment1 = session.create 'comment', body: '1', post: post1
+        comment2 = session.create 'comment', body: '2', post: post2
 
         session.flush().then null, ->
           expect(session.newModels.has(post1)).to.be.true
@@ -211,6 +227,23 @@ describe "rest", ->
           expect(session.newModels.has(comment2)).to.be.true
           expect(comment1.isNew).to.be.true
           expect(comment2.isNew).to.be.true
+
+          adapter.r['POST:/posts'] = (url, type, hash) ->
+            adapter.r['POST:/posts'] = ->
+              throw status: 0
+
+            post: {title: hash.data.post.title, id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
+
+          session.flush().then null, ->
+            adapter.r['POST:/posts'] = (url, type, hash) ->
+              post: {title: hash.data.post.title, id: 2, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
+
+            session.flush().then (models) ->
+              expect(session.newModels.size).to.eq(0)
+              expect(post1.isNew).to.be.false
+              expect(post2.isNew).to.be.false
+              expect(comment1.isNew).to.be.false
+              expect(comment2.isNew).to.be.false        
 
       it 'merges payload with latest client changes against latest client version', ->
         adapter.r['POST:/posts'] = (url, type, hash) ->
