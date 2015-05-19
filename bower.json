@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "lodash": "~2.4.1",
-    "dexie": "~1.0.2"
+    "dexie": "~1.0.2",
+    "rsvp": "~3.0.18"
   }
 }

@@ -23,8 +23,26 @@ export default class OperationGraph {
 
       // perform after all parents have performed
       if(op.parents.size > 0) {
-        promise = Coalesce.Promise.all(array_from(op.parents)).then(function() {
-          return op.perform();
+        
+        var parentOperations = array_from(op.parents);
+        
+        promise =  Coalesce.RSVP.allSettled(parentOperations).then(function(states) {
+          var rejectedOperations = _.filter(states, function(obj){
+            return obj.state === 'rejected';
+          });
+
+          var fulfilledOperations = _.filter(states, function(obj){
+            return obj.state === 'fulfilled';
+          });
+
+          if(rejectedOperations.length){
+            // if we dont reject, if a complex graph contains duplicate operations throughout
+            // then some promises will never finish
+            op.reject();
+            throw op.model;
+          }else{        
+            return op.perform();
+          }
         });
       } else {
         promise = op.perform();
@@ -37,28 +55,36 @@ export default class OperationGraph {
         return model;
       }, function(model) {
         results.push(model);
-
-        // Need to add this operations children models to results so they are 
-        // merged back in
-        if(op.children.size > 0) {
-        	array_from(op.children).forEach(function(childOp){
-        		results.push(childOp.model);
-        	});
-        }
-
         _.remove(pending, op);
-
         throw model;
       });
 
       if(op.children.size > 0) {
         promise = promise.then(function(model) {
-          return Coalesce.Promise.all(array_from(op.children)).then(function(models) {
-            adapter.rebuildRelationships(models, model);
-            return model;
-          }, function(models) {
-            // XXX: should we still rebuild relationships since this request succeeded?
-            throw model;
+
+          var childrenOperations = array_from(op.children);
+
+          return Coalesce.RSVP.allSettled(childrenOperations).then(function(states) {
+            
+            var rejectedOperations = _.filter(states, function(obj){
+              return obj.state === 'rejected';
+            });
+
+            var fulfilledOperations = _.filter(states, function(obj){
+              return obj.state === 'fulfilled';
+            });
+
+            if(rejectedOperations.length){
+              throw model;
+            }else{
+              var models = fulfilledOperations.map(function(obj){
+                return obj.value;
+              });
+
+              adapter.rebuildRelationships(models, model);
+
+              return model;
+            }
           });
         });
       }
@@ -67,20 +93,32 @@ export default class OperationGraph {
 
     var promises = [];
     this.ops.forEach(function(op, model) {
-      promises.push(createNestedPromise(op));
       pending.push(op);
+      promises.push(createNestedPromise(op));
     }); 
 
-    return Coalesce.Promise.all(promises).then(function() {
-      return results;
-    }, function(err) {
-      // all the promises that haven't finished, we need still merge them into
-      // the session
-      var failures = pending.map(function(op) {
-        return op.fail();
+    return Coalesce.RSVP.allSettled(promises).then(function(states) {
+      var rejectedOperations = _.filter(states, function(obj){
+        return obj.state === 'rejected';
       });
-      results = results.concat(failures);
-      throw results;
+
+      rejectedOperations.forEach(function(obj){
+        var err = obj.reason;
+
+        // all the promises that haven't finished, we need still merge them into
+        // the session
+        var failures = pending.map(function(op) {
+          return op.fail();
+        });
+
+        results = results.concat(failures);
+      });
+
+      if(rejectedOperations.length){
+        throw results;
+      }else{
+        return results; 
+      }
     });
   }
 

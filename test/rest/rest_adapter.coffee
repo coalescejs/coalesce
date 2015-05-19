@@ -53,5 +53,58 @@ describe "RestAdapter", ->
     
     it 'encodes ids', ->
       expect(@adapter.buildUrl('message', 'asd@asd.com')).to.eq('/messages/asd%40asd.com')
-      
-      
+
+  context 'delta saving', (done) ->
+    it 'multiple dirty models with error, persists a dirty model after resolve', ->
+      adapter.r["PUT:/posts/1"] = ->
+        throw status: 422, responseText: JSON.stringify(errors: {title: 'is invalid'})
+
+      adapter.r["PUT:/posts/2"] = ->
+        throw status: 422, responseText: JSON.stringify(errors: {title: 'is invalid'})
+
+      post1 = session.merge @Post.create(id: 1, title: '')
+      post2 = session.merge @Post.create(id: 2, title: '')
+
+      post1.title = 'error title'
+      post2.title = 'error title'
+
+      session.flush().then null, ->
+        expect(post1.title).to.eql('error title')
+        expect(post2.title).to.eql('error title')
+        expect(post1.isDirty).to.be.true
+        expect(post2.isDirty).to.be.true
+
+        expect(session.shadows.has(post1)).to.be.true
+        expect(session.shadows.has(post2)).to.be.true
+
+        post1.title = 'valid title'
+
+        adapter.r["PUT:/posts/1"] = (url, type, hash) ->
+          expect(hash.data.post.title).to.eql('valid title')
+          expect(post2.title).to.eql('error title')
+
+          # cause of the session flush preempty markClean
+          expect(post1.isDirty).to.be.false
+          expect(post2.isDirty).to.be.false
+
+          post: {title: hash.data.post.title, id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}       
+
+        session.flush().then null, ->
+          expect(post1.isDirty).to.be.false
+          expect(post2.isDirty).to.be.true
+
+          expect(post1.errors).to.be.null
+
+          expect(session.shadows.has(post2)).to.be.true
+
+          done
+
+          # expect(post1.title).to.eql('valid title')
+          # expect(post2.title).to.eql('error title')
+
+          # adapter.r["PUT:/posts/2"] = (url, type, hash) ->
+          #   expect(hash.data.post.title).to.eql('another that post')
+          #   post: {title: hash.data.post.title, id: 2, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
+
+          # session.flush().then ->
+          #   done

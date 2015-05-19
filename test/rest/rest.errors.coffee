@@ -12,7 +12,7 @@ describe "rest", ->
     adapter = @adapter
     session = @session
 
-  context 'simple model with errors', ->
+  context 'a model with errors', ->
 
     beforeEach ->
       `class User extends Model {}`
@@ -71,7 +71,9 @@ describe "rest", ->
         session.load('post', 1).then (post) ->
           expect(post.title).to.eq('test')
           post.title = ''
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('')
             expect(post.errors.title).to.eq('is too short')
@@ -86,7 +88,9 @@ describe "rest", ->
         post.title = ''
         post.errors = new Errors(title: 'is not good')
         expect(post.errors.title).to.eq('is not good')
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(post.hasErrors).to.be.true
           expect(post.title).to.eq('')
           expect(post.errors.title).to.eq('is too short')
@@ -100,7 +104,9 @@ describe "rest", ->
         session.load('post', 1).then (post) ->
           expect(post.title).to.eq('test')
           post.title = ''
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('')
             expect(post.errors.title).to.eq('is too short')
@@ -114,7 +120,9 @@ describe "rest", ->
         session.load('post', 1).then (post) ->
           expect(post.title).to.eq('test')
           post.title = ''
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('')
             expect(post.category).to.eq('new')
@@ -129,7 +137,9 @@ describe "rest", ->
         session.load('post', 1).then (post) ->
           expect(post.title).to.eq('test')
           post.title = ''
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.hasErrors).to.be.true
             expect(post.title).to.eq('Something')
             expect(adapter.h).to.eql(['PUT:/posts/1'])
@@ -142,7 +152,7 @@ describe "rest", ->
         session.load('post', 1).then (post) ->
           expect(post.title).to.eq('test')
           post.title = ''
-          session.flush().then null, ->
+          session.flush().then  ->
             expect(post.hasErrors).to.be.false
             expect(post.title).to.eq('')
             expect(adapter.h).to.eql(['PUT:/posts/1'])
@@ -160,7 +170,9 @@ describe "rest", ->
 
         comment = session.create 'comment', body: 'some comments here', post: post
 
-        session.flush().then null, (models) ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , (models) ->
 
           expect(post.errors.title).to.eq('is lamerz')
 
@@ -177,7 +189,9 @@ describe "rest", ->
           throw status: 500, responseText: JSON.stringify(error: "something is wrong")
 
         post = session.create 'post', title: 'errorz'
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(session.newModels.has(post)).to.be.true
           expect(post.isNew).to.be.true
           
@@ -188,7 +202,7 @@ describe "rest", ->
           delay = if calls % 2 == 1
             0
           else
-            1000
+            650
           calls++
           Coalesce.run.later callback, delay
           
@@ -198,18 +212,21 @@ describe "rest", ->
         post1 = session.create 'post', title: 'bad post'
         post2 = session.create 'post', title: 'another bad post'
 
-        session.flush().then null, ->
+        session.flush().then  ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(session.newModels.has(post1)).to.be.true
           expect(session.newModels.has(post2)).to.be.true
           expect(post1.isNew).to.be.true
           expect(post2.isNew).to.be.true
+          
 
       it 'handle errors with multiple creates/children and suceeds after multiple retries', ->        
         adapter.r['POST:/posts'] = ->
           throw status: 0
 
         adapter.r['POST:/comments'] = (url, type, hash) ->
-            comment: {body: hash.data.comment.body, id: hash.data.comment.body, client_id: hash.data.comment.client_id, client_rev: hash.data.comment.client_rev}
+          comment: {body: hash.data.comment.body, id: hash.data.comment.body, client_id: hash.data.comment.client_id, client_rev: hash.data.comment.client_rev}
 
         post1 = session.create 'post', title: 'bad post'
         post2 = session.create 'post', title: 'another bad post'
@@ -217,33 +234,44 @@ describe "rest", ->
         comment1 = session.create 'comment', body: '1', post: post1
         comment2 = session.create 'comment', body: '2', post: post2
 
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(session.newModels.has(post1)).to.be.true
           expect(session.newModels.has(post2)).to.be.true
           expect(post1.isNew).to.be.true
           expect(post2.isNew).to.be.true
-
           expect(session.newModels.has(comment1)).to.be.true
           expect(session.newModels.has(comment2)).to.be.true
           expect(comment1.isNew).to.be.true
           expect(comment2.isNew).to.be.true
 
           adapter.r['POST:/posts'] = (url, type, hash) ->
+            # the 2nd post will fail
             adapter.r['POST:/posts'] = ->
               throw status: 0
 
+            # first will be gravy
             post: {title: hash.data.post.title, id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
 
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             adapter.r['POST:/posts'] = (url, type, hash) ->
               post: {title: hash.data.post.title, id: 2, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
 
+            expect(session.newModels.size).to.eq(2)
+
             session.flush().then (models) ->
+
               expect(session.newModels.size).to.eq(0)
               expect(post1.isNew).to.be.false
               expect(post2.isNew).to.be.false
               expect(comment1.isNew).to.be.false
-              expect(comment2.isNew).to.be.false        
+              expect(comment2.isNew).to.be.false
+            , ->
+               expect("Flush reject should not be called").to.be.null
+                    
 
       it 'merges payload with latest client changes against latest client version', ->
         adapter.r['POST:/posts'] = (url, type, hash) ->
@@ -258,7 +286,9 @@ describe "rest", ->
           throw status: 422, responseText: JSON.stringify(errors: {title: 'is lamerz'})
 
         post = session.create 'post', title: 'errorz'
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(post.errors.title).to.eq('is lamerz')
           adapter.r['POST:/posts'] = (url, type, hash) ->
             post: {title: 'linkbait', id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
@@ -272,7 +302,9 @@ describe "rest", ->
           throw status: 422, responseText: JSON.stringify(post: {title: 'Something', client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev, errors: {title: 'is lamerz'}})
 
         post = session.create 'post', title: 'errorz'
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(post.title).to.eq('Something')
           expect(post.errors.title).to.eq('is lamerz')
           adapter.r['POST:/posts'] = (url, type, hash) ->
@@ -289,7 +321,9 @@ describe "rest", ->
         adapter.r['GET:/posts'] = (url, type, hash) ->
           throw status: 0, responseText: ""
           
-        session.query('post').then null, (err) ->
+        session.query('post').then ->
+            expect("Flush resolve should not be called").to.be.null
+        , (err) ->
           expect(err.status).to.eq(0)
         
 
@@ -302,7 +336,9 @@ describe "rest", ->
 
           session = session.newSession()
           post = session.create 'post', title: ''
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.title).to.eq('Something')
 
         it 'succeeds after retry', ->
@@ -311,7 +347,9 @@ describe "rest", ->
 
           session = session.newSession()
           post = session.create 'post', title: 'errorz'
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.errors.title).to.eq('is lamerz')
             adapter.r['POST:/posts'] = (url, type, hash) ->
               post: {title: 'linkbait', id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
@@ -326,7 +364,9 @@ describe "rest", ->
 
           session = session.newSession()
           post = session.create 'post', title: 'errorz'
-          session.flush().then null, ->
+          session.flush().then ->
+            expect("Flush resolve should not be called").to.be.null
+          , ->
             expect(post.title).to.eq('Something')
             adapter.r['POST:/posts'] = (url, type, hash) ->
               post: {title: 'linkbait', id: 1, client_id: hash.data.post.client_id, client_rev: hash.data.post.client_rev}
@@ -343,7 +383,9 @@ describe "rest", ->
           adapter.r['GET:/posts/1'] = ->
             throw status: errorCode
 
-          session.load('post', 1).then null, (post) ->
+          session.load('post', 1).then ->
+            expect("Flush resolve should not be called").to.be.null
+          , (post) ->
             expect(post.hasErrors).to.be.true
             expect(post.errors.status).to.eq(errorCode)
             expect(adapter.h).to.eql(['GET:/posts/1'])
@@ -358,7 +400,9 @@ describe "rest", ->
         post = session.merge new @Post(id: 1, title: 'errorz')
         session.deleteModel(post)
         expect(post.isDeleted).to.be.true
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
           expect(post.isDirty).to.be.true
           expect(post.isDeleted).to.be.true
       
@@ -374,7 +418,7 @@ describe "rest", ->
           delay = if calls % 2 == 1
             0
           else
-            1000
+            650
           calls++
           Coalesce.run.later callback, delay
           
@@ -384,7 +428,10 @@ describe "rest", ->
         session.deleteModel(post2)
         expect(post1.isDeleted).to.be.true
         expect(post2.isDeleted).to.be.true
-        session.flush().then null, ->
+        session.flush().then ->
+          expect("Flush resolve should not be called").to.be.null
+        , ->
+          console.log('first flush')
           expect(post1.isDirty).to.be.true
           expect(post1.isDeleted).to.be.true
           expect(post2.isDirty).to.be.true
@@ -394,6 +441,7 @@ describe "rest", ->
           adapter.r['DELETE:/posts/2'] = -> {}
           
           session.flush().then ->
+            console.log('second flush')
             expect(post1.isDirty).to.be.false
             expect(post1.isDeleted).to.be.true
             expect(post2.isDirty).to.be.false

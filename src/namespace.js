@@ -18,7 +18,8 @@ if(requireModule && typeof requireModule === 'function') {
 
 var Coalesce = {
   VERSION: 'VERSION_STRING_PLACEHOLDER',
-  Promise: Promise,
+  Promise: RSVP.Promise,
+  RSVP: RSVP,
   ajax: ajax,
   run: Backburner && new Backburner(['actions'])
 }
