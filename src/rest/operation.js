@@ -95,6 +95,9 @@ export default class Operation {
       return "deleted";
     } else if(this.isDirtyFromUpdates || this.force) {
       return "updated";
+    } else if(this.shadow && this.shadow.hasErrors) {
+      // If shadow has errors we know we need to send to backend
+      return "updated";
     }
   }
 
