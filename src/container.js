@@ -19,6 +19,8 @@ import ModelSetSerializer from './serializers/model_set';
 import StorageModelSerializer from './serializers/storage_model';
 import StorageHasManySerializer from './serializers/storage_has_many';
 import StorageBelongsToSerializer from './serializers/storage_belongs_to';
+import StorageRelationSerializer from './serializers/storage_relation';
+
 import PerField from './merge/per_field';
 
 import RestAdapter from './rest/rest_adapter';
@@ -63,6 +65,7 @@ function setupSerializers(container) {
   container.register('serializer:session', SessionSerializer);
   container.register('serializer:model-set', ModelSetSerializer);
   container.register('serializer:storage-model', StorageModelSerializer);
+  container.register('serializer:storage-relation', StorageRelationSerializer);
   container.register('serializer:storage-has-many', StorageHasManySerializer);
   container.register('serializer:storage-belongs-to', StorageBelongsToSerializer);
 }

@@ -55,21 +55,33 @@ describe 'SessionSerializer', ->
         id: 1
         title: 'heyna'
         type_key: 'post'
+        user_id: 3
+        client_id: "post1"
 
       seralizedPost2 =
         id: 2
         title: 'yao'
         type_key: 'post'
+        user_id: 4
+        client_id: "post2"
 
       seralizedUser1 =
         id: 3
         name: 'jerry'
         type_key: 'user'
+        post:
+          id: 1
+          type_key: 'post'
+          clientId: 'post1'
 
       seralizedUser2 =
         id: 4
         name: 'garcia'
         type_key: 'user'
+        post:
+          id: 2
+          type_key: 'post'
+          clientId: 'post2'
 
       data =
         [
@@ -78,78 +90,45 @@ describe 'SessionSerializer', ->
           seralizedUser1
         ]
 
-      newData =
-        [
-          seralizedUser2
-        ]
-      
-
       serializedSessionHash =
         models: data
-        newModels: newData
-        shadows: [],
         uuidStart: 5
 
       deserializedSession = sessionSerializer.deserialize(session, serializedSessionHash)
-      
       # check hash structure
       expect(deserializedSession.models).to.not.be.undefined
-      expect(deserializedSession.newModels).to.not.be.undefined
-      expect(deserializedSession.shadows).to.not.be.undefined
-      expect(deserializedSession.queryCache).to.not.be.undefined
       expect(deserializedSession.idManager.uuid).to.eq(5)
-
-      # check that a user was deserialized correctly
-      deserializeUser = userSerializer.deserialize(seralizedUser2)
-      deserializedSessionUser = deserializedSession.newModels[0]
-
-      expect(deserializedSessionUser).to.eql(deserializeUser)
-
-      # check that a post was deserialized correctly
-      deserializePost = postSerializer.deserialize(seralizedPost1)
-      deserializedSessionPost = deserializedSession.models[0]
-      
-      expect(deserializedSessionPost.id).to.eql(deserializePost.id)
       
   describe '.serialize', ->
 
     it 'serializes', ->
-      post1 = @Post.create id: 1, title: "yo"
-      post2 = @Post.create id: 2, title: "yo boi"
-      user1 = @User.create id: 3, name: "johnny"
 
+      user1 = @User.create name: "johnny"
+      post1 = @Post.create title: "post1", user: user1
+      post2 = @Post.create title: "post2", user: user1
+
+      user1.posts = [post1, post2]
+      session.merge user1
       session.merge post1
       session.merge post2
-      session.merge user1
 
-      # make post1 dirty so it will be seralized
-      post1.title = "yo1"
-      post1.title = "yo"
+      serializedSession = sessionSerializer.serialize(session)
 
-      # this response will be returned for both queries
-      adapter.r['GET:/posts'] =
-        posts: [postSerializer.serialize(post1),postSerializer.serialize(post2)]
+      # check hash structure
+      expect(serializedSession.models).to.not.be.undefined
+      expect(serializedSession.uuidStart).to.eq(4)
 
-      query1 = session.query('post')
-      query2 = session.query('post',{"title":"yo"})
+      deserializedSession = sessionSerializer.deserialize(session, serializedSession)
 
-      Coalesce.Promise.all([query1,query2]).then ->
-        
-        serializedSession = sessionSerializer.serialize(session)
-
-        # check hash structure
-        expect(serializedSession.models).to.not.be.undefined
-        expect(serializedSession.newModels).to.not.be.undefined
-        expect(serializedSession.shadows).to.not.be.undefined
-
-        expect(serializedSession.uuidStart).to.eq(4)
-
-        # check that a post was serialized correctly
-        serializePost = storageModelSerializer.serialize(post1)
-
-        serializedSessionPost = serializedSession.models[0]
-        
-        expect(serializePost).to.eql(serializedSessionPost)
+      user1 = deserializedSession.models[0]
+      post1 = deserializedSession.models[2]
+      post2 = deserializedSession.models[1]
+      
+      expect(user1.posts.length).to.eq(2)
+      expect(user1.posts[0]).to.eq(post2)
+      expect(user1.posts[1]).to.eq(post1)
+      expect(post1.user).to.eq(user1)
+      expect(post2.user).to.eq(user1)
 
     describe "relationships", ->
 

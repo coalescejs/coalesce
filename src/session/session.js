@@ -1,7 +1,6 @@
 import Coalesce from '../namespace';
 import ModelArray from '../collections/model_array';
 import ModelSet from '../collections/model_set';
-import StorageModelSet from '../collections/storage_model_set';
 import CollectionManager from './collection_manager';
 import InverseManager from './inverse_manager';
 import Model from '../model/model';
@@ -24,16 +23,7 @@ export default class Session {
     this.idManager = idManager;
     this.container = container;
     this.parent = parent;
-
-    // the main session should use storageModelSet
-    // if(this.parent === undefined){
-    //   this.models = new StorageModelSet('models', container);
-    // }else{
-    //   this.models = new ModelSet();    
-    // }
-  
     this.models = new ModelSet(); 
-  
     this.collectionManager = new CollectionManager();
     this.inverseManager = new InverseManager(this);
     this.shadows = new ModelSet();
@@ -519,7 +509,8 @@ export default class Session {
       parent: this,
       adapter: this.adapter,
       container: this.container,
-      idManager: this.idManager
+      idManager: this.idManager,
+      store: this.store //TODO: not sure if this makes sense, but adept doesnt use child sessions
     });
     return child;
   }
@@ -989,6 +980,12 @@ export default class Session {
 
     return this.store.get(this.sessionStorageKey).then(function(serializedSessionData){
       return sessionSerializer.deserialize(session, serializedSessionData);
+    });
+  }
+
+  getFromStorage(){
+    return this.store.get(this.sessionStorageKey).then(function(serializedSessionData){
+      return serializedSessionData;
     });
   }
 
