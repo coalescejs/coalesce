@@ -48,42 +48,6 @@ export default class ModelSetSerializer extends Serializer {
 
         modelSet.toArray().forEach(function(model) {
             modelsToBeSerialized.addData(model);
-
-            model.eachLoadedRelationship(function(name, relationship) {
-                var type = dasherize(relationship.kind);
-
-                if (type === 'belongs-to') {
-                    var self = this,
-                        parent = model[name];
-
-                    //we know new models will already be in the modelSet
-                    // embeded models are messing up.  Need to revist
-                    if (parent && !parent.isNew) { //we know new models will already be in the modelSet
-                        modelsToBeSerialized.addData(parent);
-
-                        // may need parent parents
-                        parent.eachLoadedRelationship(function(name, relationship) {
-                            var type = dasherize(relationship.kind);
-
-                            if (type === 'belongs-to') {
-                                var parentParent = parent[name];
-
-                                if (parentParent) {
-                                    modelsToBeSerialized.addData(parentParent);
-                                }
-                            }
-                        });
-
-                        if (adapter.isEmbedded(parent)) {
-                            var embeddedParent = adapter._embeddedManager.findParent(parent);
-
-                            if (embeddedParent) {
-                                modelsToBeSerialized.addData(embeddedParent);
-                            }
-                        }
-                    }
-                }
-            }, this);
         }, this);
 
 		return modelsToBeSerialized.toArray().map(function(model){

@@ -11,7 +11,7 @@ export default class StorageModelSerializer extends ModelSerializer {
     this.addProperty(serialized, model, 'typeKey', 'string');
   }
 
-   deserialize (hash, opts) {
+  deserialize (hash, opts) {
   	this.typeKey = hash.type_key;
 	return super(hash, opts);
   }
@@ -20,7 +20,7 @@ export default class StorageModelSerializer extends ModelSerializer {
     
     if (type === 'has-many') {
       type = 'storage-has-many';
-    }else if (type === 'belongs-to') {
+    }else if (type === 'belongs-to'){// && model.isNew) { // dont need a custom serialization for non new models
       type = 'storage-belongs-to';
     } 
 
@@ -31,7 +31,7 @@ export default class StorageModelSerializer extends ModelSerializer {
     
     if (type === 'has-many') {
       type = 'storage-has-many';
-    }else if (type === 'belongs-to') {
+    }else if (type === 'belongs-to'){//  && model.isNew) { // dont need a custom serialization for non new models
       type = 'storage-belongs-to';
     } 
 

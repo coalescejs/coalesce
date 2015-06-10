@@ -27,6 +27,14 @@ export default class SessionSerializer extends Serializer {
         session.merge(model);  
       }
     });
+
+    session.shadows = modelSetSerializer.deserialize(serializedSessionData.shadows);
+
+    // for merging existing models after a loadFromStorage we need originals or 
+    // will always take the server version
+    session.shadows.forEach(function(m){
+    	session.originals.addData(m);
+    });
     
     // We also need to track where to start assigning clientIds since the models
     // we deserialize will already have clientIds assigned.
@@ -35,16 +43,19 @@ export default class SessionSerializer extends Serializer {
   }
   
   serialize(session) {
-    var modelSetSerializer = this.serializerFor('model-set');
-    
-    var serialized = {
-      models: {},
-      uuidStart: 0
-    };
-    
+    var modelSetSerializer 	= this.serializerFor('model-set'),
+    	serialized 			= { models: [], shadows: [], uuidStart: 0},
+    	dirtyModels 		= session.dirtyModels,
+    	dirtyShadowModels 	= _.compact(dirtyModels.toArray().map(function(dirt){
+    		var shadow = session.shadows.getForClientId(dirt.clientId);
+
+    		return shadow;
+    	}));
+
     // Only need to seralize dirty models.  
     // WE WILL RELY ON SERVER RESPONSE CACHING TO HANDLE NON-DIRTY MODELS
-    serialized.models = modelSetSerializer.serialize(session.dirtyModels);
+    serialized.models = modelSetSerializer.serialize(dirtyModels);
+    serialized.shadows = modelSetSerializer.serialize(dirtyShadowModels);
     serialized.uuidStart = session.idManager.uuid;
     
     return serialized;
