@@ -20,7 +20,7 @@ export default class StorageModelSerializer extends ModelSerializer {
     
     if (type === 'has-many') {
       type = 'storage-has-many';
-    }else if (type === 'belongs-to'){// && model.isNew) { // dont need a custom serialization for non new models
+    }else if (type === 'belongs-to' && model.isNew) { // dont need a custom serialization for non new models
       type = 'storage-belongs-to';
     } 
 
@@ -31,7 +31,7 @@ export default class StorageModelSerializer extends ModelSerializer {
     
     if (type === 'has-many') {
       type = 'storage-has-many';
-    }else if (type === 'belongs-to'){//  && model.isNew) { // dont need a custom serialization for non new models
+    }else if (type === 'belongs-to' && model.isNew) { // dont need a custom serialization for non new models
       type = 'storage-belongs-to';
     } 
 
