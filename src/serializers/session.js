@@ -23,7 +23,9 @@ export default class SessionSerializer extends Serializer {
     models.forEach(function(model) {
       if(model.isNew){
         session.add(model);
-      }else{
+      }else if (model.isDeleted){
+      	session.adopt(model);
+  	  }else{
         session.merge(model);  
       }
     });
