@@ -16,8 +16,12 @@ export default class ModelCache {
       if(!promise) {
         promise = Coalesce.Promise.resolve(model);
       }
+    }
+    
+    if(promise) {
       this._promises[model.clientId] = promise;
     }
+
     // unlike query cache, we get the "entry" from the session directly
   }
 

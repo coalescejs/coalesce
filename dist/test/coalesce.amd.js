@@ -4521,6 +4521,8 @@ define("coalesce/session/model_cache", ['../namespace'], function($__0) {
         if (!promise) {
           promise = Coalesce.Promise.resolve(model);
         }
+      }
+      if (promise) {
         this._promises[model.clientId] = promise;
       }
     },
