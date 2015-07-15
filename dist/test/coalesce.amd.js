@@ -3320,7 +3320,7 @@ define("coalesce/rest/rest_adapter", ['../namespace', '../adapter', './embedded_
           } else {
             serializer = adapter.serializerFor(opts.errorSerializer || 'errors');
             var errors = serializer.deserialize(data, serializerOptions);
-            if (context.isModel) {
+            if (context && context.isModel) {
               var model = context.lazyCopy();
               model.errors = errors;
               throw model;

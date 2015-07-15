@@ -295,7 +295,7 @@ export default class RestAdapter extends Adapter {
           // treat other errors generically
           serializer = adapter._serializerFor(opts.errorSerializer || 'errors');
           var errors = serializer.deserialize(data, serializerOptions);
-          if(context.isModel) {
+          if(context && context.isModel) {
             // if the context is a model we want to return a model with errors
             // so that it can be merged by the session
             var model = context.lazyCopy();

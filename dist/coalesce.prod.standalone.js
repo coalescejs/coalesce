@@ -3,7 +3,7 @@
  * @copyright Copyright 2014 Gordon L. Hempton and contributors
  * @license   Licensed under MIT license
  *            See https://raw.github.com/coalescejs/coalesce/master/LICENSE
- * @version   0.4.0+dev.1b6a2376
+ * @version   0.4.0+dev.c008febd
  */
 (function() {
 var define, requireModule, require, requirejs;
@@ -6290,7 +6290,7 @@ define("coalesce/namespace", [], function() {
     } catch (e) {}
   }
   var Coalesce = {
-    VERSION: '0.4.0+dev.1b6a2376',
+    VERSION: '0.4.0+dev.c008febd',
     Promise: Promise,
     ajax: ajax,
     run: Backburner && new Backburner(['actions'])
@@ -6946,7 +6946,7 @@ define("coalesce/rest/rest_adapter", ['../namespace', '../adapter', './embedded_
           } else {
             serializer = adapter.serializerFor(opts.errorSerializer || 'errors');
             var errors = serializer.deserialize(data, serializerOptions);
-            if (context.isModel) {
+            if (context && context.isModel) {
               var model = context.lazyCopy();
               model.errors = errors;
               throw model;
