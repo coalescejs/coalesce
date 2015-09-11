@@ -1,4 +1,4 @@
-import ModelArray from '../collections/model_array';
+import ModelArray  from '../collections/model_array'
 
 export default class HasManyArray extends ModelArray {
   
@@ -12,7 +12,7 @@ export default class HasManyArray extends ModelArray {
         return this.session.add(model);
       }, this);
     }
-    super(idx, amt, objects);
+    super.replace(idx, amt, objects);
   }
 
   arrayContentWillChange(index, removed, added) {
@@ -30,11 +30,11 @@ export default class HasManyArray extends ModelArray {
       }
     }
 
-    return super(index, removed, added);
+    return super.arrayContentWillChange(index, removed, added);
   }
 
   arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
+    super.arrayContentDidChange(index, removed, added);
 
     var model = this.owner,
         name = this.name,

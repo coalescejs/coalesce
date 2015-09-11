@@ -1,3 +1,4 @@
+`import Coalesce from 'coalesce/namespace'`
 `import Context from 'coalesce/rest/context'`
 
 `import {post} from '../support/configs'`
@@ -35,7 +36,7 @@ describe "rest concurrent flushes", ->
       else
         10
       calls++
-      Coalesce.run.later callback, delay
+      Coalesce.backburner.run.later callback, delay
 
     @server.r 'PUT:/posts/1', (xhr) ->
       data = JSON.parse(xhr.requestBody)

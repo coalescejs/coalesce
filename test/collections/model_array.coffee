@@ -1,3 +1,4 @@
+`import Coalesce from 'coalesce/namespace'`
 `import ModelArray from 'coalesce/collections/model_array'`
 `import Model from 'coalesce/model/model'`
 `import attr from 'coalesce/model/attribute'`

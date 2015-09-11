@@ -2,10 +2,8 @@ function guidFor(model) {
   return model.clientId;
 }
 
-import array_from from '../utils/array_from';
-// XXX: this is just needed since payload extends this class, should eventually
-// change that
-import BaseClass from '../utils/base_class';
+import array_from  from '../utils/array_from'
+import BaseClass  from '../utils/base_class'
 
 /**
   An unordered collection of unique models.
@@ -19,6 +17,7 @@ import BaseClass from '../utils/base_class';
 export default class ModelSet extends BaseClass {
 
   constructor(iterable) {
+    super();
     this._size = 0;
     if(iterable) {
       this.addObjects(iterable);

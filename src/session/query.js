@@ -1,12 +1,12 @@
-import ObservableArray from '../collections/observable_array';  
+import ObservableArray  from '../collections/observable_array'
 
 export default class Query extends ObservableArray {
   
   constructor(session, type, params) {
+    super();
     this.session = session;
     this._type = type;
     this._params = params;
-    super();
   }
   
   get params() {

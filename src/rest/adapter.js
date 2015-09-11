@@ -1,9 +1,8 @@
-import Coalesce from '../namespace';
-import Adapter from '../adapter';
-import ModelSet from '../collections/model_set';
-
-import {decamelize, pluralize, camelize} from '../utils/inflector';
-import array_from from '../utils/array_from';
+import Adapter  from '../adapter'
+import ModelSet  from '../collections/model_set'
+import Coalesce  from '../namespace'
+import array_from  from '../utils/array_from'
+import { decamelize, pluralize, camelize } from '../utils/inflector'
 
 var defaults = _.defaults;
 
@@ -629,11 +628,11 @@ export default class RestAdapter extends Adapter {
       hash = adapter.ajaxOptions(url, type, hash);
 
       hash.success = function(json) {
-        Coalesce.run(null, resolve, json);
+        Coalesce.backburner.run(null, resolve, json);
       };
 
       hash.error = function(jqXHR, textStatus, errorThrown) {
-        Coalesce.run(null, reject, adapter.ajaxError(jqXHR));
+        Coalesce.backburner.run(null, reject, adapter.ajaxError(jqXHR));
       };
 
       Coalesce.ajax(hash);

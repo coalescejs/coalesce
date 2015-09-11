@@ -1,7 +1,7 @@
-import ObservableArray from './observable_array';
-import ModelSet from './model_set';
-import isEqual from '../utils/is_equal';
-import Coalesce from '../namespace';
+import Coalesce  from '../namespace'
+import isEqual  from '../utils/is_equal'
+import ModelSet  from './model_set'
+import ObservableArray  from './observable_array'
 
 export default class ModelArray extends ObservableArray {
   
@@ -15,11 +15,11 @@ export default class ModelArray extends ObservableArray {
       }
     }
 
-    super(index, removed, added);
+    super.arrayContentWillChange(index, removed, added);
   }
 
   arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
+    super.arrayContentDidChange(index, removed, added);
 
     for (var i=index; i<index+added; i++) {
       var model = this.objectAt(i);
@@ -72,7 +72,7 @@ export default class ModelArray extends ObservableArray {
   }
   
   copy() {
-    return super(true);
+    return super.copy(true);
   }
 
   diff(arr) {

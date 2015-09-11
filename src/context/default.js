@@ -1,25 +1,19 @@
-import Base from './base';
-
-import Session from '../session/session';
-
-import BelongsToSerializer from '../serializers/belongs_to';
-import BooleanSerializer from '../serializers/boolean';
-import DateSerializer from '../serializers/date';
-import HasManySerializer from '../serializers/has_many';
-import IdSerializer from '../serializers/id';
-import NumberSerializer from '../serializers/number';
-import ModelSerializer from '../serializers/model';
-import RevisionSerializer from '../serializers/revision';
-import StringSerializer from '../serializers/string';
-
-import PerField from '../merge/per_field';
-
-import ModelCache from '../session/model_cache';
-import QueryCache from '../session/query_cache';
-
-import Errors from '../model/errors';
-
-import IdManager from '../id_manager';
+import IdManager  from '../id_manager'
+import PerField  from '../merge/per_field'
+import Errors  from '../model/errors'
+import BelongsToSerializer  from '../serializers/belongs_to'
+import BooleanSerializer  from '../serializers/boolean'
+import DateSerializer  from '../serializers/date'
+import HasManySerializer  from '../serializers/has_many'
+import IdSerializer  from '../serializers/id'
+import ModelSerializer  from '../serializers/model'
+import NumberSerializer  from '../serializers/number'
+import RevisionSerializer  from '../serializers/revision'
+import StringSerializer  from '../serializers/string'
+import ModelCache  from '../session/model_cache'
+import QueryCache  from '../session/query_cache'
+import Session  from '../session/session'
+import Base  from './base'
 
 /**
   Default context with sensible default configuration
@@ -35,7 +29,7 @@ export default class Context extends Base {
   }
   
   _setupContainer() {
-    super();
+    super._setupContainer();
     var container = this.container;
     container.register('model:errors', Errors);
     this._setupSession(container);

@@ -1,8 +1,8 @@
-import Coalesce from '../namespace';
-import Relationship from './relationship';
-import HasManyArray from '../collections/has_many_array';
-import isEqual from '../utils/is_equal';
-import copy from '../utils/copy';
+import HasManyArray  from '../collections/has_many_array'
+import Coalesce  from '../namespace'
+import copy  from '../utils/copy'
+import isEqual  from '../utils/is_equal'
+import Relationship  from './relationship'
 
 var defaults = _.defaults;
 

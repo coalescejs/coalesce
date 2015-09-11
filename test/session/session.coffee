@@ -1,3 +1,4 @@
+`import Coalesce from 'coalesce/namespace'`
 `import Model from 'coalesce/model/model'`
 `import ModelSerializer from 'coalesce/serializers/model'`
 `import {postWithComments} from '../support/configs'`

@@ -1,51 +1,52 @@
 var fs = require('fs');
-var traceur = require('broccoli-traceur');
+var babel = require('broccoli-babel-transpiler');
 var pickFiles = require('broccoli-static-compiler');
 var mergeTrees = require('broccoli-merge-trees');
 var writeFile = require('broccoli-file-creator');
 var moveFile = require('broccoli-file-mover');
 var concat = require('broccoli-concat');
-var uglify = require('broccoli-uglify-js');
+var concatWithSourceMaps = require('broccoli-sourcemap-concat');
 var removeFile = require('broccoli-file-remover');
 var defeatureify = require('broccoli-defeatureify');
 var coffee = require('broccoli-coffee');
 var replace = require('broccoli-replace');
-var yuidocCompiler = require('broccoli-yuidoc');
+var sourceMap = require('broccoli-source-map');
 
 var calculateVersion = require('./lib/calculate-version');
 
 var licenseJs = fs.readFileSync('./generators/license.js').toString();
 
-var devAmd = (function() {
-  var tree = pickFiles('src', {
-    srcDir: '/',
-    destDir: 'coalesce'
+var devBundledModules = (function() {
+  var tree = babel('src', {
+    modules: 'system',
+    moduleIds: true,
+    sourceRoot: 'coalesce',
+    moduleRoot: 'coalesce',
+    externalHelpers: true,
+    sourceMap: 'inline'
   });
-  var vendoredPackage = moveFile(tree, {
-    srcFile: 'coalesce/main.js',
-    destFile: '/coalesce.js'
-  });
-
-  tree = mergeTrees([tree, vendoredPackage]);
-  tree = removeFile(tree,  {
-    files: ['coalesce/main.js']
-  });
-  var transpiled = traceur(tree, {
-    moduleName: true,
-    modules: 'amd',
-    annotations: true
-  });
-  return concat(transpiled, {
+  tree = sourceMap.extract(tree);
+  return concatWithSourceMaps(tree, {
     inputFiles: ['**/*.js'],
-    outputFile: '/coalesce.amd.js'
+    outputFile: '/coalesce.system.js'
   });
 })();
 
-var prodAmd = (function() {
 
-  var tree = moveFile(devAmd, {
-    srcFile: 'coalesce.amd.js',
-    destFile: '/coalesce.prod.amd.js'
+var prodBundledModules = (function() {
+  var tree = babel('src', {
+    modules: 'system',
+    moduleIds: true,
+    sourceRoot: 'coalesce',
+    moduleRoot: 'coalesce',
+    externalHelpers: true,
+    sourceMap: 'inline'
+  });
+  
+  tree = sourceMap.extract(tree);
+  return concatWithSourceMaps(tree, {
+    inputFiles: ['**/*.js'],
+    outputFile: '/coalesce.prod.system.js'
   });
 
   tree = defeatureify(tree, {
@@ -57,101 +58,61 @@ var prodAmd = (function() {
   });
 
   return tree;
-
 })();
 
-var vendor = mergeTrees(['node_modules/traceur/bin', 'bower_components', 'vendor']);
 
-function concatStandalone(tree, inputFile, outputFile) {
-  var iifeStart = writeFile('iife-start', '(function() {');
-  var iifeStop  = writeFile('iife-stop', '})();');
-  var bootstrap = writeFile('bootstrap', 'this.Coalesce = requireModule("coalesce")["default"];\n');
-
-  var trees = [vendor, iifeStart, iifeStop, bootstrap, tree];
-
-  return concat(mergeTrees(trees), {
-    inputFiles: [
-      'iife-start',
-      'loader/loader.js',
-      'traceur-runtime.js',
-      'backburner.amd.js',
-      inputFile,
-      'bootstrap',
-      'iife-stop'
-    ],
-    outputFile: outputFile
-  });
-}
-
-
-var devStandalone = concatStandalone(devAmd, 'coalesce.amd.js', '/coalesce.standalone.js');
-var prodStandalone = concatStandalone(prodAmd, 'coalesce.prod.amd.js', '/coalesce.prod.standalone.js');
-
-var minStandalone = (function() {
-
-  var tree = moveFile(prodStandalone, {
-    srcFile: 'coalesce.prod.standalone.js',
-    destFile: '/coalesce.prod.standalone.min.js'
-  });
-  return uglify(tree);
-
-})();
+var vendor = mergeTrees(['bower_components', 'vendor', 'node_modules']);
 
 var testTree = (function() {
-  var testAmd = (function() {
-    var tree = pickFiles('test', {
-      srcDir: '/',
-      destDir: 'coalesce-test'
-    });
 
-    tree = coffee(tree, {
+  var testBundledModules = (function() {
+    // XXX: need add source map support once this gets resolved: https://github.com/joliss/broccoli-coffee/pull/9
+    tree = coffee('test', {
       bare: true
     });
 
-    var transpiled = traceur(tree, {
-      moduleName: true,
-      modules: 'amd'
+    tree = babel(tree, {
+      modules: 'system',
+      moduleIds: true,
+      externalHelpers: true,
+      //sourceMap: 'inline',
+      sourceRoot: 'coalesce-test'
     });
-    return concat(transpiled, {
+    //tree = sourceMap.extract(tree);
+    return concat(tree, {
       inputFiles: ['**/*.js'],
-      outputFile: '/coalesce-test.amd.js'
+      outputFile: '/test/coalesce-test.system.js'
     });
   })();
-  
-  var testVendorJs = concat(vendor, {
-    inputFiles: [
-      'sinonjs/sinon.js',
-      'mocha/mocha.js',
-      'mocha-lazy-bdd/dist/mocha-lazy-bdd.js',
-      'chai/chai.js',
-      'jquery/dist/jquery.js',
-      'lodash/dist/lodash.js',
-      'loader/loader.js',
-      'traceur-runtime.js',
-      'backburner.amd.js'
-    ],
-    outputFile: '/vendor.js'
-  });
-  
-  var testVendorCss = pickFiles(vendor, {
-    srcDir: '/mocha',
-    files: ['mocha.css'],
-    destDir: '/'
-  });
-  
-  var trees = mergeTrees([testVendorJs, testAmd, devAmd, 'test', testVendorCss]);
-  return pickFiles(trees, {
+
+  var testVendor = pickFiles(vendor, {
     srcDir: '/',
     files: [
-      'vendor.js',
-      'mocha.css',
-      'coalesce.amd.js',
-      'coalesce-test.amd.js',
-      'index.html'
+      'babel-core/browser-polyfill.js',
+      'babel-core/external-helpers.js',
+      'es6-module-loader/dist/es6-module-loader.js',
+      'es6-module-loader/dist/es6-module-loader.js.map',
+      'systemjs/dist/system.js',
+      'jquery/dist/jquery.js',
+      'lodash/dist/lodash.js',
+      'backburner.js',
+      'sinonjs/sinon.js',
+      'mocha/mocha.js',
+      'mocha/mocha.css',
+      'mocha-lazy-bdd/dist/mocha-lazy-bdd.js',
+      'chai/chai.js'
     ],
-    destDir: 'test'
+    destDir: 'test/vendor'
   });
-  
+
+  var testIndex = pickFiles('test', {
+    srcDir: '/',
+    destDir: '/test',
+    files: ['index.html']
+  });
+
+  return mergeTrees([testIndex, testBundledModules, testVendor]);
+
 })();
 
 
@@ -161,22 +122,17 @@ var bowerJSON = writeFile('bower.json', JSON.stringify({
   license: "MIT",
   main: 'coalesce.js',
   ignore: ['docs', 'test', 'testem.js'],
-  keywords: [
-    "coalesce",
-    "orm",
-    "persistence",
-    "data",
-    "sync"
-  ]
+  keywords: require('./package.json').keywords
 }, null, 2));
 
-distTree = mergeTrees([bowerJSON, devAmd, prodAmd, devStandalone, prodStandalone, minStandalone]);
-distTree = replace(distTree, {
-  files: [ '**/*.js' ],
-  patterns: [
-    { match: /^/, replacement: licenseJs }
-  ]
-});
+distTree = mergeTrees([bowerJSON, devBundledModules, prodBundledModules]);
+// XXX: need to support source maps with this
+// distTree = replace(distTree, {
+//   files: [ '**/*.js' ],
+//   patterns: [
+//     { match: /^/, replacement: licenseJs }
+//   ]
+// });
 distTree = replace(distTree, {
   files: [ '**/*' ],
   patterns: [
@@ -184,11 +140,6 @@ distTree = replace(distTree, {
   ]
 });
 
-var docs = yuidocCompiler('src', {
-  srcDir: '/',
-  destDir: 'docs'
-});
-
 var testemDummy = writeFile('testem.js', '');
 
-module.exports = mergeTrees([docs, distTree, testTree, testemDummy]);
+module.exports = mergeTrees([distTree, testTree, testemDummy]);

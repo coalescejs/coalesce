@@ -1,15 +1,15 @@
-import Coalesce from '../namespace';
-import BaseClass from '../utils/base_class';
-import ModelSet from '../collections/model_set';
-import copy from '../utils/copy';
-import lazyCopy from '../utils/lazy_copy';
-import isEqual from '../utils/is_equal';
-import Attribute from './attribute';
-import BelongsTo from './belongs_to';
-import HasMany from './has_many';
-import Error from '../error';
-import Field from './field';
-import {camelize, pluralize, underscore, classify} from '../utils/inflector';
+import ModelSet  from '../collections/model_set'
+import Error  from '../error'
+import Coalesce  from '../namespace'
+import BaseClass  from '../utils/base_class'
+import copy  from '../utils/copy'
+import { camelize, pluralize, underscore, classify } from '../utils/inflector'
+import isEqual  from '../utils/is_equal'
+import lazyCopy  from '../utils/lazy_copy'
+import Attribute  from './attribute'
+import BelongsTo  from './belongs_to'
+import Field  from './field'
+import HasMany  from './has_many'
 
 export default class Model extends BaseClass {
 
@@ -69,6 +69,7 @@ export default class Model extends BaseClass {
   }
   
   constructor(fields) {
+    super();
     this._meta = {
       id: null,
       clientId: null,
@@ -214,7 +215,7 @@ export default class Model extends BaseClass {
   willWatchProperty(key) {
     // EmberTODO
     if(this.isManaged && this.shouldTriggerLoad(key)) {
-      Coalesce.run.scheduleOnce('actions', this, this.load);
+      Coalesce.backburner.run.scheduleOnce('actions', this, this.load);
     }
   }
 

@@ -1,3 +1,4 @@
+import Coalesce  from 'coalesce/namespace';
 
 // simple promise wrapper for set timeout
 
