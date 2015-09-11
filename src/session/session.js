@@ -1,14 +1,14 @@
-import ModelArray from '../collections/model_array';
-import ModelSet from '../collections/model_set';
-import CollectionManager from './collection_manager';
-import InverseManager from './inverse_manager';
-import Model from '../model/model';
-import Query from './query';
-import Flush from './flush';
-import copy from '../utils/copy';
-import Error from '../error';
-import array_from from '../utils/array_from';
-import evented from '../utils/evented';
+import ModelArray  from '../collections/model_array';
+import ModelSet  from '../collections/model_set';
+import Error  from '../error';
+import Model  from '../model/model';
+import array_from  from '../utils/array_from';
+import copy  from '../utils/copy';
+import evented  from '../utils/evented';
+import CollectionManager  from './collection_manager';
+import Flush  from './flush';
+import InverseManager  from './inverse_manager';
+import Query  from './query';
 
 var uuid = 1;
 
@@ -406,7 +406,7 @@ export default class Session {
     if(!res && this.parent) {
       res = this.parent.getModel(model);
       if(res) {
-        res = this.adopt(res.copy());
+        res = res.fork(this);
         // TODO: is there a better place for this?
         this.updateCache(res);
       }

@@ -23,7 +23,7 @@ var devBundledModules = (function() {
     sourceRoot: 'coalesce',
     moduleRoot: 'coalesce',
     externalHelpers: true,
-    sourceMap: 'inline'
+    //sourceMap: 'inline'
   });
   tree = sourceMap.extract(tree);
   return concatWithSourceMaps(tree, {

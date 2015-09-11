@@ -4,10 +4,10 @@
   "description": "A modern client-side persistence framework",
   "main": "./lib/index.js",
   "scripts": {
-    "build": "rm -rf dist; broccoli build dist",
-    "test": "testem ci",
-    "postinstall": "bower install",
-    "start": "broccoli serve"
+    "build": "rm -rf dist; ./node_modules/.bin/broccoli build dist",
+    "test": "./node_modules/.bin/testem ci",
+    "postinstall": "./node_modules/.bin/bower install",
+    "start": "./node_modules/.bin/broccoli serve"
   },
   "repository": "https://github.com/coalescejs/coalesce.git",
   "keywords": [

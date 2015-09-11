@@ -1,5 +1,5 @@
-import { singularize, camelize, underscore, dasherize } from '../utils/inflector'
-import Serializer  from './base'
+import { singularize, camelize, underscore, dasherize } from '../utils/inflector';
+import Serializer  from './base';
 
 /**
   @namespace serializers

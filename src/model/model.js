@@ -1,15 +1,15 @@
-import ModelSet  from '../collections/model_set'
-import Error  from '../error'
-import Coalesce  from '../namespace'
-import BaseClass  from '../utils/base_class'
-import copy  from '../utils/copy'
-import { camelize, pluralize, underscore, classify } from '../utils/inflector'
-import isEqual  from '../utils/is_equal'
-import lazyCopy  from '../utils/lazy_copy'
-import Attribute  from './attribute'
-import BelongsTo  from './belongs_to'
-import Field  from './field'
-import HasMany  from './has_many'
+import ModelSet  from '../collections/model_set';
+import Error  from '../error';
+import Coalesce  from '../namespace';
+import BaseClass  from '../utils/base_class';
+import copy  from '../utils/copy';
+import { camelize, pluralize, underscore, classify } from '../utils/inflector';
+import isEqual  from '../utils/is_equal';
+import lazyCopy  from '../utils/lazy_copy';
+import Attribute  from './attribute';
+import BelongsTo  from './belongs_to';
+import Field  from './field';
+import HasMany  from './has_many';
 
 export default class Model extends BaseClass {
 
@@ -209,6 +209,20 @@ export default class Model extends BaseClass {
     this.eachLoadedRelationship(function(name, relationship) {
       dest[name] = this[name];
     }, this);
+  }
+  
+  /**
+    Copy the model to the target session.
+  */
+  fork(session) {
+    var dest = new this.constructor();
+    this.copyTo(dest);
+    session.adopt(dest);
+    // XXX: this is a hack to lazily add the children when the array is accessed
+    dest.eachLoadedRelationship(function(name, relationship) {
+      dest[name].needsReification = true;
+    });
+    return dest;
   }
 
   // XXX: move to ember

@@ -1,8 +1,8 @@
-import HasManyArray  from '../collections/has_many_array'
-import Coalesce  from '../namespace'
-import copy  from '../utils/copy'
-import isEqual  from '../utils/is_equal'
-import Relationship  from './relationship'
+import HasManyArray  from '../collections/has_many_array';
+import Coalesce  from '../namespace';
+import copy  from '../utils/copy';
+import isEqual  from '../utils/is_equal';
+import Relationship  from './relationship';
 
 var defaults = _.defaults;
 
@@ -31,6 +31,10 @@ export default class HasMany extends Relationship {
           if(content) {
             value.addObjects(content);
           }
+        }
+        if(value && value.needsReification && value.reify && this.session) {
+          value.reify();
+          value.needsReification = false;
         }
         return value;
       },

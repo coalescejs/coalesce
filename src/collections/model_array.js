@@ -1,7 +1,7 @@
-import Coalesce  from '../namespace'
-import isEqual  from '../utils/is_equal'
-import ModelSet  from './model_set'
-import ObservableArray  from './observable_array'
+import Coalesce  from '../namespace';
+import isEqual  from '../utils/is_equal';
+import ModelSet  from './model_set';
+import ObservableArray  from './observable_array';
 
 export default class ModelArray extends ObservableArray {
   

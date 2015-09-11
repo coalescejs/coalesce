@@ -98,4 +98,6 @@ describe "Session", ->
       post = @child.add(parentPost)
       expect(post).to.not.eq(parentPost)
       expect(post.comments.length).to.eq(1)
-      expect(post.comments.firstObject).to.not.eq(parentPost.comments.firstObject)
+      expect(post.comments[0]).to.not.eq(parentPost.comments[0])
+      expect(post.comments[0].session).to.eq(@child)
+      expect(post.comments[0].post).to.eq(post)
