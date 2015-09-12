@@ -34,7 +34,7 @@
         mocha.setup('lazy-bdd');
         var expect = chai.expect;
 
-        System.import('coalesce/index').then(function(module) {
+        System.import('coalesce').then(function(module) {
           
           System.import('coalesce-test/support/server').then(function() {
 

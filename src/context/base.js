@@ -1,6 +1,6 @@
-import Container from './container';
-import Error from '../error';
-import Config from './config';
+import Error  from '../error';
+import Config  from './config';
+import Container  from './container';
 
 export default class Base {
   
