@@ -1355,7 +1355,7 @@ define('coalesce/context/base', ['exports', 'module', '../error', './config', '.
         var config = this._configs[typeKey];
         if (!config) {
           config = this._configs[typeKey] = new _Config['default'](typeKey, this);
-          if (config.type) {
+          if (config.type && typeof config.type.reify === 'function') {
             config.type.reify(this, typeKey);
           }
         }
@@ -1492,10 +1492,7 @@ define("coalesce/context/config", ["exports", "module"], function (exports, modu
           return this._type;
         }
         var Type = this._container.lookupFactory("model:" + this._typeKey);
-        if (Type) {
-          // Ember's container extends by default
-          Type = Type.parentType;
-        }
+
         return this._type = Type;
       }
     }]);
@@ -3240,7 +3237,7 @@ define('coalesce/model/model', ['exports', 'module', '../collections/model_set',
 
   var _Coalesce = babelHelpers.interopRequireDefault(_namespace);
 
-  var _BaseClass2 = babelHelpers.interopRequireDefault(_utilsBase_class);
+  var _BaseClass = babelHelpers.interopRequireDefault(_utilsBase_class);
 
   var _copy = babelHelpers.interopRequireDefault(_utilsCopy);
 
@@ -3256,8 +3253,7 @@ define('coalesce/model/model', ['exports', 'module', '../collections/model_set',
 
   var _HasMany = babelHelpers.interopRequireDefault(_has_many);
 
-  var Model = (function (_BaseClass) {
-    babelHelpers.inherits(Model, _BaseClass);
+  var Model = (function () {
     babelHelpers.createClass(Model, [{
       key: 'id',
       get: function get() {
@@ -3324,7 +3320,6 @@ define('coalesce/model/model', ['exports', 'module', '../collections/model_set',
     function Model(fields) {
       babelHelpers.classCallCheck(this, Model);
 
-      babelHelpers.get(Object.getPrototypeOf(Model.prototype), 'constructor', this).call(this);
       this._meta = {
         id: null,
         clientId: null,
@@ -3875,6 +3870,15 @@ define('coalesce/model/model', ['exports', 'module', '../collections/model_set',
         return possibleRelationships[0];
       }
     }, {
+      key: 'reopen',
+      value: function reopen(props) {
+        for (var key in props) {
+          if (!props.hasOwnProperty(key)) return;
+          this.prototype[key] = props[key];
+        }
+        return this;
+      }
+    }, {
       key: 'ownFields',
       get: function get() {
         if (!this.hasOwnProperty('_ownFields')) {
@@ -3943,7 +3947,7 @@ define('coalesce/model/model', ['exports', 'module', '../collections/model_set',
       }
     }]);
     return Model;
-  })(_BaseClass2['default']);
+  })();
 
   module.exports = Model;
   Model.prototype._parent = null;
@@ -4072,7 +4076,7 @@ define('coalesce/namespace', ['exports', 'module'], function (exports, module) {
       Backburner = global.Backburner;
 
   var Coalesce = {
-    VERSION: '0.4.0+dev.12238b19',
+    VERSION: '0.4.0+dev.7dda63ff',
     Promise: Promise,
     ajax: ajax
   };
@@ -5434,10 +5438,12 @@ define('coalesce/serializers/id', ['exports', 'module', './base'], function (exp
 });
 
 
-define('coalesce/serializers/model', ['exports', 'module', '../utils/inflector', './base'], function (exports, module, _utilsInflector, _base) {
+define('coalesce/serializers/model', ['exports', 'module', '../utils/inflector', './base', '../utils/safe_create'], function (exports, module, _utilsInflector, _base, _utilsSafe_create) {
   'use strict';
 
   var _Serializer2 = babelHelpers.interopRequireDefault(_base);
+
+  var _safeCreate = babelHelpers.interopRequireDefault(_utilsSafe_create);
 
   /**
     @namespace serializers
@@ -5605,7 +5611,8 @@ define('coalesce/serializers/model', ['exports', 'module', '../utils/inflector',
     }, {
       key: 'createModel',
       value: function createModel() {
-        return this.typeFor(this.typeKey).create();
+        var klass = this.typeFor(this.typeKey);
+        return (0, _safeCreate['default'])(klass);
       }
     }, {
       key: 'typeFor',
@@ -6730,7 +6737,7 @@ define('coalesce/session/query_cache', ['exports', 'module', '../namespace'], fu
 });
 
 
-define('coalesce/session/session', ['exports', 'module', '../collections/model_array', '../collections/model_set', '../error', '../model/model', '../utils/array_from', '../utils/copy', '../utils/evented', './collection_manager', './flush', './inverse_manager', './query'], function (exports, module, _collectionsModel_array, _collectionsModel_set, _error, _modelModel, _utilsArray_from, _utilsCopy, _utilsEvented, _collection_manager, _flush, _inverse_manager, _query) {
+define('coalesce/session/session', ['exports', 'module', '../collections/model_array', '../collections/model_set', '../error', '../model/model', '../utils/array_from', '../utils/copy', '../utils/evented', './collection_manager', './flush', './inverse_manager', './query', '../utils/safe_create'], function (exports, module, _collectionsModel_array, _collectionsModel_set, _error, _modelModel, _utilsArray_from, _utilsCopy, _utilsEvented, _collection_manager, _flush, _inverse_manager, _query, _utilsSafe_create) {
   'use strict';
 
   var _ModelArray = babelHelpers.interopRequireDefault(_collectionsModel_array);
@@ -6754,6 +6761,8 @@ define('coalesce/session/session', ['exports', 'module', '../collections/model_a
   var _InverseManager = babelHelpers.interopRequireDefault(_inverse_manager);
 
   var _Query = babelHelpers.interopRequireDefault(_query);
+
+  var _safeCreate = babelHelpers.interopRequireDefault(_utilsSafe_create);
 
   var uuid = 1;
 
@@ -6790,7 +6799,7 @@ define('coalesce/session/session', ['exports', 'module', '../collections/model_a
       key: 'build',
       value: function build(type, hash) {
         type = this._typeFor(type);
-        var model = type.create(hash || {});
+        var model = (0, _safeCreate['default'])(type, hash || {});
         return model;
       }
 
@@ -6902,7 +6911,7 @@ define('coalesce/session/session', ['exports', 'module', '../collections/model_a
         var dest = this.getModel(model);
 
         if (model.isNew && !dest) {
-          dest = model.constructor.create();
+          dest = (0, _safeCreate['default'])(model.constructor);
           // need to set the clientId for adoption
           dest.clientId = model.clientId;
           this.adopt(dest);
@@ -7248,7 +7257,7 @@ define('coalesce/session/session', ['exports', 'module', '../collections/model_a
     }, {
       key: 'newSession',
       value: function newSession() {
-        var child = this.constructor.create({
+        var child = (0, _safeCreate['default'])(this.constructor, {
           parent: this,
           context: this.context,
           idManager: this.idManager
@@ -8460,6 +8469,26 @@ define('coalesce/utils/parse_date', ['exports', 'module'], function (exports, mo
     }
 
     ;
+});
+
+
+define('coalesce/utils/safe_create', ['exports', 'module'], function (exports, module) {
+  'use strict';
+
+  module.exports = safeCreate;
+
+  function safeCreate(klass) {
+    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    // back-compat with ember
+    if (typeof klass.create === 'function') {
+      return klass.create.apply(klass, args);
+    } else {
+      return new (babelHelpers.bind.apply(klass, [null].concat(args)))();
+    }
+  }
 });
 
 //# sourceMappingURL=coalesce.prod.amd.map

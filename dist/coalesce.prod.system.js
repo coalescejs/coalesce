@@ -1421,7 +1421,7 @@ System.register('coalesce/context/base', ['../error', './config', './container']
             var config = this._configs[typeKey];
             if (!config) {
               config = this._configs[typeKey] = new Config(typeKey, this);
-              if (config.type) {
+              if (config.type && typeof config.type.reify === 'function') {
                 config.type.reify(this, typeKey);
               }
             }
@@ -1564,10 +1564,7 @@ System.register("coalesce/context/config", [], function (_export) {
               return this._type;
             }
             var Type = this._container.lookupFactory("model:" + this._typeKey);
-            if (Type) {
-              // Ember's container extends by default
-              Type = Type.parentType;
-            }
+
             return this._type = Type;
           }
         }]);
@@ -3450,8 +3447,7 @@ System.register('coalesce/model/model', ['../collections/model_set', '../error',
       HasMany = _has_many['default'];
     }],
     execute: function () {
-      Model = (function (_BaseClass) {
-        babelHelpers.inherits(Model, _BaseClass);
+      Model = (function () {
         babelHelpers.createClass(Model, [{
           key: 'id',
           get: function get() {
@@ -3518,7 +3514,6 @@ System.register('coalesce/model/model', ['../collections/model_set', '../error',
         function Model(fields) {
           babelHelpers.classCallCheck(this, Model);
 
-          babelHelpers.get(Object.getPrototypeOf(Model.prototype), 'constructor', this).call(this);
           this._meta = {
             id: null,
             clientId: null,
@@ -4069,6 +4064,15 @@ System.register('coalesce/model/model', ['../collections/model_set', '../error',
             return possibleRelationships[0];
           }
         }, {
+          key: 'reopen',
+          value: function reopen(props) {
+            for (var key in props) {
+              if (!props.hasOwnProperty(key)) return;
+              this.prototype[key] = props[key];
+            }
+            return this;
+          }
+        }, {
           key: 'ownFields',
           get: function get() {
             if (!this.hasOwnProperty('_ownFields')) {
@@ -4137,7 +4141,7 @@ System.register('coalesce/model/model', ['../collections/model_set', '../error',
           }
         }]);
         return Model;
-      })(BaseClass);
+      })();
 
       _export('default', Model);
 
@@ -4253,7 +4257,7 @@ System.register('coalesce/namespace', [], function (_export) {
       ajax = global.jQuery && global.jQuery.ajax;
       Backburner = global.Backburner;
       Coalesce = {
-        VERSION: '0.4.0+dev.12238b19',
+        VERSION: '0.4.0+dev.7dda63ff',
         Promise: Promise,
         ajax: ajax
       };
@@ -5692,7 +5696,7 @@ System.register('coalesce/serializers/id', ['./base'], function (_export) {
 });
 
 
-System.register('coalesce/serializers/model', ['../utils/inflector', './base'], function (_export) {
+System.register('coalesce/serializers/model', ['../utils/inflector', './base', '../utils/safe_create'], function (_export) {
 
   /**
     @namespace serializers
@@ -5700,7 +5704,7 @@ System.register('coalesce/serializers/model', ['../utils/inflector', './base'], 
   */
   'use strict';
 
-  var singularize, camelize, underscore, dasherize, Serializer, ModelSerializer;
+  var singularize, camelize, underscore, dasherize, Serializer, safeCreate, ModelSerializer;
   return {
     setters: [function (_utilsInflector) {
       singularize = _utilsInflector.singularize;
@@ -5709,6 +5713,8 @@ System.register('coalesce/serializers/model', ['../utils/inflector', './base'], 
       dasherize = _utilsInflector.dasherize;
     }, function (_base) {
       Serializer = _base['default'];
+    }, function (_utilsSafe_create) {
+      safeCreate = _utilsSafe_create['default'];
     }],
     execute: function () {
       ModelSerializer = (function (_Serializer) {
@@ -5872,7 +5878,8 @@ System.register('coalesce/serializers/model', ['../utils/inflector', './base'], 
         }, {
           key: 'createModel',
           value: function createModel() {
-            return this.typeFor(this.typeKey).create();
+            var klass = this.typeFor(this.typeKey);
+            return safeCreate(klass);
           }
         }, {
           key: 'typeFor',
@@ -7059,10 +7066,10 @@ System.register('coalesce/session/query_cache', ['../namespace'], function (_exp
 });
 
 
-System.register('coalesce/session/session', ['../collections/model_array', '../collections/model_set', '../error', '../model/model', '../utils/array_from', '../utils/copy', '../utils/evented', './collection_manager', './flush', './inverse_manager', './query'], function (_export) {
+System.register('coalesce/session/session', ['../collections/model_array', '../collections/model_set', '../error', '../model/model', '../utils/array_from', '../utils/copy', '../utils/evented', './collection_manager', './flush', './inverse_manager', './query', '../utils/safe_create'], function (_export) {
   'use strict';
 
-  var ModelArray, ModelSet, Error, Model, array_from, copy, evented, CollectionManager, Flush, InverseManager, Query, uuid, Session;
+  var ModelArray, ModelSet, Error, Model, array_from, copy, evented, CollectionManager, Flush, InverseManager, Query, safeCreate, uuid, Session;
   return {
     setters: [function (_collectionsModel_array) {
       ModelArray = _collectionsModel_array['default'];
@@ -7086,6 +7093,8 @@ System.register('coalesce/session/session', ['../collections/model_array', '../c
       InverseManager = _inverse_manager['default'];
     }, function (_query) {
       Query = _query['default'];
+    }, function (_utilsSafe_create) {
+      safeCreate = _utilsSafe_create['default'];
     }],
     execute: function () {
       uuid = 1;
@@ -7123,7 +7132,7 @@ System.register('coalesce/session/session', ['../collections/model_array', '../c
           key: 'build',
           value: function build(type, hash) {
             type = this._typeFor(type);
-            var model = type.create(hash || {});
+            var model = safeCreate(type, hash || {});
             return model;
           }
 
@@ -7235,7 +7244,7 @@ System.register('coalesce/session/session', ['../collections/model_array', '../c
             var dest = this.getModel(model);
 
             if (model.isNew && !dest) {
-              dest = model.constructor.create();
+              dest = safeCreate(model.constructor);
               // need to set the clientId for adoption
               dest.clientId = model.clientId;
               this.adopt(dest);
@@ -7581,7 +7590,7 @@ System.register('coalesce/session/session', ['../collections/model_array', '../c
         }, {
           key: 'newSession',
           value: function newSession() {
-            var child = this.constructor.create({
+            var child = safeCreate(this.constructor, {
               parent: this,
               context: this.context,
               idManager: this.idManager
@@ -8875,6 +8884,31 @@ System.register('coalesce/utils/parse_date', [], function (_export) {
             ;
         }
     };
+});
+
+
+System.register('coalesce/utils/safe_create', [], function (_export) {
+  'use strict';
+
+  _export('default', safeCreate);
+
+  function safeCreate(klass) {
+    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    // back-compat with ember
+    if (typeof klass.create === 'function') {
+      return klass.create.apply(klass, args);
+    } else {
+      return new (babelHelpers.bind.apply(klass, [null].concat(args)))();
+    }
+  }
+
+  return {
+    setters: [],
+    execute: function () {}
+  };
 });
 
 //# sourceMappingURL=coalesce.prod.system.map

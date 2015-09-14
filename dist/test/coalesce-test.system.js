@@ -63,10 +63,10 @@ System.register('coalesce-test/collections/model_array', ['coalesce/namespace', 
         });
         describe('removeObject', function () {
           return it('should remove based on `isEqual` equivalence', function () {
-            array.addObject(this.Post.create({
+            array.addObject(new this.Post({
               clientId: '1'
             }));
-            array.removeObject(this.Post.create({
+            array.removeObject(new this.Post({
               clientId: '1'
             }));
             return expect(array.length).to.eq(0);
@@ -79,19 +79,19 @@ System.register('coalesce-test/collections/model_array', ['coalesce/namespace', 
             return dest = new ModelArray();
           });
           it('should copy objects', function () {
-            array.addObjects([this.Post.create({
+            array.addObjects([new this.Post({
               clientId: '1'
-            }), this.Post.create({
+            }), new this.Post({
               clientId: '2'
             })]);
             array.copyTo(dest);
             return expect(dest.length).to.eq(2);
           });
           return it('should remove objects not present in source array', function () {
-            array.addObject(this.Post.create({
+            array.addObject(new this.Post({
               clientId: '1'
             }));
-            dest.addObject(this.Post.create({
+            dest.addObject(new this.Post({
               clientId: '2'
             }));
             array.copyTo(dest);
@@ -107,10 +107,10 @@ System.register('coalesce-test/collections/model_array', ['coalesce/namespace', 
                 return Coalesce.Promise.resolve(this);
               }
             });
-            array.pushObject(this.Post.create({
+            array.pushObject(new this.Post({
               id: "1"
             }));
-            return array.pushObject(this.Post.create({
+            return array.pushObject(new this.Post({
               id: "2"
             }));
           });
@@ -165,12 +165,12 @@ System.register('coalesce-test/collections/model_set', ['coalesce/model/model', 
         });
         it('removes based on isEqual', function () {
           var postA, postB;
-          postA = this.Post.create({
+          postA = new this.Post({
             id: "1",
             title: "one",
             clientId: "post1"
           });
-          postB = this.Post.create({
+          postB = new this.Post({
             id: "1",
             title: "one",
             clientId: "post1"
@@ -184,12 +184,12 @@ System.register('coalesce-test/collections/model_set', ['coalesce/model/model', 
         });
         it('adds based on isEqual and always overwrites', function () {
           var postA, postB;
-          postA = this.Post.create({
+          postA = new this.Post({
             id: "1",
             title: "one",
             clientId: "post1"
           });
-          postB = this.Post.create({
+          postB = new this.Post({
             id: "1",
             title: "one",
             clientId: "post1"
@@ -204,12 +204,12 @@ System.register('coalesce-test/collections/model_set', ['coalesce/model/model', 
         });
         it('copies', function () {
           var copy, copyA, copyB, postA, postB;
-          postA = this.Post.create({
+          postA = new this.Post({
             id: "1",
             title: "one",
             clientId: "post1"
           });
-          postB = this.Post.create({
+          postB = new this.Post({
             id: "2",
             title: "two",
             clientId: "post2"
@@ -225,12 +225,12 @@ System.register('coalesce-test/collections/model_set', ['coalesce/model/model', 
         });
         it('deep copies', function () {
           var copy, copyA, copyB, postA, postB;
-          postA = this.Post.create({
+          postA = new this.Post({
             id: "1",
             title: "one",
             clientId: "post1"
           });
-          postB = this.Post.create({
+          postB = new this.Post({
             id: "2",
             title: "two",
             clientId: "post2"
@@ -248,7 +248,7 @@ System.register('coalesce-test/collections/model_set', ['coalesce/model/model', 
         });
         return context('with model', function () {
           beforeEach(function () {
-            this.post = this.Post.create({
+            this.post = new this.Post({
               title: 'test',
               id: "1",
               clientId: "post1"
@@ -263,7 +263,7 @@ System.register('coalesce-test/collections/model_set', ['coalesce/model/model', 
           });
           return it('finds via getModel with alternate model', function () {
             var post;
-            post = this.Post.create({
+            post = new this.Post({
               title: 'some other',
               id: "1",
               clientId: "post1"
@@ -529,7 +529,7 @@ System.register('coalesce-test/id_manager', ['coalesce/model/model', 'coalesce/i
         return describe('.reifyClientId', function () {
           it('sets clientId on new record', function () {
             var post;
-            post = this.Post.create({
+            post = new this.Post({
               title: 'new post'
             });
             expect(post.clientId).to.be["null"];
@@ -538,14 +538,14 @@ System.register('coalesce-test/id_manager', ['coalesce/model/model', 'coalesce/i
           });
           return it('should set existing clientId on detached model', function () {
             var detached, post;
-            post = this.Post.create({
+            post = new this.Post({
               title: 'new post',
               id: "1"
             });
             expect(post.clientId).to.be["null"];
             this.subject.reifyClientId(post);
             expect(post.clientId).to.not.be["null"];
-            detached = this.Post.create({
+            detached = new this.Post({
               title: 'different instance',
               id: "1"
             });
@@ -674,14 +674,14 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         it('keeps modified fields from both versions', function () {
           var post;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'titleA',
             body: 'bodyA',
             createdAt: new Date(1985, 7, 22)
           }));
           post.title = 'titleB';
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'titleA',
             body: 'bodyB',
@@ -692,13 +692,13 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
           expect(post.body).to.eq('bodyB');
           expect(post.createdAt).to.be["null"];
           post.comments.addObject(this.session.create('comment'));
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'titleB',
             body: 'bodyB',
-            user: this.User.create({
+            user: new this.User({
               id: '2',
-              posts: [this.Post.create({
+              posts: [new this.Post({
                 id: '1'
               })]
             })
@@ -709,14 +709,14 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         it('keeps ours if same field modified in both versions', function () {
           var post;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'titleA',
             body: 'bodyA'
           }));
           post.title = 'titleB';
           post.body = 'bodyB';
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'titleC',
             body: 'bodyC',
@@ -725,16 +725,16 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
           }));
           expect(post.title).to.eq('titleB');
           expect(post.body).to.eq('bodyB');
-          post.comments.addObject(this.Comment.create());
-          post.user = this.User.create();
-          this.session.merge(this.Post.create({
+          post.comments.addObject(new this.Comment());
+          post.user = new this.User();
+          this.session.merge(new this.Post({
             id: '1',
             title: 'titleB',
             body: 'bodyB',
-            user: this.User.create({
+            user: new this.User({
               id: '2'
             }),
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '3'
             })]
           }));
@@ -744,22 +744,22 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         it('keeps ours if only modified in ours', function () {
           var newData, post;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'titleA',
             body: 'bodyA',
-            user: this.User.create({
+            user: new this.User({
               id: '2',
-              posts: [this.Post.create({
+              posts: [new this.Post({
                 id: '1'
               })]
             }),
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '3',
-              user: this.User.create({
+              user: new this.User({
                 id: '2'
               }),
-              post: this.Post.create({
+              post: new this.Post({
                 id: '1'
               })
             })]
@@ -768,22 +768,22 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
             post: post
           });
           expect(post.comments.length).to.eq(2);
-          newData = this.Post.create({
+          newData = new this.Post({
             id: '1',
             title: 'titleA',
             body: 'bodyA',
-            user: this.User.create({
+            user: new this.User({
               id: '2',
-              posts: [this.Post.create({
+              posts: [new this.Post({
                 id: '1'
               })]
             }),
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '3',
-              user: this.User.create({
+              user: new this.User({
                 id: '2'
               }),
-              post: this.Post.create({
+              post: new this.Post({
                 id: '1'
               })
             })]
@@ -794,25 +794,25 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         it('still merges model if removed from belongsTo in ours', function () {
           var post, user;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'herp',
-            user: this.User.create({
+            user: new this.User({
               id: '2',
-              posts: [this.Post.create({
+              posts: [new this.Post({
                 id: '1'
               })]
             })
           }));
           user = post.user;
           post.user = null;
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'herp',
-            user: this.User.create({
+            user: new this.User({
               id: '2',
               name: 'grodon',
-              posts: [this.Post.create({
+              posts: [new this.Post({
                 id: '1'
               })]
             })
@@ -822,13 +822,13 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         it('still merges model if removed from hasMany in ours', function () {
           var comment, post;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'herp',
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '2',
               body: 'herp',
-              post: this.Post.create({
+              post: new this.Post({
                 id: '1'
               })
             })]
@@ -836,13 +836,13 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
           comment = post.comments[0];
           post.comments.clear();
           expect(post.comments.length).to.eq(0);
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'herp',
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '2',
               body: 'derp',
-              post: this.Post.create({
+              post: new this.Post({
                 id: '1'
               })
             })]
@@ -852,13 +852,13 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         it('still merges model if sibling added to hasMany', function () {
           var comment, post;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'herp',
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '2',
               body: 'herp',
-              post: this.Post.create({
+              post: new this.Post({
                 id: '1'
               })
             })]
@@ -867,13 +867,13 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
             body: 'derp'
           }));
           comment = post.comments[0];
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'herp',
-            comments: [this.Comment.create({
+            comments: [new this.Comment({
               id: '2',
               body: 'derp?',
-              post: this.Post.create({
+              post: new this.Post({
                 id: '1'
               })
             })]
@@ -883,17 +883,17 @@ System.register('coalesce-test/merge_strategies/per_field', ['coalesce/merge/per
         });
         return it('will preserve local updates after multiple merges', function () {
           var post;
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: '1',
             title: 'A'
           }));
           post.title = 'B';
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'C'
           }));
           expect(post.title).to.eq('B');
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: '1',
             title: 'C'
           }));
@@ -1401,14 +1401,14 @@ System.register('coalesce-test/model/relationships', ['../support/configs', 'coa
             var comment, post, unloadedComment;
             post = this.session.merge(this.session.build('post', {
               id: 1,
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: 2
               })]
             }));
             unloadedComment = post.comments[0];
             comment = this.session.merge(this.session.build('comment', {
               id: 2,
-              post: this.Post.create({
+              post: new this.Post({
                 id: 1
               })
             }));
@@ -1429,13 +1429,13 @@ System.register('coalesce-test/model/relationships', ['../support/configs', 'coa
           });
           it('belongsTo adds object to session', function () {
             var comment, post;
-            post = this.session.merge(this.Post.create({
+            post = this.session.merge(new this.Post({
               id: '1'
             }));
-            comment = this.session.merge(this.Comment.create({
+            comment = this.session.merge(new this.Comment({
               id: '2'
             }));
-            comment.post = this.Post.create({
+            comment.post = new this.Post({
               id: '1'
             });
             return expect(comment.post).to.eq(post);
@@ -1471,15 +1471,15 @@ System.register('coalesce-test/model/relationships', ['../support/configs', 'coa
           });
           it('hasMany adds to session', function () {
             var comment, post;
-            post = this.session.merge(this.Post.create({
+            post = this.session.merge(new this.Post({
               id: '1',
               comments: []
             }));
-            comment = this.session.merge(this.Comment.create({
+            comment = this.session.merge(new this.Comment({
               id: '2',
               post: null
             }));
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: '2'
             }));
             return expect(post.comments[0]).to.eq(comment);
@@ -1487,7 +1487,7 @@ System.register('coalesce-test/model/relationships', ['../support/configs', 'coa
           return it('hasMany content can be set directly', function () {
             var post;
             post = this.session.create('post', {
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: '2'
               })]
             });
@@ -1849,12 +1849,12 @@ System.register('coalesce-test/rest/rest.acceptance', ['coalesce/model/model', '
                 }
               };
             });
-            post = this.session.merge(this.Post.create({
+            post = this.session.merge(new this.Post({
               id: "1",
               title: "brogrammer's guide to beer pong",
               comments: []
             }));
-            this.session.merge(this.Comment.create({
+            this.session.merge(new this.Comment({
               id: "2",
               message: "yo",
               post: post
@@ -1982,16 +1982,16 @@ System.register('coalesce-test/rest/rest.acceptance', ['coalesce/model/model', '
           return it('deletes root', function () {
             var user;
             this.server.r('DELETE:/users/1', {});
-            this.User.create({
+            new this.User({
               id: '1'
             });
-            user = this.session.merge(this.User.create({
+            user = this.session.merge(new this.User({
               id: '1',
               name: 'abby',
-              profile: this.Profile.create({
+              profile: new this.Profile({
                 id: '2',
                 bio: 'asd',
-                tags: [this.Tag.create({
+                tags: [new this.Tag({
                   id: '3',
                   name: 'java'
                 })]
@@ -2536,7 +2536,7 @@ System.register('coalesce-test/rest/rest.concurrent', ['coalesce/namespace', 'co
               }
             };
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'twerkin',
             submitted: false
@@ -2572,7 +2572,7 @@ System.register('coalesce-test/rest/rest.concurrent', ['coalesce/namespace', 'co
               }
             };
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'twerkin',
             submitted: false
@@ -2607,7 +2607,7 @@ System.register('coalesce-test/rest/rest.concurrent', ['coalesce/namespace', 'co
               };
             });
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'twerkin',
             submitted: false
@@ -2653,7 +2653,7 @@ System.register('coalesce-test/rest/rest.concurrent', ['coalesce/namespace', 'co
               };
             })(this));
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'twerkin',
             submitted: false,
@@ -2694,7 +2694,7 @@ System.register('coalesce-test/rest/rest.concurrent', ['coalesce/namespace', 'co
               }
             };
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'twerkin',
             submitted: false
@@ -2763,7 +2763,7 @@ System.register('coalesce-test/rest/rest.errors', ['coalesce/rest/context', 'coa
                 }
               });
             });
-            this.session.merge(this.Post.create({
+            this.session.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -2790,7 +2790,7 @@ System.register('coalesce-test/rest/rest.errors', ['coalesce/rest/context', 'coa
                 }
               });
             });
-            post = this.session.merge(this.Post.create({
+            post = this.session.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -2820,7 +2820,7 @@ System.register('coalesce-test/rest/rest.errors', ['coalesce/rest/context', 'coa
                 }
               });
             });
-            this.session.merge(this.Post.create({
+            this.session.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -2850,7 +2850,7 @@ System.register('coalesce-test/rest/rest.errors', ['coalesce/rest/context', 'coa
                 }
               });
             });
-            this.session.merge(this.Post.create({
+            this.session.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -2882,7 +2882,7 @@ System.register('coalesce-test/rest/rest.errors', ['coalesce/rest/context', 'coa
                 }
               });
             });
-            this.session.merge(this.Post.create({
+            this.session.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -2908,7 +2908,7 @@ System.register('coalesce-test/rest/rest.errors', ['coalesce/rest/context', 'coa
                 }
               };
             });
-            this.session.merge(this.Post.create({
+            this.session.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -3371,7 +3371,7 @@ System.register('coalesce-test/rest/rest.meta', ['coalesce/rest/context', '../su
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -3400,7 +3400,7 @@ System.register('coalesce-test/rest/rest.meta', ['coalesce/rest/context', '../su
               }
             };
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -3437,7 +3437,7 @@ System.register('coalesce-test/rest/rest.meta', ['coalesce/rest/context', '../su
               traffic: 'heavy'
             }
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -3464,7 +3464,7 @@ System.register('coalesce-test/rest/rest.meta', ['coalesce/rest/context', '../su
               title: 'something new'
             }
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -3694,7 +3694,7 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'parent',
             comments: []
@@ -3727,7 +3727,7 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
               }
             };
           });
-          post = this.Post.create({
+          post = new this.Post({
             id: 1
           });
           comment = this.session.create('comment', {
@@ -3744,7 +3744,7 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
         });
         it('create followed by delete does not hit server', function () {
           var comment;
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'parent'
           }));
@@ -3793,12 +3793,12 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
               }
             };
           });
-          post = this.Post.create({
+          post = new this.Post({
             id: "1",
             title: 'parent',
             comments: []
           });
-          post.comments.addObject(this.Comment.create({
+          post.comments.addObject(new this.Comment({
             id: "2",
             body: 'child',
             post: post
@@ -3867,12 +3867,12 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
             }
           });
           this.server.r('DELETE:/comments/2', {});
-          post = this.Post.create({
+          post = new this.Post({
             id: "1",
             title: 'parent',
             comments: []
           });
-          post.comments.addObject(this.Comment.create({
+          post.comments.addObject(new this.Comment({
             id: "2",
             body: 'child',
             post: post
@@ -3901,12 +3901,12 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
             }
           });
           this.server.r('DELETE:/comments/2', {});
-          post = this.Post.create({
+          post = new this.Post({
             id: "1",
             title: 'parent',
             comments: []
           });
-          post.comments.addObject(this.Comment.create({
+          post.comments.addObject(new this.Comment({
             id: "2",
             body: 'child',
             post: post
@@ -3933,12 +3933,12 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
           var post;
           this.server.r('DELETE:/posts/1', {});
           this.server.r('DELETE:/comments/2', {});
-          post = this.Post.create({
+          post = new this.Post({
             id: "1",
             title: 'parent',
             comments: []
           });
-          post.comments.addObject(this.Comment.create({
+          post.comments.addObject(new this.Comment({
             id: "2",
             body: 'child',
             post: post
@@ -4134,12 +4134,12 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
                 }
               };
             });
-            post = this.Post.create({
+            post = new this.Post({
               id: "1",
               title: 'parent',
               comments: []
             });
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "2",
               body: 'child',
               post: post
@@ -4177,17 +4177,17 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
                 }
               };
             });
-            post = this.Post.create({
+            post = new this.Post({
               id: "1",
               title: 'parent',
               comments: []
             });
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "2",
               body: 'child1',
               post: post
             }));
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "3",
               body: 'child2',
               post: post
@@ -4242,17 +4242,17 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
           });
           it('deletes multiple children in multiple flushes', function () {
             var post;
-            post = this.Post.create({
+            post = new this.Post({
               id: "1",
               title: 'parent',
               comments: []
             });
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "2",
               body: 'thing 1',
               post: post
             }));
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "3",
               body: 'thing 2',
               post: post
@@ -4292,12 +4292,12 @@ System.register('coalesce-test/rest/rest.one_to_many', ['coalesce/rest/context',
           return it('deletes parent and child', function () {
             var post;
             this.server.r('DELETE:/posts/1', {});
-            post = this.Post.create({
+            post = new this.Post({
               id: "1",
               title: 'parent',
               comments: []
             });
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "2",
               body: 'child'
             }));
@@ -4404,11 +4404,11 @@ System.register('coalesce-test/rest/rest.one_to_one', ['coalesce/rest/context', 
         it('deletes one side', function () {
           var profile;
           this.server.r('DELETE:/users/2', {});
-          profile = this.Profile.create({
+          profile = new this.Profile({
             id: "1",
             title: 'parent'
           });
-          profile.user = this.User.create({
+          profile.user = new this.User({
             id: "2",
             name: 'wes',
             profile: profile
@@ -4431,11 +4431,11 @@ System.register('coalesce-test/rest/rest.one_to_one', ['coalesce/rest/context', 
           var profile;
           this.server.r('DELETE:/profiles/1', {});
           this.server.r('DELETE:/users/2', {});
-          profile = this.Profile.create({
+          profile = new this.Profile({
             id: "1",
             title: 'parent'
           });
-          profile.user = this.User.create({
+          profile.user = new this.User({
             id: "2",
             name: 'wes',
             profile: profile
@@ -4536,7 +4536,7 @@ System.register('coalesce-test/rest/rest.one_to_one', ['coalesce/rest/context', 
                 }
               };
             });
-            profile = this.session.merge(this.Profile.create({
+            profile = this.session.merge(new this.Profile({
               id: "1",
               title: 'parent'
             }));
@@ -4586,11 +4586,11 @@ System.register('coalesce-test/rest/rest.one_to_one', ['coalesce/rest/context', 
           return it('deletes parent', function () {
             var profile;
             this.server.r('DELETE:/profiles/1', {});
-            profile = this.Profile.create({
+            profile = new this.Profile({
               id: "1",
               title: 'parent'
             });
-            profile.user = this.User.create({
+            profile.user = new this.User({
               id: "2",
               name: 'wes'
             });
@@ -4757,7 +4757,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4808,7 +4808,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4850,7 +4850,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4880,7 +4880,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4908,7 +4908,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4937,7 +4937,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4966,7 +4966,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -4997,7 +4997,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -5027,7 +5027,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -5059,7 +5059,7 @@ System.register('coalesce-test/rest/rest.rpc', ['coalesce/model/model', 'coalesc
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test',
             submitted: false
@@ -5221,7 +5221,7 @@ System.register('coalesce-test/rest/rest.simple', ['coalesce/rest/context', 'coa
               }
             };
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -5246,7 +5246,7 @@ System.register('coalesce-test/rest/rest.simple', ['coalesce/rest/context', 'coa
               }
             };
           });
-          post = this.session.merge(this.Post.create({
+          post = this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -5278,7 +5278,7 @@ System.register('coalesce-test/rest/rest.simple', ['coalesce/rest/context', 'coa
         });
         it('deletes', function () {
           this.server.r('DELETE:/posts/1', {});
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -5297,11 +5297,11 @@ System.register('coalesce-test/rest/rest.simple', ['coalesce/rest/context', 'coa
         it('deletes multiple times in multiple flushes', function () {
           var post1, post2;
           this.server.r('DELETE:/posts/1', {});
-          post1 = this.session.merge(this.Post.create({
+          post1 = this.session.merge(new this.Post({
             id: "1",
             title: 'thing 1'
           }));
-          post2 = this.session.merge(this.Post.create({
+          post2 = this.session.merge(new this.Post({
             id: "2",
             title: 'thing 2'
           }));
@@ -5379,7 +5379,7 @@ System.register('coalesce-test/rest/rest.simple', ['coalesce/rest/context', 'coa
               title: 'something new'
             }
           });
-          this.session.merge(this.Post.create({
+          this.session.merge(new this.Post({
             id: "1",
             title: 'test'
           }));
@@ -6152,11 +6152,11 @@ System.register('coalesce-test/session/session.hierarchy', ['coalesce/namespace'
             return this.context.newSession();
           });
           beforeEach(function () {
-            this.sessionA.merge(this.Post.create({
+            this.sessionA.merge(new this.Post({
               id: "1",
               title: 'original'
             }));
-            return this.sessionB.merge(this.Post.create({
+            return this.sessionB.merge(new this.Post({
               id: "1",
               title: 'original'
             }));
@@ -6187,7 +6187,7 @@ System.register('coalesce-test/session/session.hierarchy', ['coalesce/namespace'
             return this.parent.newSession();
           });
           it('.flushIntoParent flushes updates immediately', function () {
-            this.parent.merge(this.Post.create({
+            this.parent.merge(new this.Post({
               id: "1",
               title: 'original'
             }));
@@ -6205,7 +6205,7 @@ System.register('coalesce-test/session/session.hierarchy', ['coalesce/namespace'
             })(this));
           });
           it('.flush waits for success before updating parent', function () {
-            this.parent.merge(this.Post.create({
+            this.parent.merge(new this.Post({
               id: "1",
               title: 'original'
             }));
@@ -6226,12 +6226,12 @@ System.register('coalesce-test/session/session.hierarchy', ['coalesce/namespace'
           });
           it('does not mutate parent session relationships', function () {
             var post;
-            post = this.parent.merge(this.Post.create({
+            post = this.parent.merge(new this.Post({
               id: "1",
               title: 'parent',
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: '2',
-                post: this.Post.create({
+                post: new this.Post({
                   id: "1"
                 })
               })]
@@ -6242,12 +6242,12 @@ System.register('coalesce-test/session/session.hierarchy', ['coalesce/namespace'
           });
           return it('adds hasMany correctly', function () {
             var parentPost, post;
-            parentPost = this.parent.merge(this.Post.create({
+            parentPost = this.parent.merge(new this.Post({
               id: "1",
               title: 'parent',
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: '2',
-                post: this.Post.create({
+                post: new this.Post({
                   id: "1"
                 })
               })]
@@ -6358,7 +6358,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
         describe('.add', function () {
           it('works with lazy models', function () {
             var added, post;
-            post = this.Post.create({
+            post = new this.Post({
               id: "1"
             });
             added = this.subject.add(post);
@@ -6366,18 +6366,18 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           it('reuses detached model', function () {
             var post;
-            post = this.Post.create({
+            post = new this.Post({
               title: 'test'
             });
             return expect(this.subject.add(post)).to.eq(post);
           });
           return it('overwrites unloaded models', function () {
             var lazy, post;
-            lazy = this.Post.create({
+            lazy = new this.Post({
               id: '1'
             });
             this.subject.add(lazy);
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: '1',
               title: 'post'
             }));
@@ -6390,7 +6390,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
         describe('.invalidate', function () {
           return it('causes existing model to be reloaded', function () {
             var hit, post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: '1',
               title: 'refresh me plz'
             }));
@@ -6412,7 +6412,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
             var res;
             this.Adapter.prototype.query = (function (_this) {
               return function () {
-                return Coalesce.Promise.resolve([_this.Post.create({
+                return Coalesce.Promise.resolve([new _this.Post({
                   id: 1
                 })]);
               };
@@ -6427,7 +6427,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
             this.Adapter.prototype.query = (function (_this) {
               return function () {
                 hit += 1;
-                return Coalesce.Promise.resolve([_this.Post.create({
+                return Coalesce.Promise.resolve([new _this.Post({
                   id: 1
                 })]);
               };
@@ -6456,7 +6456,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
               this.Adapter.prototype.query = (function (_this) {
                 return function () {
                   hit += 1;
-                  return Coalesce.Promise.resolve([_this.Post.create({
+                  return Coalesce.Promise.resolve([new _this.Post({
                     id: 1
                   })]);
                 };
@@ -6476,7 +6476,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
             this.Adapter.prototype.query = (function (_this) {
               return function () {
                 hit += 1;
-                return Coalesce.Promise.resolve([_this.Post.create({
+                return Coalesce.Promise.resolve([new _this.Post({
                   id: 1
                 })]);
               };
@@ -6498,7 +6498,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
             this.Adapter.prototype.query = (function (_this) {
               return function () {
                 hit += 1;
-                return Coalesce.Promise.resolve([_this.Post.create({
+                return Coalesce.Promise.resolve([new _this.Post({
                   id: 1
                 })]);
               };
@@ -6516,7 +6516,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
         describe('.merge', function () {
           it('reuses detached model', function () {
             var post;
-            post = this.Post.create({
+            post = new this.Post({
               id: "1",
               title: 'test'
             });
@@ -6532,7 +6532,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
             this.subject.on('didMerge', function () {
               return didMergeHit = true;
             });
-            post = this.Post.create({
+            post = new this.Post({
               id: "1",
               title: 'test'
             });
@@ -6542,18 +6542,18 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           it('handles merging detached model with hasMany child already in session', function () {
             var comment, post;
-            comment = this.subject.merge(this.Comment.create({
+            comment = this.subject.merge(new this.Comment({
               id: "1",
               body: "obscurity",
-              post: this.Post.create({
+              post: new this.Post({
                 id: "2"
               })
             }));
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "2",
               comments: []
             }));
-            post.comments.addObject(this.Comment.create({
+            post.comments.addObject(new this.Comment({
               id: "1",
               body: "obscurity"
             }));
@@ -6561,18 +6561,18 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           it('handles merging detached model with belongsTo child already in session', function () {
             var comment, post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "2",
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: "1"
               })]
             }));
-            comment = this.subject.merge(this.Comment.create({
+            comment = this.subject.merge(new this.Comment({
               id: "1",
               body: "obscurity",
-              post: this.Post.create({
+              post: new this.Post({
                 id: "2",
-                comments: [this.Comment.create({
+                comments: [new this.Comment({
                   id: "1"
                 })]
               })
@@ -6581,14 +6581,14 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           it('handles merging detached model with lazy belongsTo reference', function () {
             var comment, post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "2",
               comments: []
             }));
-            comment = this.subject.merge(this.Comment.create({
+            comment = this.subject.merge(new this.Comment({
               id: "1",
               body: "obscurity",
-              post: this.Post.create({
+              post: new this.Post({
                 id: "2"
               })
             }));
@@ -6597,14 +6597,14 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           it('handles merging detached model with lazy hasMany reference', function () {
             var comment, post;
-            comment = this.subject.merge(this.Comment.create({
+            comment = this.subject.merge(new this.Comment({
               id: "1",
               body: "obscurity",
               post: null
             }));
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "2",
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: "1"
               })]
             }));
@@ -6613,16 +6613,16 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           return it('reuses existing hasMany arrays', function () {
             var comments, post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "2",
               comments: []
             }));
             comments = post.comments;
-            this.subject.merge(this.Post.create({
+            this.subject.merge(new this.Post({
               id: "2",
-              comments: [this.Comment.create({
+              comments: [new this.Comment({
                 id: "1",
-                post: this.Post.create({
+                post: new this.Post({
                   id: "2"
                 })
               })]
@@ -6633,7 +6633,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
         describe('.markClean', function () {
           it('makes models no longer dirty', function () {
             var post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -6644,7 +6644,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           return it('works with already clean models', function () {
             var post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -6656,7 +6656,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
         describe('.touch', function () {
           return it('makes the model dirty', function () {
             var post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -6683,7 +6683,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           it('can update while flush is pending', function () {
             var f1, post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "1",
               title: 'original'
             }));
@@ -6710,7 +6710,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
                   return willFlushHit = true;
                 };
               })(this));
-              post = this.subject.merge(this.Post.create({
+              post = this.subject.merge(new this.Post({
                 id: "1",
                 title: 'original'
               }));
@@ -6726,7 +6726,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
         describe('.isDirty', function () {
           it('is true when models are dirty', function () {
             var post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -6736,7 +6736,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           return it('becomes false after successful flush', function () {
             var post;
-            post = this.subject.merge(this.Post.create({
+            post = this.subject.merge(new this.Post({
               id: "1",
               title: 'test'
             }));
@@ -6774,10 +6774,10 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
                   expect(query).to.eql({
                     q: "herpin"
                   });
-                  return Coalesce.Promise.resolve([_this.Post.create({
+                  return Coalesce.Promise.resolve([new _this.Post({
                     id: "1",
                     title: 'herp'
-                  }), _this.Post.create({
+                  }), new _this.Post({
                     id: "2",
                     title: 'derp'
                   })]);
@@ -6794,7 +6794,7 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           });
           describe('.load', function () {
             return it('loads from parent session', function () {
-              this.parent.merge(this.Post.create({
+              this.parent.merge(new this.Post({
                 id: "1",
                 title: "flash gordon"
               }));
@@ -6809,9 +6809,9 @@ System.register('coalesce-test/session/session', ['coalesce/namespace', 'coalesc
           return describe('.add', function () {
             return it('includes lazy relationships', function () {
               var comment, parentComment;
-              parentComment = this.parent.merge(this.Comment.create({
+              parentComment = this.parent.merge(new this.Comment({
                 id: "1",
-                post: this.Post.create({
+                post: new this.Post({
                   id: "2"
                 })
               }));
