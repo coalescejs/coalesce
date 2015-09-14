@@ -38,7 +38,7 @@ describe "rest with simple model", ->
   it 'updates', ->
     @server.r 'PUT:/posts/1', -> posts: {id: 1, title: 'updated'}
 
-    @session.merge @Post.create(id: "1", title: 'test')
+    @session.merge new @Post(id: "1", title: 'test')
 
     @session.load('post', 1).then (post) =>
       expect(post.title).to.eq('test')
@@ -51,7 +51,7 @@ describe "rest with simple model", ->
   it 'updates multiple times', ->
     @server.r 'PUT:/posts/1', -> posts: {id: 1, title: 'updated'}
 
-    post = @session.merge @Post.create(id: "1", title: 'test')
+    post = @session.merge new @Post(id: "1", title: 'test')
 
     expect(post.title).to.eq('test')
     post.title = 'updated'
@@ -74,7 +74,7 @@ describe "rest with simple model", ->
   it 'deletes', ->
     @server.r 'DELETE:/posts/1', {}
 
-    @session.merge @Post.create(id: "1", title: 'test')
+    @session.merge new @Post(id: "1", title: 'test')
 
     @session.load('post', 1).then (post) =>
       expect(post.id).to.eq("1")
@@ -88,8 +88,8 @@ describe "rest with simple model", ->
   it 'deletes multiple times in multiple flushes', ->
     @server.r 'DELETE:/posts/1', {}
 
-    post1 = @session.merge @Post.create(id: "1", title: 'thing 1')
-    post2 = @session.merge @Post.create(id: "2", title: 'thing 2')
+    post1 = @session.merge new @Post(id: "1", title: 'thing 1')
+    post2 = @session.merge new @Post(id: "2", title: 'thing 2')
 
     @session.deleteModel post1
 
@@ -145,7 +145,7 @@ describe "rest with simple model", ->
   it 'refreshes', ->
     @server.r 'GET:/posts/1', posts: {id: 1, title: 'something new'}
 
-    @session.merge @Post.create(id: "1", title: 'test')
+    @session.merge new @Post(id: "1", title: 'test')
 
     @session.load(@Post, 1).then (post) =>
       expect(post.title).to.eq('test')

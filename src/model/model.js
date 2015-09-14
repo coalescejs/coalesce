@@ -11,7 +11,7 @@ import BelongsTo  from './belongs_to';
 import Field  from './field';
 import HasMany  from './has_many';
 
-export default class Model extends BaseClass {
+export default class Model {
 
   get id() {
     return getMeta.call(this, 'id');
@@ -69,7 +69,6 @@ export default class Model extends BaseClass {
   }
   
   constructor(fields) {
-    super();
     this._meta = {
       id: null,
       clientId: null,
@@ -623,6 +622,14 @@ export default class Model extends BaseClass {
     }
 
     return possibleRelationships[0];
+  }
+  
+  static reopen(props) {
+    for(var key in props) { 
+      if(!props.hasOwnProperty(key)) return;
+      this.prototype[key] = props[key];
+    }
+    return this;
   }
 }
 

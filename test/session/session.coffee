@@ -61,19 +61,19 @@ describe "Session", ->
   describe '.add', ->
 
     it 'works with lazy models', ->
-      post = @Post.create id: "1"
+      post = new @Post(id: "1")
       added = @subject.add(post)
       expect(added.session).to.eq(@subject)
 
     it 'reuses detached model', ->
-      post = @Post.create(title: 'test')
+      post = new @Post(title: 'test')
       expect(@subject.add(post)).to.eq(post)
 
 
     it 'overwrites unloaded models', ->
-      lazy = @Post.create id: '1'
+      lazy = new @Post(id: '1')
       @subject.add(lazy)
-      post = @subject.merge(@Post.create(id: '1', title: 'post'))
+      post = @subject.merge(new @Post(id: '1', title: 'post'))
       @subject.add(post)
       expect(@subject.getModel(lazy)).to.eq(post)
       @subject.add(lazy)
@@ -83,7 +83,7 @@ describe "Session", ->
   describe '.invalidate', ->
 
     it 'causes existing model to be reloaded', ->
-      post = @subject.merge @Post.create id: '1', title: 'refresh me plz'
+      post = @subject.merge new @Post(id: '1', title: 'refresh me plz')
       hit = false
       @Adapter.prototype.load = (model) ->
         expect(model).to.eq(post)
@@ -99,7 +99,7 @@ describe "Session", ->
     
     it 'returns a Query', ->
       @Adapter.prototype.query = =>
-        Coalesce.Promise.resolve([@Post.create id: 1])
+        Coalesce.Promise.resolve([new @Post id: 1])
         
       res = @subject.query(@Post).then (posts) ->
         expect(posts).to.be.an.instanceOf(Query)
@@ -108,7 +108,7 @@ describe "Session", ->
       hit = 0
       @Adapter.prototype.query = =>
         hit += 1
-        Coalesce.Promise.resolve([@Post.create id: 1])
+        Coalesce.Promise.resolve([new @Post id: 1])
         
       res = @subject.query(@Post).then (posts) =>
         @subject.query(@Post).then ->
@@ -127,7 +127,7 @@ describe "Session", ->
         hit = 0
         @Adapter.prototype.query = =>
           hit += 1
-          Coalesce.Promise.resolve([@Post.create id: 1])
+          Coalesce.Promise.resolve([new @Post id: 1])
           
         res = @subject.query(@Post).then (posts) ->
           @subject.refreshQuery(posts).then ->
@@ -139,7 +139,7 @@ describe "Session", ->
       hit = 0
       @Adapter.prototype.query = =>
         hit += 1
-        Coalesce.Promise.resolve([@Post.create id: 1])
+        Coalesce.Promise.resolve([new @Post id: 1])
         
       res = @subject.query(@Post).then (posts) =>
         @subject.invalidateQuery(posts)
@@ -152,7 +152,7 @@ describe "Session", ->
       hit = 0
       @Adapter.prototype.query = =>
         hit += 1
-        Coalesce.Promise.resolve([@Post.create id: 1])
+        Coalesce.Promise.resolve([new @Post id: 1])
         
       res = @subject.query(@Post).then (posts) =>
         @subject.invalidateQueries(@Post)
@@ -162,7 +162,7 @@ describe "Session", ->
   describe '.merge', ->
 
     it 'reuses detached model', ->
-      post = @Post.create(id: "1", title: 'test')
+      post = new @Post(id: "1", title: 'test')
       expect(@subject.merge(post)).to.eq(post)
       
     
@@ -174,56 +174,56 @@ describe "Session", ->
       @subject.on 'didMerge', ->
         didMergeHit = true
         
-      post = @Post.create(id: "1", title: 'test')
+      post = new @Post(id: "1", title: 'test')
       @subject.merge(post)
       expect(willMergeHit).to.be.true
       expect(didMergeHit).to.be.true
 
 
     it 'handles merging detached model with hasMany child already in session', ->
-      comment = @subject.merge @Comment.create(id: "1", body: "obscurity", post: @Post.create(id: "2"))
-      post = @subject.merge @Post.create(id: "2", comments: [])
-      post.comments.addObject(@Comment.create(id: "1", body: "obscurity"))
+      comment = @subject.merge new @Comment(id: "1", body: "obscurity", post: new @Post(id: "2"))
+      post = @subject.merge new @Post(id: "2", comments: [])
+      post.comments.addObject(new @Comment(id: "1", body: "obscurity"))
       expect(post.comments[0]).to.eq(comment)
 
 
     it 'handles merging detached model with belongsTo child already in session', ->
-      post = @subject.merge @Post.create(id: "2", comments: [@Comment.create(id: "1")])
-      comment = @subject.merge @Comment.create(id: "1", body: "obscurity", post: @Post.create(id: "2", comments: [@Comment.create(id: "1")]))
+      post = @subject.merge new @Post(id: "2", comments: [new @Comment(id: "1")])
+      comment = @subject.merge new @Comment(id: "1", body: "obscurity", post: new @Post(id: "2", comments: [new @Comment(id: "1")]))
       expect(comment.post).to.eq(post)
       
       
     it 'handles merging detached model with lazy belongsTo reference', ->
-      post = @subject.merge @Post.create id: "2", comments: []
-      comment = @subject.merge @Comment.create id: "1", body: "obscurity", post: @Post.create(id: "2")
+      post = @subject.merge new @Post id: "2", comments: []
+      comment = @subject.merge new @Comment id: "1", body: "obscurity", post: new @Post(id: "2")
       expect(post.comments[0]).to.eq(comment)
       expect(post.isDirty).to.be.false
 
 
     it 'handles merging detached model with lazy hasMany reference', ->
-      comment = @subject.merge @Comment.create id: "1", body: "obscurity", post: null
-      post = @subject.merge @Post.create id: "2", comments: [@Comment.create(id: "1")]
+      comment = @subject.merge new @Comment id: "1", body: "obscurity", post: null
+      post = @subject.merge new @Post id: "2", comments: [new @Comment(id: "1")]
       expect(comment.post).to.eq(post)
       expect(comment.isDirty).to.be.false
 
     it 'reuses existing hasMany arrays', ->
-      post = @subject.merge @Post.create id: "2", comments: []
+      post = @subject.merge new @Post id: "2", comments: []
       comments = post.comments
-      @subject.merge @Post.create id: "2", comments: [@Comment.create(id: "1", post: @Post.create(id: "2"))]
+      @subject.merge new @Post id: "2", comments: [new @Comment(id: "1", post: new @Post(id: "2"))]
       expect(comments.length).to.eq(1)
 
 
   describe '.markClean', ->
 
     it 'makes models no longer dirty', ->
-      post = @subject.merge @Post.create(id: "1", title: 'test')
+      post = @subject.merge new @Post(id: "1", title: 'test')
       post.title = 'dirty bastard'
       expect(post.isDirty).to.be.true
       @subject.markClean(post)
       expect(post.isDirty).to.be.false
 
     it 'works with already clean models', ->
-      post = @subject.merge @Post.create(id: "1", title: 'test')
+      post = @subject.merge new @Post(id: "1", title: 'test')
       expect(post.isDirty).to.be.false
       @subject.markClean(post)
       expect(post.isDirty).to.be.false
@@ -231,7 +231,7 @@ describe "Session", ->
   describe '.touch', ->
 
     it 'makes the model dirty', ->
-      post = @subject.merge @Post.create(id: "1", title: 'test')
+      post = @subject.merge new @Post(id: "1", title: 'test')
       expect(post.isDirty).to.be.false
       @subject.touch(post)
       expect(post.isDirty).to.be.true
@@ -247,7 +247,7 @@ describe "Session", ->
           models.forEach (model) -> @subject.merge(model)
 
     it 'can update while flush is pending', ->
-      post = @subject.merge @Post.create(id: "1", title: 'original')
+      post = @subject.merge new @Post(id: "1", title: 'original')
       post.title = 'update 1'
       f1 = @subject.flush()
       post.title = 'update 2'
@@ -264,7 +264,7 @@ describe "Session", ->
         willFlushHit = false
         @subject.on 'willFlush', =>
           willFlushHit = true
-        post = @subject.merge @Post.create(id: "1", title: 'original')
+        post = @subject.merge new @Post(id: "1", title: 'original')
         post.title = 'update 1'
         @subject.flush().then =>
           expect(willFlushHit).to.be.true
@@ -272,13 +272,13 @@ describe "Session", ->
   describe '.isDirty', ->
 
     it 'is true when models are dirty', ->
-      post = @subject.merge @Post.create(id: "1", title: 'test')
+      post = @subject.merge new @Post(id: "1", title: 'test')
       expect(@subject.isDirty).to.be.false
       @subject.touch(post)
       expect(@subject.isDirty).to.be.true
 
     it 'becomes false after successful flush', ->
-      post = @subject.merge @Post.create(id: "1", title: 'test')
+      post = @subject.merge new @Post(id: "1", title: 'test')
       @subject.touch(post)
       expect(@subject.isDirty).to.be.true
       @subject.flush().then =>
@@ -303,14 +303,14 @@ describe "Session", ->
       it 'queries', ->
         @Adapter.prototype.query = (type, query) =>
           expect(query).to.eql({q: "herpin"})
-          Coalesce.Promise.resolve([@Post.create(id: "1", title: 'herp'), @Post.create(id: "2", title: 'derp')])
+          Coalesce.Promise.resolve([new @Post(id: "1", title: 'herp'), new @Post(id: "2", title: 'derp')])
         @subject.query('post', {q: "herpin"}).then (models) =>
           expect(models.length).to.eq(2)
 
     describe '.load', ->
 
       it 'loads from parent session', ->
-        @parent.merge @Post.create(id: "1", title: "flash gordon")
+        @parent.merge new @Post(id: "1", title: "flash gordon")
         @subject.load(@Post, 1).then (post) =>
           expect(post).to.not.eq(@parent.getModel(post))
           expect(post.title).to.eq('flash gordon')
@@ -319,7 +319,7 @@ describe "Session", ->
     describe '.add', ->
     
       it 'includes lazy relationships', ->
-        parentComment = @parent.merge @Comment.create(id: "1", post: @Post.create(id: "2"))
+        parentComment = @parent.merge new @Comment(id: "1", post: new @Post(id: "2"))
         comment = @subject.add(parentComment)
         expect(comment).to.not.eq(parentComment)
         expect(comment.post).to.not.be.null

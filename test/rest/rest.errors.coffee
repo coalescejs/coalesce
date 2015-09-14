@@ -18,7 +18,7 @@ describe "rest with errors", ->
       @server.r 'PUT:/posts/1', (xhr) ->
         respond xhr, errors: {title: 'is too short', created_at: 'cannot be in the past'}
 
-      @session.merge @Post.create(id: "1", title: 'test')
+      @session.merge new @Post(id: "1", title: 'test')
       @session.load('post', 1).then (post) =>
         expect(post.title).to.eq('test')
         post.title = ''
@@ -33,7 +33,7 @@ describe "rest with errors", ->
       @server.r 'PUT:/posts/1', (xhr) ->
         respond xhr, errors: {title: 'is too short'}
 
-      post = @session.merge @Post.create(id: "1", title: 'test')
+      post = @session.merge new @Post(id: "1", title: 'test')
       post.title = ''
       post.errors = new Errors(title: 'is not good')
       expect(post.errors.title).to.eq('is not good')
@@ -47,7 +47,7 @@ describe "rest with errors", ->
       @server.r 'PUT:/posts/1', (xhr) ->
         respond xhr, post: {id: 1, title: 'test', errors: {title: 'is too short'}}
 
-      @session.merge @Post.create(id: "1", title: 'test')
+      @session.merge new @Post(id: "1", title: 'test')
       @session.load('post', 1).then (post) =>
         expect(post.title).to.eq('test')
         post.title = ''
@@ -61,7 +61,7 @@ describe "rest with errors", ->
       @server.r 'PUT:/posts/1', (xhr) ->
         respond xhr, post: {id: 1, title: '', rev: 10, errors: {title: 'is too short'}}
 
-      @session.merge @Post.create(id: "1", title: 'test')
+      @session.merge new @Post(id: "1", title: 'test')
       @session.load('post', 1).then (post) =>
         expect(post.title).to.eq('test')
         post.title = ''
@@ -76,7 +76,7 @@ describe "rest with errors", ->
         data = JSON.parse(xhr.requestBody)
         respond xhr, post: {id: 1, title: 'Something', client_rev: data.post.client_rev, errors: {title: 'cannot be empty'}}
 
-      @session.merge @Post.create(id: "1", title: 'test')
+      @session.merge new @Post(id: "1", title: 'test')
       @session.load('post', 1).then (post) =>
         expect(post.title).to.eq('test')
         post.title = ''
@@ -89,7 +89,7 @@ describe "rest with errors", ->
       @server.r 'PUT:/posts/1', ->
         post: {id: 1, title: '', errors: {}}
 
-      @session.merge @Post.create(id: "1", title: 'test')
+      @session.merge new @Post(id: "1", title: 'test')
       @session.load('post', 1).then (post) =>
         expect(post.title).to.eq('test')
         post.title = ''

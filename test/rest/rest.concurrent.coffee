@@ -17,7 +17,7 @@ describe "rest concurrent flushes", ->
     @server.r 'PUT:/posts/1', (xhr) ->
       data = JSON.parse(xhr.requestBody)
       posts: {id: 1, title: data.post.title, submitted: "true"}
-    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post = @session.merge new @Post(id: "1", title: 'twerkin', submitted: false)
     post.title = 'update1'
     f1 = @session.flush()
     post.title = 'update2'
@@ -41,7 +41,7 @@ describe "rest concurrent flushes", ->
     @server.r 'PUT:/posts/1', (xhr) ->
       data = JSON.parse(xhr.requestBody)
       posts: {id: 1, title: data.post.title, submitted: "true"}
-    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post = @session.merge new @Post(id: "1", title: 'twerkin', submitted: false)
     post.title = 'update1'
     f1 = @session.flush()
     post.title = 'update2'
@@ -62,7 +62,7 @@ describe "rest concurrent flushes", ->
       delay delayAmount, ->
         data = JSON.parse(xhr.requestBody)
         posts: {id: 1, title: data.post.title, submitted: "true"}
-    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post = @session.merge new @Post(id: "1", title: 'twerkin', submitted: false)
     post.title = 'update1'
     f1 = @session.flush()
     post.title = 'update2'
@@ -88,7 +88,7 @@ describe "rest concurrent flushes", ->
           respond xhr, {error: "twerkin too hard"}, 500
         rev = parseInt(data.post.title.split("update")[1])+1
         posts: {id: 1, title: data.post.title, submitted: "true", rev: rev}
-    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false, rev: 1)
+    post = @session.merge new @Post(id: "1", title: 'twerkin', submitted: false, rev: 1)
     post.title = 'update1'
     f1 = @session.flush()
     post.title = 'update2'
@@ -109,7 +109,7 @@ describe "rest concurrent flushes", ->
       if count++ == 0
         respond xhr, {error: "plz twerk again"}, 500
       posts: {id: 1, title: data.post.title, submitted: "true"}
-    post = @session.merge @Post.create(id: "1", title: 'twerkin', submitted: false)
+    post = @session.merge new @Post(id: "1", title: 'twerkin', submitted: false)
     post.title = 'update1'
     @session.flush().then null, =>
       expect(post.title).to.eq('update1')

@@ -9,6 +9,7 @@ import CollectionManager  from './collection_manager';
 import Flush  from './flush';
 import InverseManager  from './inverse_manager';
 import Query  from './query';
+import safeCreate from '../utils/safe_create';
 
 var uuid = 1;
 
@@ -39,7 +40,7 @@ export default class Session {
   */
   build(type, hash) {
     type = this._typeFor(type);
-    var model = type.create(hash || {});
+    var model = safeCreate(type, hash || {});
     return model;
   }
 
@@ -154,7 +155,7 @@ export default class Session {
     var dest = this.getModel(model);
 
     if(model.isNew && !dest) {
-      dest = model.constructor.create();
+      dest = safeCreate(model.constructor);
       // need to set the clientId for adoption
       dest.clientId = model.clientId;
       this.adopt(dest);
@@ -487,7 +488,7 @@ export default class Session {
   }
 
   newSession() {
-    var child = this.constructor.create({
+    var child = safeCreate(this.constructor, {
       parent: this,
       context: this.context,
       idManager: this.idManager

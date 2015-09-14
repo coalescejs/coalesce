@@ -19,8 +19,8 @@ describe 'ModelArray', ->
   describe 'removeObject', ->
 
     it 'should remove based on `isEqual` equivalence', ->
-      array.addObject @Post.create(clientId: '1')
-      array.removeObject @Post.create(clientId: '1')
+      array.addObject new @Post(clientId: '1')
+      array.removeObject new @Post(clientId: '1')
       expect(array.length).to.eq(0)
 
 
@@ -32,14 +32,14 @@ describe 'ModelArray', ->
       dest = new ModelArray()
 
     it 'should copy objects', ->
-      array.addObjects [@Post.create(clientId: '1'), @Post.create(clientId: '2')]
+      array.addObjects [new @Post(clientId: '1'), new @Post(clientId: '2')]
       array.copyTo(dest)
 
       expect(dest.length).to.eq(2)
 
     it 'should remove objects not present in source array', ->
-      array.addObject @Post.create(clientId: '1')
-      dest.addObject @Post.create(clientId: '2')
+      array.addObject new @Post(clientId: '1')
+      dest.addObject new @Post(clientId: '2')
       array.copyTo(dest)
 
       expect(dest.length).to.eq(1)
@@ -53,8 +53,8 @@ describe 'ModelArray', ->
         load: ->
           @loadCalled = true
           Coalesce.Promise.resolve(@)
-      array.pushObject(@Post.create(id: "1"))
-      array.pushObject(@Post.create(id: "2"))
+      array.pushObject(new @Post(id: "1"))
+      array.pushObject(new @Post(id: "2"))
 
     it 'should load all models', ->
       array.load().then ->

@@ -23,7 +23,7 @@ export default class Base {
     var config = this._configs[typeKey];
     if(!config) {
       config = this._configs[typeKey] = new Config(typeKey, this);
-      if(config.type) {
+      if(config.type && typeof config.type.reify === 'function') {
         config.type.reify(this, typeKey);
       }
     }

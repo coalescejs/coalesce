@@ -1,5 +1,6 @@
 import { singularize, camelize, underscore, dasherize } from '../utils/inflector';
 import Serializer  from './base';
+import safeCreate from '../utils/safe_create';
 
 /**
   @namespace serializers
@@ -146,7 +147,8 @@ export default class ModelSerializer extends Serializer {
   }
 
   createModel() {
-    return this.typeFor(this.typeKey).create();
+    var klass = this.typeFor(this.typeKey);
+    return safeCreate(klass);
   }
 
   typeFor(typeKey) {

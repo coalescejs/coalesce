@@ -106,8 +106,8 @@ describe "rest acceptance scenarios", ->
     it 'creates a new comment within a child session', ->
       @server.r 'POST:/comments', -> comment: {client_id: comment.clientId, id: "3", message: "#2", post: "1"}
 
-      post = @session.merge @Post.create(id: "1", title: "brogrammer's guide to beer pong", comments: [])
-      @session.merge @Comment.create(id: "2", message: "yo", post: post)
+      post = @session.merge new @Post(id: "1", title: "brogrammer's guide to beer pong", comments: [])
+      @session.merge new @Comment(id: "2", message: "yo", post: post)
 
       childSession = @session.newSession()
       childPost = childSession.add(post)
@@ -164,14 +164,14 @@ describe "rest acceptance scenarios", ->
     it 'deletes root', ->
       @server.r 'DELETE:/users/1', {}
 
-      @User.create id: '1'
-      user = @session.merge @User.create
+      new @User id: '1'
+      user = @session.merge new @User
         id: '1'
         name: 'abby'
-        profile: @Profile.create
+        profile: new @Profile
           id: '2'
           bio: 'asd'
-          tags: [@Tag.create(id: '3', name: 'java')]
+          tags: [new @Tag(id: '3', name: 'java')]
 
       @session.deleteModel(user)
       @session.flush().then =>
