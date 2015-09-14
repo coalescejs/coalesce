@@ -224,14 +224,6 @@ export default class Model {
     return dest;
   }
 
-  // XXX: move to ember
-  willWatchProperty(key) {
-    // EmberTODO
-    if(this.isManaged && this.shouldTriggerLoad(key)) {
-      Coalesce.backburner.run.scheduleOnce('actions', this, this.load);
-    }
-  }
-
   shouldTriggerLoad(key) {
     return this.isField(key) && !this.isFieldLoaded(key);
   }
