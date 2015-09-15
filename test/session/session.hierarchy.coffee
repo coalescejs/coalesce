@@ -101,3 +101,15 @@ describe "Session", ->
       expect(post.comments[0]).to.not.eq(parentPost.comments[0])
       expect(post.comments[0].session).to.eq(@child)
       expect(post.comments[0].post).to.eq(post)
+      
+    it 'adds belongsTo correctly', ->
+      parentPost = @parent.merge new @Post(id: "1", title: 'parent', comments: [new @Comment(id: '2', post: new @Post(id: "1"))])
+      parentComment = parentPost.comments[0]
+      comment = @child.add(parentComment)
+      expect(comment).to.not.eq(parentComment)
+      expect(comment.post).to.not.eq(parentPost)
+      
+    it 'gets null belongsTo correctly', ->
+      parentComment = @parent.merge new @Comment(id: '2', post: null)
+      comment = @child.getModel(parentComment)
+      expect(comment).to.not.eq(parentComment)

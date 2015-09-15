@@ -219,7 +219,9 @@ export default class Model {
     session.adopt(dest);
     // XXX: this is a hack to lazily add the children when the array is accessed
     dest.eachLoadedRelationship(function(name, relationship) {
-      dest[name].needsReification = true;
+      if(relationship.kind == 'hasMany') {
+        dest[name]._stale = true;
+      }
     });
     return dest;
   }

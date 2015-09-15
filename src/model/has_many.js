@@ -32,9 +32,9 @@ export default class HasMany extends Relationship {
             value.addObjects(content);
           }
         }
-        if(value && value.needsReification && value.reify && this.session) {
+        if(value && value._stale && value.reify && this.session) {
           value.reify();
-          value.needsReification = false;
+          value._stale = false;
         }
         return value;
       },
