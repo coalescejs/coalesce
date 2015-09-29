@@ -259,6 +259,14 @@ describe 'ModelSerializer', ->
         it 'deserializes as empty relationship', ->
           expect(@deserialized.comments.length).to.eq(0)
           
+      context 'with multiple models', ->
+        
+        lazy 'data', -> id: 1, comments: [2, 3]
+        
+        it 'preserves order', ->
+          expect(@deserialized.comments.length).to.eq(2)
+          expect(@deserialized.comments[0].id).to.eq("2")
+          
       context 'when embedded', ->
         
         lazy 'context', -> new Context(postWithEmbeddedComments())
