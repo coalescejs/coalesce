@@ -34,8 +34,12 @@ describe "Session", ->
       expect(@subject.getModel(post)).to.not.eq(post)
       
     it 'instantiates a model with attributes', ->
-      post = @subject.create('post', title: 'test')
+      post = @subject.build('post', title: 'test')
       expect(post.title).to.eq('test')
+      
+    it 'sets clientId', ->
+      post = @subject.build('post', title: 'test')
+      expect(post.clientId).to.not.be.null
       
 
   describe '.create', ->

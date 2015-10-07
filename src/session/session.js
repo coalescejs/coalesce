@@ -41,6 +41,7 @@ export default class Session {
   build(type, hash) {
     type = this._typeFor(type);
     var model = safeCreate(type, hash || {});
+    this.reifyClientId(model);
     return model;
   }
 
