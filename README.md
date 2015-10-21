@@ -149,7 +149,7 @@ To build coalesce, follow the instructions below:
 * `git clone https://github.com/coalescejs/coalesce`
 * `cd coalesce`
 * `npm install`
-* `npm test` to run the tests via `mocha`
+* `npm test` or `broccoli serve` to run the tests via `mocha` 
 * To build a browser distributable, run the `build-browser` command in the repository root with `ember-script build-browser` (make sure to install [ember-script](https://github.com/ghempton/ember-script) globally).
 
 

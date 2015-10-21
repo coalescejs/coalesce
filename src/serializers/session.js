@@ -2,7 +2,7 @@ import Serializer from './base';
 import ModelSetSerializer from './model_set';
 import QueryCache from '../session/query_cache';
 import Query from '../session/query';
-
+import ModelSet from '../collections/model_set';
 
 /**
   @namespace serializers
@@ -42,14 +42,14 @@ export default class SessionSerializer extends Serializer {
     var modelSetSerializer 	= this.serializerFor('model-set'),
     	serialized 			= { models: [], shadows: [], uuidStart: 0},
     	dirtyModels 		= session.dirtyModels,
-    	dirtyShadowModels 	= _.compact(dirtyModels.toArray().map(function(dirt){
+    	dirtyShadowModels 	= new ModelSet(_.compact(dirtyModels.toArray().map(function(dirt){
     		return session.shadows.getModel(dirt);
-    	}));
+    	})));
 
-    // Only need to seralize dirty models.  
-    // WE WILL RELY ON SERVER RESPONSE CACHING TO HANDLE NON-DIRTY MODELS
     serialized.models = modelSetSerializer.serialize(dirtyModels);
+    
     serialized.shadows = modelSetSerializer.serialize(dirtyShadowModels);
+
     serialized.uuidStart = session.idManager.uuid;
     
     return serialized;
