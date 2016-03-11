@@ -1,8 +1,8 @@
-import Coalesce from '../namespace';
-import ModelSet from '../collections/model_set';
-import Operation from './operation';
-import materializeRelationships from '../utils/materialize_relationships';
-import array_from from '../utils/array_from';
+import ModelSet  from '../collections/model_set'
+import Coalesce  from '../namespace'
+import array_from  from '../utils/array_from'
+import materializeRelationships  from '../utils/materialize_relationships'
+import Operation  from './operation'
 
 var remove = _.remove;
 

@@ -1,4 +1,4 @@
-import BaseClass from '../utils/base_class';
+import BaseClass  from '../utils/base_class'
 
 class Errors extends BaseClass {
 
@@ -7,7 +7,7 @@ class Errors extends BaseClass {
   }
 
   constructor(obj={}) {
-    super()
+    super();
     for(var key in obj) {
       if(!obj.hasOwnProperty(key)) continue;
       this[key] = obj[key];

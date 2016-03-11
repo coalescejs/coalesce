@@ -1,4 +1,4 @@
-import ModelArray from '../collections/model_array';
+import ModelArray  from '../collections/model_array';
 
 export default class HasManyArray extends ModelArray {
   
@@ -12,7 +12,7 @@ export default class HasManyArray extends ModelArray {
         return this.session.add(model);
       }, this);
     }
-    super(idx, amt, objects);
+    super.replace(idx, amt, objects);
   }
 
   arrayContentWillChange(index, removed, added) {
@@ -30,11 +30,11 @@ export default class HasManyArray extends ModelArray {
       }
     }
 
-    return super(index, removed, added);
+    return super.arrayContentWillChange(index, removed, added);
   }
 
   arrayContentDidChange(index, removed, added) {
-    super(index, removed, added);
+    super.arrayContentDidChange(index, removed, added);
 
     var model = this.owner,
         name = this.name,
@@ -51,5 +51,33 @@ export default class HasManyArray extends ModelArray {
       }
     }
   }
+  
+  reify() {
+    replace(this, 0, this.length, this.map((model) => {
+      return this.session.add(model);
+    }));
+  }
 
+}
+
+var splice = Array.prototype.splice;
+
+function replace(array, idx, amt, objects) {
+  var args = [].concat(objects), chunk, ret = [],
+      // https://code.google.com/p/chromium/issues/detail?id=56588
+      size = 60000, start = idx, ends = amt, count;
+
+  while (args.length) {
+    count = ends > size ? size : ends;
+    if (count <= 0) { count = 0; }
+
+    chunk = args.splice(0, size);
+    chunk = [start, count].concat(chunk);
+
+    start += size;
+    ends -= count;
+
+    ret = ret.concat(splice.apply(array, chunk));
+  }
+  return ret;
 }

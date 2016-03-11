@@ -1,6 +1,6 @@
-import Container from './container';
-import Error from '../error';
-import Config from './config';
+import Error  from '../error';
+import Config  from './config';
+import Container  from './container';
 
 export default class Base {
   
@@ -23,7 +23,7 @@ export default class Base {
     var config = this._configs[typeKey];
     if(!config) {
       config = this._configs[typeKey] = new Config(typeKey, this);
-      if(config.type) {
+      if(config.type && typeof config.type.reify === 'function') {
         config.type.reify(this, typeKey);
       }
     }

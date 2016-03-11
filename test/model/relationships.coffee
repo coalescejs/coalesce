@@ -57,9 +57,9 @@ describe "relationships", ->
 
 
     it 'belongsTo updates inverse on delete when initially added unloaded', ->
-      post = @session.merge @session.build 'post', id: 1, comments: [@Comment.create(id: 2)]
+      post = @session.merge @session.build 'post', id: 1, comments: [new @Comment(id: 2)]
       unloadedComment = post.comments[0]
-      comment = @session.merge @session.build 'comment', id: 2, post: @Post.create(id: 1)
+      comment = @session.merge @session.build 'comment', id: 2, post: new @Post(id: 1)
       unloadedComment.post = post
       expect(post.comments.toArray()).to.eql([unloadedComment])
       @session.deleteModel unloadedComment
@@ -75,10 +75,10 @@ describe "relationships", ->
 
 
     it 'belongsTo adds object to session', ->
-      post = @session.merge(@Post.create(id: '1'))
-      comment = @session.merge(@Comment.create(id: '2'))
+      post = @session.merge(new @Post(id: '1'))
+      comment = @session.merge(new @Comment(id: '2'))
 
-      comment.post = @Post.create(id: '1')
+      comment.post = new @Post(id: '1')
       expect(comment.post).to.eq(post)
 
 
@@ -110,15 +110,15 @@ describe "relationships", ->
 
 
     it 'hasMany adds to session', ->
-      post = @session.merge(@Post.create(id: '1', comments: []))
-      comment = @session.merge(@Comment.create(id: '2', post: null))
+      post = @session.merge(new @Post(id: '1', comments: []))
+      comment = @session.merge(new @Comment(id: '2', post: null))
 
-      post.comments.addObject @Comment.create(id: '2')
+      post.comments.addObject new @Comment(id: '2')
       expect(post.comments[0]).to.eq(comment)
 
 
     it 'hasMany content can be set directly', ->
-      post = @session.create 'post', comments: [@Comment.create(id: '2')]
+      post = @session.create 'post', comments: [new @Comment(id: '2')]
       expect(post.comments.length).to.eq(1)
       expect(post.comments[0].id).to.eq('2')
 

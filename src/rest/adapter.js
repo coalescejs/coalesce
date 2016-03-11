@@ -1,9 +1,8 @@
-import Coalesce from '../namespace';
-import Adapter from '../adapter';
-import ModelSet from '../collections/model_set';
-
-import {decamelize, pluralize, camelize} from '../utils/inflector';
-import array_from from '../utils/array_from';
+import Adapter  from '../adapter'
+import ModelSet  from '../collections/model_set'
+import Coalesce  from '../namespace'
+import array_from  from '../utils/array_from'
+import { decamelize, pluralize, camelize } from '../utils/inflector'
 
 var defaults = _.defaults;
 
@@ -114,7 +113,7 @@ export default class RestAdapter extends Adapter {
   load(model, opts, session) {
     return this._mergeAndContextualizePromise(this._load(model, opts), session, model, opts);
   }
-  
+
   _load(model, opts) {
     opts = opts || {};
     _.defaults(opts, {
@@ -126,7 +125,7 @@ export default class RestAdapter extends Adapter {
   update(model, opts, session) {
     return this._mergeAndContextualizePromise(this._update(model, opts), session, model, opts);
   }
-  
+
   _update(model, opts) {
     opts = opts || {};
     _.defaults(opts, {
@@ -134,7 +133,7 @@ export default class RestAdapter extends Adapter {
     });
     return this._remoteCall(model, null, model, opts);
   }
-  
+
   create(model, opts, session) {
     return this._mergeAndContextualizePromise(this._create(model, opts), session, model, opts);
   }
@@ -142,7 +141,7 @@ export default class RestAdapter extends Adapter {
   _create(model, opts) {
     return this._remoteCall(model, null, model, opts);
   }
-  
+
   deleteModel(model, opts, session) {
     return this._mergeAndContextualizePromise(this._deleteModel(model, opts), session, model, opts);
   }
@@ -158,7 +157,7 @@ export default class RestAdapter extends Adapter {
   query(typeKey, query, opts, session) {
     return this._mergeAndContextualizePromise(this._query(typeKey, query, opts), session, typeKey, opts);
   }
-  
+
   _query(typeKey, query, opts) {
     opts = opts || {};
     _.defaults(opts, {
@@ -203,7 +202,7 @@ export default class RestAdapter extends Adapter {
     var adapter = this,
         opts = this._normalizeOptions(opts),
         url;
-    
+
     if(opts.url) {
       url = opts.url;
     } else {
@@ -211,22 +210,22 @@ export default class RestAdapter extends Adapter {
     }
 
     var method = opts.type || "POST";
-    
+
     if(opts.serialize !== false) {
       var serializer = opts.serializer,
           serializerOptions = opts.serializerOptions || {};
-          
+
       if(!serializer && context) {
         serializer = this.serializerForContext(context);
       }
-      
+
       if(serializer && data) {
         serializer = this._serializerFor(serializer);
         serializerOptions = _.defaults(serializerOptions, {context: context});
         data = serializer.serialize(data, serializerOptions);
       }
     }
-    
+
     if(opts.params) {
       data = data || {};
       data = _.defaults(data, opts.params);
@@ -234,7 +233,7 @@ export default class RestAdapter extends Adapter {
 
     return this._deserializePromise(this.ajax(url, method, {data: data}), context, opts);
   }
-  
+
   _normalizeOptions(opts) {
     opts = opts || {};
     // make sure that the context is a typeKey instead of a type
@@ -244,6 +243,10 @@ export default class RestAdapter extends Adapter {
     return opts;
   }
 
+  serializerForContext(context) {
+    return this.defaultSerializer;
+  }
+  
   /**
     @private
 
@@ -252,11 +255,11 @@ export default class RestAdapter extends Adapter {
   _deserializePromise(promise, context, opts) {
     var serializer = opts.deserializer || opts.serializer,
         serializerOptions = opts.serializerOptions || {};
-    
+
     if(!serializer && context) {
       serializer = this.serializerForContext(context);
     }
-    
+
     if(serializer) {
       serializer = this._serializerFor(serializer);
       _.defaults(serializerOptions, {context: context});
@@ -267,7 +270,7 @@ export default class RestAdapter extends Adapter {
       if(opts.deserialize !== false) {
         return serializer.deserialize(data, serializerOptions);
       }
-      
+
       return data;
     }, function(xhr) {
       if(opts.deserialize !== false) {
@@ -291,7 +294,7 @@ export default class RestAdapter extends Adapter {
           // treat other errors generically
           serializer = adapter._serializerFor(opts.errorSerializer || 'errors');
           var errors = serializer.deserialize(data, serializerOptions);
-          if(context.isModel) {
+          if(context && context.isModel) {
             // if the context is a model we want to return a model with errors
             // so that it can be merged by the session
             var model = context.lazyCopy();
@@ -625,11 +628,11 @@ export default class RestAdapter extends Adapter {
       hash = adapter.ajaxOptions(url, type, hash);
 
       hash.success = function(json) {
-        Coalesce.run(null, resolve, json);
+        Coalesce.backburner.run(null, resolve, json);
       };
 
       hash.error = function(jqXHR, textStatus, errorThrown) {
-        Coalesce.run(null, reject, adapter.ajaxError(jqXHR));
+        Coalesce.backburner.run(null, reject, adapter.ajaxError(jqXHR));
       };
 
       Coalesce.ajax(hash);

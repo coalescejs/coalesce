@@ -1,11 +1,11 @@
-import Context from '../rest/context';
-import ActiveModelSerializer from './serializers/model';
-import ActiveModelAdapter from './adapter';
+import Context  from '../rest/context'
+import ActiveModelAdapter  from './adapter'
+import ActiveModelSerializer  from './serializers/model'
 
 export default class ActiveModelContext extends Context {
   
   _setupContainer() {
-    super();
+    super._setupContainer();
     var container = this.container;
     container.register('adapter:default', container.lookupFactory('adapter:application') || ActiveModelAdapter);
     

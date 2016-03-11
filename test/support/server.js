@@ -1,3 +1,5 @@
+import Coalesce from 'coalesce/namespace';
+
 //
 // Wrapper around sinon fake server
 //

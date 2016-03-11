@@ -1,4 +1,5 @@
 # Use rest adapter for now
+`import Coalesce from 'coalesce/namespace'`
 `import Adapter from 'coalesce/rest/adapter'`
 `import {postWithComments} from '../support/configs'`
 `import Context from 'coalesce/context/default'`
@@ -33,8 +34,8 @@ describe "Session", ->
     lazy 'sessionB', -> @context.newSession()
 
     beforeEach ->
-      @sessionA.merge @Post.create(id: "1", title: 'original')
-      @sessionB.merge @Post.create(id: "1", title: 'original')
+      @sessionA.merge new @Post(id: "1", title: 'original')
+      @sessionB.merge new @Post(id: "1", title: 'original')
 
     it 'updates are isolated', ->
       postA = null
@@ -59,7 +60,7 @@ describe "Session", ->
     lazy 'child', -> @parent.newSession()
 
     it '.flushIntoParent flushes updates immediately', ->
-      @parent.merge @Post.create(id: "1", title: 'original')
+      @parent.merge new @Post(id: "1", title: 'original')
 
       @child.load('post', 1).then (childPost) =>
 
@@ -72,7 +73,7 @@ describe "Session", ->
           f
 
     it '.flush waits for success before updating parent', ->
-      @parent.merge @Post.create(id: "1", title: 'original')
+      @parent.merge new @Post(id: "1", title: 'original')
 
       @child.load('post', 1).then (childPost) =>
 
@@ -86,15 +87,29 @@ describe "Session", ->
             expect(parentPost.title).to.eq('child version')
 
     it 'does not mutate parent session relationships', ->
-      post = @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
+      post = @parent.merge new @Post(id: "1", title: 'parent', comments: [new @Comment(id: '2', post: new @Post(id: "1"))])
       expect(post.comments.length).to.eq(1)
       @child.add(post)
       expect(post.comments.length).to.eq(1)
 
 
     it 'adds hasMany correctly', ->
-      parentPost = @parent.merge @Post.create(id: "1", title: 'parent', comments: [@Comment.create(id: '2', post: @Post.create(id: "1"))])
+      parentPost = @parent.merge new @Post(id: "1", title: 'parent', comments: [new @Comment(id: '2', post: new @Post(id: "1"))])
       post = @child.add(parentPost)
       expect(post).to.not.eq(parentPost)
       expect(post.comments.length).to.eq(1)
-      expect(post.comments.firstObject).to.not.eq(parentPost.comments.firstObject)
+      expect(post.comments[0]).to.not.eq(parentPost.comments[0])
+      expect(post.comments[0].session).to.eq(@child)
+      expect(post.comments[0].post).to.eq(post)
+      
+    it 'adds belongsTo correctly', ->
+      parentPost = @parent.merge new @Post(id: "1", title: 'parent', comments: [new @Comment(id: '2', post: new @Post(id: "1"))])
+      parentComment = parentPost.comments[0]
+      comment = @child.add(parentComment)
+      expect(comment).to.not.eq(parentComment)
+      expect(comment.post).to.not.eq(parentPost)
+      
+    it 'gets null belongsTo correctly', ->
+      parentComment = @parent.merge new @Comment(id: '2', post: null)
+      comment = @child.getModel(parentComment)
+      expect(comment).to.not.eq(parentComment)

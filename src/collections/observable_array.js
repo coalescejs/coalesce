@@ -302,7 +302,7 @@ export default class ObservableArray extends Array {
     @return {Object} receiver
   */
   addObjects(objects) {
-    for (var i = objects.length - 1; i >= 0; i--) {
+    for (var i = 0; i < objects.length; i++) {
       this.addObject(objects[i]);
     }
     return this;

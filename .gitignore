@@ -2,12 +2,12 @@ node_modules
 pkg
 *.gem
 
+dist/
 .DS_Store
 Gemfile.lock
 tmp
 bower_components
 
-dist
 staging
 
 docs

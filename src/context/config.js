@@ -14,10 +14,7 @@ export default class Config {
       return this._type;
     }
     var Type = this._container.lookupFactory(`model:${this._typeKey}`);
-    if(Type) {
-      // Ember's container extends by default
-      Type = Type.parentType;
-    }
+
     return this._type = Type;
   }
   

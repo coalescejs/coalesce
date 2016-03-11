@@ -77,7 +77,7 @@ describe "rest with one->many relationship", ->
   it 'creates child', ->
     @server.r 'POST:/comments', -> comments: {client_id: comment.clientId, id: 2, body: 'new child', post: 1}
 
-    @session.merge @Post.create(id: "1", title: 'parent', comments: []);
+    @session.merge new @Post(id: "1", title: 'parent', comments: []);
 
     comment = null
 
@@ -94,7 +94,7 @@ describe "rest with one->many relationship", ->
   it 'creates child with lazy reference to parent', ->
     @server.r 'POST:/comments', -> comments: {client_id: comment.clientId, id: 2, body: 'new child', post: 1}
 
-    post = @Post.create(id: 1)
+    post = new @Post(id: 1)
 
     comment = @session.create('comment', body: 'new child')
     comment.post = post
@@ -105,7 +105,7 @@ describe "rest with one->many relationship", ->
 
 
   it 'create followed by delete does not hit server', ->
-    @session.merge @Post.create(id: "1", title: 'parent');
+    @session.merge new @Post(id: "1", title: 'parent');
 
     comment = null
 
@@ -123,8 +123,8 @@ describe "rest with one->many relationship", ->
     @server.r 'PUT:/comments/2', -> comments: {id: 2, title: 'original sibling', post: 1}
     @server.r 'POST:/comments', -> comments: {client_id: sibling.clientId, id: 3, body: 'sibling', post: 1}
 
-    post = @Post.create(id: "1", title: 'parent', comments: []);
-    post.comments.addObject @Comment.create(id: "2", body: 'child', post: post)
+    post = new @Post(id: "1", title: 'parent', comments: []);
+    post.comments.addObject new @Comment(id: "2", body: 'child', post: post)
     @session.merge post
 
     comment = null
@@ -161,8 +161,8 @@ describe "rest with one->many relationship", ->
     @server.r 'PUT:/posts/1', posts: {id: 1, title: 'mvcc ftw', comments: [2]}
     @server.r 'DELETE:/comments/2', {}
 
-    post = @Post.create(id: "1", title: 'parent', comments: []);
-    post.comments.addObject @Comment.create(id: "2", body: 'child', post: post)
+    post = new @Post(id: "1", title: 'parent', comments: []);
+    post.comments.addObject new @Comment(id: "2", body: 'child', post: post)
     @session.merge post
 
     @session.load('post', 1).then (post) =>
@@ -178,8 +178,8 @@ describe "rest with one->many relationship", ->
     @server.r 'PUT:/posts/1', posts: {id: 1, title: 'childless', comments: []}
     @server.r 'DELETE:/comments/2', {}
 
-    post = @Post.create(id: "1", title: 'parent', comments: []);
-    post.comments.addObject @Comment.create(id: "2", body: 'child', post: post)
+    post = new @Post(id: "1", title: 'parent', comments: []);
+    post.comments.addObject new @Comment(id: "2", body: 'child', post: post)
     @session.merge post
 
     @session.load('post', 1).then (post) =>
@@ -199,8 +199,8 @@ describe "rest with one->many relationship", ->
     @server.r 'DELETE:/posts/1', {}
     @server.r 'DELETE:/comments/2', {}
 
-    post = @Post.create(id: "1", title: 'parent', comments: [])
-    post.comments.addObject @Comment.create(id: "2", body: 'child', post: post)
+    post = new @Post(id: "1", title: 'parent', comments: [])
+    post.comments.addObject new @Comment(id: "2", body: 'child', post: post)
     @session.merge post
 
     @session.load('post', 1).then (post) =>
@@ -290,8 +290,8 @@ describe "rest with one->many relationship", ->
         expect(data.post.comments.length).to.eq(0)
         return posts: {id: 1, title: 'mvcc ftw', comments: []}
 
-      post = @Post.create(id: "1", title: 'parent', comments: []);
-      post.comments.addObject @Comment.create(id: "2", body: 'child', post: post)
+      post = new @Post(id: "1", title: 'parent', comments: []);
+      post.comments.addObject new @Comment(id: "2", body: 'child', post: post)
       @session.merge post
 
       @session.load('post', 1).then (post) =>
@@ -309,9 +309,9 @@ describe "rest with one->many relationship", ->
         expect(data.post.comments.length).to.eq(1)
         return posts: {id: 1, title: 'mvcc ftw', comments: [{id: 3, client_id: sibling.clientId, post: 1, body: 'child2'}]}
 
-      post = @Post.create(id: "1", title: 'parent', comments: []);
-      post.comments.addObject @Comment.create(id: "2", body: 'child1', post: post)
-      post.comments.addObject @Comment.create(id: "3", body: 'child2', post: post)
+      post = new @Post(id: "1", title: 'parent', comments: []);
+      post.comments.addObject new @Comment(id: "2", body: 'child1', post: post)
+      post.comments.addObject new @Comment(id: "3", body: 'child2', post: post)
       @session.merge post
 
       sibling = null
@@ -344,9 +344,9 @@ describe "rest with one->many relationship", ->
 
 
     it 'deletes multiple children in multiple flushes', ->
-      post = @Post.create(id: "1", title: 'parent', comments: []);
-      post.comments.addObject @Comment.create(id: "2", body: 'thing 1', post: post)
-      post.comments.addObject @Comment.create(id: "3", body: 'thing 2', post: post)
+      post = new @Post(id: "1", title: 'parent', comments: []);
+      post.comments.addObject new @Comment(id: "2", body: 'thing 1', post: post)
+      post.comments.addObject new @Comment(id: "3", body: 'thing 2', post: post)
       post = @session.merge(post)
 
       @server.r 'PUT:/posts/1', posts: {id: 1, title: 'mvcc ftw', comments: [{post: "1", id: "3", body: 'thing 2'}]}
@@ -365,8 +365,8 @@ describe "rest with one->many relationship", ->
     it 'deletes parent and child', ->
       @server.r 'DELETE:/posts/1', {}
 
-      post = @Post.create(id: "1", title: 'parent', comments: []);
-      post.comments.addObject(@Comment.create(id: "2", body: 'child'))
+      post = new @Post(id: "1", title: 'parent', comments: []);
+      post.comments.addObject(new @Comment(id: "2", body: 'child'))
       @session.merge post
 
       # TODO: once we have support for side deletions beef up this test

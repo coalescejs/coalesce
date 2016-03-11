@@ -22,7 +22,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit').then =>
@@ -47,7 +47,7 @@ describe "rest with rpc", ->
       expect(data.post.title).to.eq('test')
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', post).then =>
@@ -69,7 +69,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', token: 'asd').then =>
@@ -81,7 +81,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       meta: {traffic: 'heavy'}, posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', token: 'asd').then =>
@@ -94,7 +94,7 @@ describe "rest with rpc", ->
     @server.r 'PUT:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', {token: 'asd'}, {type: 'PUT'}).then =>
@@ -106,7 +106,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/greener_pastures', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', {token: 'asd'}, {url: '/greener_pastures'}).then =>
@@ -118,7 +118,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', {token: 'asd'}, {deserialize: false}).then (json) =>
@@ -132,7 +132,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', {token: 'asd'}, {deserializationContext: null}).then (models) =>
@@ -145,7 +145,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
 
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', {token: 'asd'}, {serializerOptions: {context: 'post'}}).then (models) =>
@@ -159,7 +159,7 @@ describe "rest with rpc", ->
     @server.r 'POST:/posts/1/submit', ->
       posts: {id: 1, title: 'submitted', submitted: "true"}
 
-    @session.merge @Post.create(id: "1", title: 'test', submitted: false)
+    @session.merge new @Post(id: "1", title: 'test', submitted: false)
     @session.load('post', 1).then (post) =>
       @session.remoteCall(post, 'submit', {token: 'asd'}, {serializerOptions: {context: @Post}}).then (models) =>
         expect(@server.h).to.eql(['POST:/posts/1/submit'])

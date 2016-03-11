@@ -1,17 +1,17 @@
-import Coalesce from '../namespace';
-import BaseClass from '../utils/base_class';
-import ModelSet from '../collections/model_set';
-import copy from '../utils/copy';
-import lazyCopy from '../utils/lazy_copy';
-import isEqual from '../utils/is_equal';
-import Attribute from './attribute';
-import BelongsTo from './belongs_to';
-import HasMany from './has_many';
-import Error from '../error';
-import Field from './field';
-import {camelize, pluralize, underscore, classify} from '../utils/inflector';
+import ModelSet  from '../collections/model_set';
+import Error  from '../error';
+import Coalesce  from '../namespace';
+import BaseClass  from '../utils/base_class';
+import copy  from '../utils/copy';
+import { camelize, pluralize, underscore, classify } from '../utils/inflector';
+import isEqual  from '../utils/is_equal';
+import lazyCopy  from '../utils/lazy_copy';
+import Attribute  from './attribute';
+import BelongsTo  from './belongs_to';
+import Field  from './field';
+import HasMany  from './has_many';
 
-export default class Model extends BaseClass {
+export default class Model {
 
   get id() {
     return getMeta.call(this, 'id');
@@ -209,13 +209,21 @@ export default class Model extends BaseClass {
       dest[name] = this[name];
     }, this);
   }
-
-  // XXX: move to ember
-  willWatchProperty(key) {
-    // EmberTODO
-    if(this.isManaged && this.shouldTriggerLoad(key)) {
-      Coalesce.run.scheduleOnce('actions', this, this.load);
-    }
+  
+  /**
+    Copy the model to the target session.
+  */
+  fork(session) {
+    var dest = new this.constructor();
+    this.copyTo(dest);
+    session.adopt(dest);
+    // XXX: this is a hack to lazily add the children when the array is accessed
+    dest.eachLoadedRelationship(function(name, relationship) {
+      if(relationship.kind == 'hasMany') {
+        dest[name]._stale = true;
+      }
+    });
+    return dest;
   }
 
   shouldTriggerLoad(key) {
@@ -608,6 +616,14 @@ export default class Model extends BaseClass {
     }
 
     return possibleRelationships[0];
+  }
+  
+  static reopen(props) {
+    for(var key in props) { 
+      if(!props.hasOwnProperty(key)) return;
+      this.prototype[key] = props[key];
+    }
+    return this;
   }
 }
 

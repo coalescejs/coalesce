@@ -1,4 +1,4 @@
-import BaseClass from './utils/base_class';
+import BaseClass  from './utils/base_class'
 
 var uuid = 1;
 
@@ -11,6 +11,7 @@ var uuid = 1;
 */
 export default class IdManager extends BaseClass {
   constructor() {
+    super();
     this.idMaps = {};
   }
 

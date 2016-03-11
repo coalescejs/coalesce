@@ -1,11 +1,11 @@
-import ModelSerializer from '../../serializers/model';
-import {singularize} from '../../utils/inflector';
+import ModelSerializer  from '../../serializers/model'
+import { singularize } from '../../utils/inflector'
 
 
 export default class ActiveModelSerializer extends ModelSerializer {
 
   keyForType(name, type, opts) {
-    var key = super(name, type);
+    var key = super.keyForType(name, type);
     if(!opts || !opts.embedded) {
       if(type === 'belongs-to') {
         return key + '_id';
