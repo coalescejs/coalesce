@@ -32,7 +32,7 @@ export default class Session {
   /**
     Instantiates a model but does *not* add it to the session. This is equivalent
     to calling `create` on the model's class itself.
-    
+
     @method create
     @param {String} type the typeKey of the model
     @param {Object} hash the initial attributes of the model
@@ -47,7 +47,7 @@ export default class Session {
 
   /**
     Creates a model within the session.
-    
+
     @method create
     @param {String} type the typeKey of the model
     @param {Object} hash the initial attributes of the model
@@ -103,7 +103,7 @@ export default class Session {
 
     var dest = this.getModel(model);
     if(dest) return dest;
-    
+
     if(model.session === this) return model;
 
     // If new and detached we can re-use. If the model is
@@ -266,11 +266,11 @@ export default class Session {
 
     return promise;
   }
-  
+
   /**
     Similar to `loadModel`, but guarntees a trip to the server and skips the
     session level model cache.
-    
+
     @params {Model} model the model to refresh
     @return {Promise}
   */
@@ -282,9 +282,9 @@ export default class Session {
 
   /**
     @deprecated
-    
+
     Delegates to either `query` or `load` based on the parameter types
-    
+
     @returns {Promise}
   */
   find(type, query, opts) {
@@ -293,21 +293,21 @@ export default class Session {
     }
     return this.load(type, query, opts);
   }
-  
+
   /**
     @private
-    
+
     Build a query instance
   */
   buildQuery(type, params) {
     type = this._typeFor(type);
     return new Query(this, type, params);
   }
-  
+
   /**
     Similar to `fetch`, this method returns a cached local result of the query
     without a trip to the server.
-    
+
     @param {Type} type the type to query against
     @param {object} params the query parameters
     @return {Query}
@@ -316,18 +316,18 @@ export default class Session {
     type = this._typeFor(type);
     var queryCache = this._queryCacheFor(type),
         query = queryCache.getQuery(type, params);
-    
+
     if(!query) {
       query = this.buildQuery(type, params);
       queryCache.add(query);
     }
-    
+
     return query;
   }
 
   /**
     Queries the server.
-    
+
     @param {Type} type Type to query against
     @param {object} params Query parameters
     @param {object} opts Additional options
@@ -338,17 +338,17 @@ export default class Session {
         query = this.fetchQuery(type, params),
         queryCache = this._queryCacheFor(type),
         promise = queryCache.getPromise(query);
-        
+
     if(!promise) {
       promise = this.refreshQuery(query, opts);
     }
-    
+
     return promise;
   }
-  
+
   /**
     Queries the server and bypasses the cache.
-    
+
     @param {Type} type Type to query against
     @param {object} params Query parameters
     @param {object} opts Additional options
@@ -365,13 +365,13 @@ export default class Session {
     });
     var queryCache = this._queryCacheFor(query.type);
     queryCache.add(query, promise);
-    
+
     return promise;
   }
 
   /**
     Sends all local changes down to the server
-    
+
     @return {Promise}
   */
   flush() {
@@ -379,9 +379,9 @@ export default class Session {
         dirtyModels = this.dirtyModels,
         newModels = this.newModels,
         shadows = this.shadows;
-    
+
     this.emit('willFlush', dirtyModels);
-    
+
     var flush = new Flush(this, dirtyModels),
         promise = flush.perform();
 
@@ -527,7 +527,7 @@ export default class Session {
     var cache = this._modelCacheFor(model);
     cache.remove(model);
   }
-  
+
   /**
     Invalidate the cache for a particular query.
 
@@ -538,7 +538,7 @@ export default class Session {
     var queryCache = this._queryCacheFor(query.type);
     queryCache.remove(query);
   }
-  
+
   /**
     Invalidate the cache for all queries corresponding to a particular Type.
 
@@ -619,7 +619,7 @@ export default class Session {
     // flush all local updates to the parent session
     var dirty = this.dirtyModels,
         parent = this.parent;
-    
+
     dirty.forEach(function(model) {
       // XXX: we want to do this, but we need to think about
       // revision numbers. The parent's clientRev needs to tbe
@@ -630,10 +630,10 @@ export default class Session {
       // if(parentModel) {
       //   this.merge(parentModel);
       // }
-      
+
       // update the values of a corresponding model in the parent session
       // if a corresponding model doesn't exist, its added to the parent session
-      parent.update(model); 
+      parent.update(model);
     }, this);
   }
 
@@ -651,7 +651,7 @@ export default class Session {
     this.updateParent();
     return this.flush();
   }
-  
+
   /**
     Merges new data for a model into this session.
 
@@ -707,7 +707,7 @@ export default class Session {
     if(model.meta){
       merged.meta = model.meta;
     }
-    
+
     for(var i = 0; i < detachedChildren.length; i++) {
       var child = detachedChildren[i];
       this.merge(child, visited);
@@ -784,11 +784,11 @@ export default class Session {
       // is the original? In order to update, it would require knowledge
       // of how the server handles merging (if at all)
     }
-    
+
     // clear the errors on the merged model
     // TODO: we need to do a proper merge here
     merged.errors = null;
-    
+
     return merged;
   }
 
@@ -806,12 +806,12 @@ export default class Session {
         // as the ancestor. This case could happen if the server manipulates
         // the response to return valid values without saving.
         shadow = shadows.getModel(model) || existing;
-        
+
     if(!existing) {
       // This case could happen on error during create inside child session
       return model;
     }
-    
+
     var original = originals.getModel(model);
 
     var hasClientChanges = this._containsClientRev(model, shadow);
@@ -837,7 +837,7 @@ export default class Session {
     // set the errors on the merged model
     // TODO: we need to do a proper merge here
     merged.errors = copy(model.errors);
- 
+
     if(!model.isNew && original) {
       // "rollback" shadow to the original
       shadows.addData(original);
@@ -874,9 +874,12 @@ export default class Session {
     // set id for new records
     dest.id = model.id;
     dest.clientId = model.clientId;
-    // copy the server revision
-    dest.rev = model.rev;
-    
+    // copy the server revision only if one is present in order to not lose
+    // versioning info
+    if(model.rev) {
+      dest.rev = model.rev;
+    }
+
     // TODO: move merging isDeleted into merge strategy
     // dest.isDeleted = model.isDeleted;
 
@@ -888,7 +891,7 @@ export default class Session {
     if(!ancestor) {
       ancestor = dest;
     }
-    
+
     // Reify child client ids before merging. This isn't semantically
     // required, but many data structures that might be used in the merging
     // process use client ids.
@@ -911,23 +914,23 @@ export default class Session {
   _containsClientRev(modelA, modelB) {
     return modelA.clientRev >= modelB.clientRev;
   }
-  
+
   _typeFor(key) {
     return this.context.typeFor(key);
   }
-  
+
   _adapterFor(key) {
     return this.context.configFor(key).get('adapter');
   }
-  
+
   _modelCacheFor(key) {
     return this.context.configFor(key).get('modelCache');
   }
-  
+
   _queryCacheFor(key) {
     return this.context.configFor(key).get('queryCache');
   }
-  
+
   _mergeStrategyFor(key) {
     return this.context.configFor(key).get('mergeStrategy');
   }
@@ -939,11 +942,11 @@ export default class Session {
     }
     return res;
   }
-  
+
   destroy() {
     // NOOP: needed for Ember's container
   }
-  
+
   static create(props) {
     return new this(props);
   }
