@@ -1,4 +1,6 @@
 
+export * from './container.spec';
+
 export * from './model.spec';
 
 export * from './session.spec';

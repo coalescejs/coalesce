@@ -1,0 +1,6 @@
+{
+  "framework": "mocha",
+  "test_page": "test.html",
+  "launch_in_ci": ["Chrome"],
+  "launch_in_dev": ["Chrome"]
+}

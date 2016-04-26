@@ -10,6 +10,8 @@ export default class Model extends Entity {
   // cache for new and detached models
   _rels = {};
 
+  session = null;
+
   constructor(fields) {
     super();
     for(var key in fields) {
@@ -19,6 +21,10 @@ export default class Model extends Entity {
 
   get isNew() {
     return !this.id;
+  }
+
+  get isModel() {
+    return true;
   }
 
   withMutations(fn) {

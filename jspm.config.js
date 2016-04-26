@@ -51,7 +51,7 @@ SystemJS.config({
     "immutable": "npm:immutable@3.7.6",
     "inflection": "npm:inflection@1.8.0",
     "mocha": "npm:mocha@2.4.5",
-    "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.0.6",
+    "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.0",
     "module": "github:jspm/nodelibs-module@0.2.0-alpha",
     "net": "github:jspm/nodelibs-net@0.2.0-alpha",
     "path": "github:jspm/nodelibs-path@0.2.0-alpha",
@@ -63,7 +63,8 @@ SystemJS.config({
     "tty": "github:jspm/nodelibs-tty@0.2.0-alpha",
     "url": "github:jspm/nodelibs-url@0.2.0-alpha",
     "util": "github:jspm/nodelibs-util@0.2.0-alpha",
-    "vm": "github:jspm/nodelibs-vm@0.2.0-alpha"
+    "vm": "github:jspm/nodelibs-vm@0.2.0-alpha",
+    "whatwg-fetch": "npm:whatwg-fetch@0.11.0"
   },
   packages: {
     "github:jspm/nodelibs-buffer@0.2.0-alpha": {
@@ -529,7 +530,7 @@ SystemJS.config({
         "brorand": "npm:brorand@1.0.5"
       }
     },
-    "npm:mocha-lazy-bdd@0.0.6": {
+    "npm:mocha-lazy-bdd@0.1.0": {
       "map": {
         "escape-string-regexp": "npm:escape-string-regexp@1.0.5"
       }

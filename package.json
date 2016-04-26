@@ -6,9 +6,9 @@
       "chai": "npm:chai@^3.5.0",
       "immutable": "npm:immutable@^3.7.6",
       "inflection": "npm:inflection@^1.8.0",
-      "mocha": "npm:mocha@^2.1.0",
-      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@^0.0.6",
-      "sinon": "npm:sinon@^1.17.3"
+      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.0",
+      "sinon": "npm:sinon@^1.17.3",
+      "whatwg-fetch": "npm:whatwg-fetch@^0.11.0"
     },
     "devDependencies": {
       "plugin-babel": "npm:systemjs-plugin-babel@^0.0.8"
@@ -23,6 +23,7 @@
       "events": "github:jspm/nodelibs-events@^0.2.0-alpha",
       "fs": "github:jspm/nodelibs-fs@^0.2.0-alpha",
       "http": "github:jspm/nodelibs-http@^0.2.0-alpha",
+      "mocha": "npm:mocha@^2.4.5",
       "module": "github:jspm/nodelibs-module@^0.2.0-alpha",
       "net": "github:jspm/nodelibs-net@^0.2.0-alpha",
       "path": "github:jspm/nodelibs-path@^0.2.0-alpha",
@@ -66,6 +67,8 @@
     }
   },
   "devDependencies": {
-    "jspm": "^0.17.0-beta.12"
+    "jspm": "^0.17.0-beta.12",
+    "jspm-dev-server": "^0.4.0",
+    "testem": "^1.6.0"
   }
 }
