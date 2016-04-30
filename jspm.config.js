@@ -50,6 +50,7 @@ SystemJS.config({
     "http": "github:jspm/nodelibs-http@0.2.0-alpha",
     "immutable": "npm:immutable@3.7.6",
     "inflection": "npm:inflection@1.8.0",
+    "lodash": "npm:lodash@4.11.1",
     "mocha": "npm:mocha@2.4.5",
     "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.0",
     "module": "github:jspm/nodelibs-module@0.2.0-alpha",
@@ -69,7 +70,7 @@ SystemJS.config({
   packages: {
     "github:jspm/nodelibs-buffer@0.2.0-alpha": {
       "map": {
-        "buffer-browserify": "npm:buffer@4.5.1"
+        "buffer-browserify": "npm:buffer@4.6.0"
       }
     },
     "github:jspm/nodelibs-crypto@0.2.0-alpha": {
@@ -396,7 +397,7 @@ SystemJS.config({
         "parse-asn1": "npm:parse-asn1@5.0.0"
       }
     },
-    "npm:buffer@4.5.1": {
+    "npm:buffer@4.6.0": {
       "map": {
         "base64-js": "npm:base64-js@1.1.2",
         "ieee754": "npm:ieee754@1.1.6",

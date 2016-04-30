@@ -1,6 +1,8 @@
 
 export * from './container.spec';
 
+export * from './merge/array.spec';
+
 export * from './model.spec';
 
 export * from './session.spec';

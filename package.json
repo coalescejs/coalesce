@@ -6,6 +6,7 @@
       "chai": "npm:chai@^3.5.0",
       "immutable": "npm:immutable@^3.7.6",
       "inflection": "npm:inflection@^1.8.0",
+      "lodash": "npm:lodash@^4.11.1",
       "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.0",
       "sinon": "npm:sinon@^1.17.3",
       "whatwg-fetch": "npm:whatwg-fetch@^0.11.0"
