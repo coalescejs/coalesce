@@ -86,13 +86,14 @@ export default class Schema {
     var relationships = config.relationships || {};
     for(var name in relationships) {
       if(!relationships.hasOwnProperty(name)) continue;
-      let klass;
-      if(relationship.kind === 'hasMany') {
+      let rel = relationships[name],
+          klass;
+      if(rel.kind === 'hasMany') {
         klass = HasMany;
       } else {
         klass = BelongsTo;
       }
-      var field = new klass(this, name, relationships[name]);
+      var field = new klass(this, name, rel);
       this[name] = field;
     }
   }
@@ -101,6 +102,10 @@ export default class Schema {
     for(var field of this.ownFields()) {
       field.defineProperty(prototype);
     }
+  }
+
+  *[Symbol.iterator]() {
+    yield* this.fields();
   }
 
   *fields() {
@@ -120,8 +125,12 @@ export default class Schema {
     }
   }
 
-  *[Symbol.iterator]() {
-    yield* this.fields();
+  *attributes() {
+    for(var field of this.fields()) {
+      if(field instanceof Attribute) {
+        yield field;
+      }
+    }
   }
 
 

@@ -2,6 +2,7 @@
 export * from './container.spec';
 
 export * from './merge/array.spec';
+export * from './merge/model.spec';
 
 export * from './model.spec';
 
