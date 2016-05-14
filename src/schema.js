@@ -133,6 +133,12 @@ export default class Schema {
     }
   }
 
-
+  *relationships() {
+    for(var field of this.fields()) {
+      if(field instanceof Relationship) {
+        yield field;
+      }
+    }
+  }
 
 }

@@ -12,7 +12,7 @@ export default class BelongsTo extends Relationship {
       configurable: true,
       get: function() {
         if(this.session) {
-          let id = this._attributes[attributeName];
+          let id = this._data[attributeName];
           if(id) {
             return this.session.getBy({id});
           } else {

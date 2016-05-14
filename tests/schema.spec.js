@@ -56,4 +56,16 @@ describe('schema', function() {
 
   });
 
+  describe('.relationships()', function() {
+
+    subject(function() { return this.schema.relationships(); });
+
+    it('only includes relationships', function() {
+      let attrs = Array.from(this.subject);
+      expect(some(attrs, (f) => f.name === 'title')).to.be.false;
+      expect(some(attrs, (f) => f.name === 'comments')).to.be.true;
+    });
+
+  });
+
 });

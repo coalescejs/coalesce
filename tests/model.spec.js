@@ -4,20 +4,20 @@ import Model from 'coalesce/model';
 
 describe('model', function() {
 
-  describe('attributes', function() {
-
-    lazy('Post', function() {
-      let klass = class Post extends Model {}
-      klass.defineSchema({
-        typeKey: 'post',
-        attributes: {
-          title: {
-            type: 'string'
-          }
+  lazy('Post', function() {
+    let klass = class Post extends Model {}
+    klass.defineSchema({
+      typeKey: 'post',
+      attributes: {
+        title: {
+          type: 'string'
         }
-      });
-      return klass;
+      }
     });
+    return klass;
+  });
+
+  describe('attributes', function() {
 
     lazy('fields', function() {
       return {title: 'test'};
@@ -76,6 +76,33 @@ describe('model', function() {
 
     it('subclasses contain parent class fields', function() {
       expect(this.Child.schema.title.name).to.eq('title');
+    });
+
+  });
+
+  describe('.assign()', function() {
+
+    lazy('source', function() { return new this.Post({title: 'A'}); });
+    lazy('target', function() { return new this.Post({title: 'B'}); });
+
+    subject(function() { return this.target.assign(this.source); });
+
+    it('copies attributes', function() {
+      expect(this.subject.title).to.eq('A');
+      expect(this.subject._attributes).to.eq(this.source._attributes);
+    });
+
+  });
+
+  describe('.clone()', function() {
+
+    lazy('source', function() { return new this.Post({title: 'A'}); });
+
+    subject(function() { return this.source.clone(); });
+
+    it('returns new instance with same attributes', function() {
+      expect(this.subject).to.not.eq(this.source);
+      expect(this.subject._attributes).to.eq(this.source._attributes);
     });
 
   });

@@ -3,7 +3,15 @@ import Immutable from 'immutable';
 import Schema from './schema';
 import Entity from './entity';
 
+import ModelMerge from './merge/model';
+
+
+/**
+ * A model is an Entity that has a defined schema and associated data.
+ */
 export default class Model extends Entity {
+
+  static merge = ModelMerge;
 
   _mutating = 0;
   _attributes = Immutable.Map();
@@ -11,6 +19,7 @@ export default class Model extends Entity {
   _rels = {};
 
   session = null;
+  clientRev = 1;
 
   constructor(fields) {
     super();
@@ -25,6 +34,24 @@ export default class Model extends Entity {
 
   get isModel() {
     return true;
+  }
+
+  get isLoaded() {
+    // if we have a rev, assume loaded
+    if(this.rev) {
+      return true;
+    }
+
+    // otherwise lets check for any attributes
+    // TODO
+  }
+
+  get isDirty() {
+    if(this.session) {
+      return this.session.isEntityDirty(this);
+    } else {
+      return false;
+    }
   }
 
   withMutations(fn) {
@@ -42,8 +69,36 @@ export default class Model extends Entity {
     }
   }
 
+
+  /**
+   * @override
+   */
+  assign(source) {
+    this._attributes = source._attributes;
+    return this;
+  }
+
+  clone() {
+    let clone = new this.constructor();
+    clone.assign(this);
+    return clone;
+  }
+
   get schema() {
     return this.constructor.schema;
+  }
+
+
+  /**
+   * @override
+   */
+  *relatedEntities() {
+    for(let relationship of this.schema.relationships()) {
+      let rel = this[relationship.name];
+      if(rel) {
+        yield rel;
+      }
+    }
   }
 
   static defineSchema(config) {
@@ -72,3 +127,6 @@ export default class Model extends Entity {
   }
 
 }
+
+// apply the default fields
+Model.schema.apply(Model.prototype);

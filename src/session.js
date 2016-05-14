@@ -5,6 +5,9 @@ import Container from './container';
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
  * bridges the top-level interfaces with the lower-level adapters.
+ *
+ * A session and its contained entities are essentially a "graph" of models
+ * and colections.
  */
 export default class Session {
 
@@ -65,6 +68,17 @@ export default class Session {
 
 
   /**
+   * Test if the given entity exists in the session.
+   *
+   * @param  {Entity}  entity entity to check for
+   * @return {boolean}        does the entity exist in the session
+   */
+  has(entity) {
+    return !!this.get(entity);
+  }
+
+
+  /**
    * Get the corresponding instance of the entity for this session based on its
    * id or clientId.
    *
@@ -99,7 +113,7 @@ export default class Session {
     let res = this.get(entity);
     if(!res) {
       let {id, clientId} = entity;
-      res = this.build(entity.constructor, {id, clientId});
+      res = this._adopt(this.build(entity.constructor, {id, clientId}));
     }
     return res;
   }
@@ -218,7 +232,36 @@ export default class Session {
     its shadow during the next flush.
   */
   touch(entity) {
+    if(this._dirtyCheckingSuspended) {
+      return;
+    }
+    // TODO Embedded models dirty their parents as well
+    // if(entity._embeddedParent) {
+    //   this.touch(entity._embeddedParent);
+    // }
+    console.assert(this.has(entity), `${entity} is not part of a session`);
+    if(!entity.isNew) {
+      var shadow = this.shadows.get(entity);
+      if(!shadow) {
+        this.shadows.add(entity.clone());
+      }
+    }
+    entity.clientRev++;
+  }
 
+  get dirtyEntities() {
+    var entities = new EntitySet();
+    for(var entity of this.shadows) {
+      entities.add(this.entities.get(entity));
+    }
+    for(var entity of this.newEntities) {
+      entities.add(entity);
+    }
+    return entities;
+  }
+
+  isEntityDirty(entity) {
+    return this.dirtyEntities.has(entity);
   }
 
   /**
@@ -230,13 +273,149 @@ export default class Session {
 
 
   /**
+   * Update the corresponding entity in the session with the data contained
+   * in the passed in entity.
+   *
+   * @param  {Entity} entity the source entity
+   * @return {Entity}        the updated entity
+   */
+  update(entity) {
+    let target = this.fetch(entity);
+    return target.assign(entity);
+  }
+
+  /**
    * Merge an entity into the session.
    *
    * @param  {Entity} serverEntity the entity to merge
    * @return {Entity}              the merged entity within the session
    */
   merge(serverEntity) {
-    
+    if(this.parent) {
+      if(serverEntity.session !== this.parent) {
+        serverEntity = this.parent.merge(serverEntity);
+      }
+      // TODO use clientRev as rev
+    }
+
+    // TODO clean this up
+    // We need to recurse to reify clientIds since we hit issues
+    // when updating the shadow
+    if(!serverEntity.clientId || serverEntity.isCollection) {
+      this._reifyClientId(serverEntity);
+      for(var childEntity of serverEntity.relatedEntities()) {
+        this._reifyClientId(childEntity);
+      }
+    }
+
+    var entity = this.fetch(serverEntity),
+        shadow = this.shadows.get(serverEntity);
+
+    // Unloaded entities do not have any data to merge, nor should they
+    // have versioning information
+    if(!serverEntity.isLoaded) {
+      return entity;
+    }
+
+    // Some backends will not return versioning information. In this
+    // case we just fabricate our own server versioning, assuming that
+    // all new entities are a newer version.
+    // NOTE: rev is also used to break merge recursion
+    if(!serverEntity.rev) {
+      serverEntity.rev = (entity.rev === null || entity.rev === undefined) ? 1 : entity.rev + 1;
+    }
+
+    // Optimistically assume has seen client's version if no clientRev set
+    if(!serverEntity.clientRev) {
+      serverEntity.clientRev = (shadow || entity).clientRev;
+    }
+
+    // Have we already seen this version?
+    if(entity.rev && entity.rev >= serverEntity.rev) {
+      return entity;
+    }
+
+    // If a entity comes in with a clientRev that is lower than the
+    // shadow it is to be merged against, then the common ancestor is
+    // no longer tracked. In this scenario we currently just toss out.
+    if(shadow && shadow.clientRev > serverEntity.clientRev) {
+      console.warn(`Not merging stale entity ${serverEntity}`)
+      return entity;
+    }
+
+    var childrenToRecurse = [];
+    for(var childEntity of serverEntity.relatedEntities()) {
+      // recurse on detached/embedded children entities
+      // TODO needs to be embedded only in "this" relationship
+      if(childEntity.isLoaded && (childEntity.isEmbedded || childEntity.isDetached)) {
+        childrenToRecurse.push(childEntity);
+      }
+    }
+
+    // If there is no shadow, then no merging is necessary and we just
+    // update the session with the new data
+    if(!shadow) {
+      this._withDirtyCheckingSuspended(function() {
+        entity = this.update(serverEntity);
+      });
+
+      // TODO: move this check to update?
+      if(!entity.isNew) {
+        this.newEntities.delete(entity);
+      }
+    } else {
+      this._withDirtyCheckingSuspended(function() {
+        entity = this._merge(entity, shadow, serverEntity);
+      }, this);
+
+      if(entity.isDeleted) {
+        this.delete(merged);
+      } else {
+        // After a successful merge we update the shadow to the
+        // last known value from the server. As an optimization,
+        // we only create shadows if the entity has been dirtied.
+        console.assert(this.has(entity));
+        // TODO: diff the entity with the serverEntity and see if
+        // we can remove the shadow entirely
+        shadow.assign(entity);
+      }
+    }
+
+    // TODO
+    // this._cacheFor(serverEntity).add(serverEntity);
+
+    // recurse on detached and embedded children
+    childrenToRecurse.forEach(function(child) {
+      this.merge(child);
+    }, this);
+
+    return entity;
+  }
+
+  /**
+    @private
+
+    Do the actual merging.
+  */
+  _merge(entity, shadow, serverEntity) {
+    console.assert(serverEntity.id || !shadow.id, `Expected ${entity} to have an id set`);
+    // set id for new records
+    entity.id = serverEntity.id;
+    if(!entity.clientId) {
+      entity.clientId = serverEntity.clientId;
+    } else {
+      console.assert(entity.clientId === serverEntity.clientId, 'Client ids do not match');
+    }
+    // copy the server revision
+    entity.rev = serverEntity.rev;
+
+    // TODO: think through merging deleted models
+    // entity.isDeleted = serverEntity.isDeleted;
+
+    var strategy = this.container.mergeFor(serverEntity.constructor);
+    strategy.merge(entity, shadow, serverEntity);
+
+    return entity;
   }
 
   /**
@@ -284,6 +463,24 @@ export default class Session {
   */
   _reifyClientId(entity) {
     this.idManager.reifyClientId(entity);
+  }
+
+
+  /**
+   * @private
+   */
+  _withDirtyCheckingSuspended(callback, binding) {
+    // could be nested
+    if(this._dirtyCheckingSuspended) {
+      return callback.call(binding || this);
+    }
+
+    try {
+      this._dirtyCheckingSuspended = true;
+      return callback.call(binding || this);
+    } finally {
+      this._dirtyCheckingSuspended = false;
+    }
   }
 
 
