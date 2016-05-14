@@ -265,6 +265,50 @@ describe('session', function() {
     });
   });
 
+  describe('.revert', function() {
+
+    lazy('Post', function() {
+      let klass = class Post extends Model {}
+      klass.defineSchema({
+        typeKey: 'post',
+        attributes: {
+          title: {
+            type: 'string'
+          }
+        }
+      });
+      return klass;
+    });
+
+    subject(function() {
+      return this.session.revert(this.original);
+    });
+
+    context('with a model', function() {
+      lazy('original', function() {
+        return new this.Post({id: 1, rev: 2, title: 'reverting 101'});
+      });
+      lazy('shadow', function() {
+        return new this.Post({id: 1, rev: 2, title: 'reverting 102'});
+      });
+
+      beforeEach(function() {
+        this.session.merge(this.shadow);
+        this.session.touch(this.shadow);
+      });
+
+      context('when shadow is the same version', function() {
+
+        it('updates shadow based on original', function() {
+          expect(this.subject.title).to.eq('reverting 101');
+        });
+
+      });
+
+    });
+
+  });
+
   describe('.touch', function() {
 
     lazy('entity', function() {

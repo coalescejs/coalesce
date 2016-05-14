@@ -418,11 +418,39 @@ export default class Session {
     return entity;
   }
 
-  /**
-    Revert the local changes in the session based on the passed in "original".
-  */
-  revert(originalEntity) {
 
+  /**
+   * Invoked when a server operation fails and the shadow needs to be reverted
+   * back to an earlier version.
+   *
+   * @param  {type} original the value to revert to
+   * @return {type}          the reverted entity
+   */
+  revert(original) {
+    if(this.parent) {
+      original = this.parent.revert(original);
+    }
+
+    this._reifyClientId(original);
+
+    // TODO: traverse embedded relationships a la merge
+
+    var entity = this.entities.get(original);
+    console.assert(!!entity, "Cannot revert non-existant entity");
+
+    if(!entity.isNew) {
+      var shadow = this.shadows.get(original);
+      if(!original.rev || shadow && shadow.rev <= original.rev) {
+        // "rollback" shadow to the original
+        console.assert(this.has(original));
+        this.shadows.add(original.clone());
+      }
+      return this.shadows.get(original);
+    } else {
+      // re-track the entity as a new entity
+      this.newEntities.add(entity.clone());
+      return this.newEntities.get(original);
+    }
   }
 
   /**
