@@ -15,9 +15,4 @@ export default class Adapter {
     throw new Error(`${this} does not support remoteCall()`);
   }
 
-  // for now defined here
-  merge(entity, ancestor, shadow) {
-    throw new Error(`${this} does not support merge()`);
-  }
-
 }

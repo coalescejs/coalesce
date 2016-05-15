@@ -184,6 +184,49 @@ describe('session', function() {
 
   });
 
+  describe('.load', function() {
+
+    lazy('Post', function() {
+      let klass = class Post extends Model {}
+      klass.adapter = this.Adapter;
+      klass.defineSchema({
+        typeKey: 'post',
+        attributes: {
+          title: {
+            type: 'string'
+          }
+        }
+      });
+      return klass;
+    });
+
+    lazy('Adapter', function() {
+      return class TestAdapter {
+        async load(entity) {
+          let res = entity.clone();
+          res.title = 'loaded title';
+          res.rev = 1;
+          return res;
+        }
+      };
+    });
+
+    lazy('entity', function() {
+      return this.session.fetchBy(this.Post, {id: 1});
+    });
+
+    subject(function() {
+      return this.session.load(this.entity);
+    });
+
+    it('loads data', async function() {
+      let res = await this.subject;
+      expect(res.title).to.eq('loaded title');
+      expect(res.session).to.eq(this.session);
+    });
+
+  });
+
   describe('.merge', function() {
 
     lazy('Post', function() {

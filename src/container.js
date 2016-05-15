@@ -20,6 +20,34 @@ export default class Container {
   }
 
   /**
+   * Return the adapter for a type.
+   *
+   * @param  {*}     key
+   * @return {Merge}     adapter
+   */
+  adapterFor(key) {
+    if(typeof key === 'string') {
+      throw "Strings not supported";
+    }
+    let factory = key.adapter;
+    return this._resolveInstance(factory);
+  }
+
+  /**
+   * Return the cache for a type.
+   *
+   * @param  {*}     key
+   * @return {Merge}     cache
+   */
+  cacheFor(key) {
+    if(typeof key === 'string') {
+      throw "Strings not supported";
+    }
+    let factory = key.cache;
+    return this._resolveInstance(factory);
+  }
+
+  /**
    * Return the merge strategy for a type.
    *
    * @param  {*}     key

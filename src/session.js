@@ -154,8 +154,9 @@ export default class Session {
 
     console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
     // TODO: this should be done on a per-attribute bases
-    var cache = this._cacheFor(entity),
-        adapter = this._adapterFor(entity);
+    let cache = this.container.cacheFor(entity.constructor),
+        adapter = this.container.adapterFor(entity.constructor),
+        promise;
 
     if(!opts.skipCache) {
       promise = cache.getPromise(entity)
@@ -169,30 +170,6 @@ export default class Session {
     } else {
       promise = adapter.load(entity, opts, this);
       cache.add(entity, promise);
-    }
-
-    var promise;
-    if(this.parent) {
-      promise = this.parent.load(entity, opts);
-    } else {
-      console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
-      // TODO: this should be done on a per-attribute bases
-      var cache = this._cacheFor(entity),
-          adapter = this._adapterFor(entity);
-
-      if(!opts.skipCache) {
-        promise = cache.getPromise(entity)
-      }
-
-      if(promise) {
-        // the cache's promise is not guaranteed to return anything
-        promise = promise.then(function() {
-          return entity;
-        });
-      } else {
-        promise = adapter.load(entity, opts, this);
-        cache.add(entity, promise);
-      }
     }
 
     promise = promise.then((serverEntity) => {

@@ -3,6 +3,8 @@ import Immutable from 'immutable';
 import Schema from './schema';
 import Entity from './entity';
 
+import Adapter from './adapter';
+import Cache from './cache';
 import ModelMerge from './merge/model';
 
 
@@ -11,6 +13,8 @@ import ModelMerge from './merge/model';
  */
 export default class Model extends Entity {
 
+  static adapter = Adapter;
+  static cache = Cache;
   static merge = ModelMerge;
 
   _mutating = 0;
