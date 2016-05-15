@@ -8,6 +8,13 @@ export * from './merge/model.spec';
 
 export * from './model.spec';
 
+export * from './serializers/boolean.spec.js';
+export * from './serializers/date.spec.js';
+export * from './serializers/id.spec.js';
+export * from './serializers/number.spec.js';
+export * from './serializers/revision.spec.js';
+export * from './serializers/string.spec.js';
+
 export * from './session.spec';
 export * from './session/id-manager.spec';
 export * from './schema.spec';

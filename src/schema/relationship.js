@@ -1,5 +1,7 @@
 import Field from './field';
 
+import {dasherize} from 'inflection';
+
 export default class Relationship extends Field {
 
   constructor(schema, name, options) {
