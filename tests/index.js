@@ -1,4 +1,6 @@
 
+export * from './adapter.spec';
+
 export * from './container.spec';
 
 export * from './merge/array.spec';

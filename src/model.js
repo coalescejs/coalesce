@@ -114,6 +114,10 @@ export default class Model extends Entity {
     return this.schema.typeKey;
   }
 
+  get typeKey() {
+    return this.constructor.typeKey;
+  }
+
   static get schema() {
     // TODO use symbol?
     if(this.hasOwnProperty('_schema')) {
