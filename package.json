@@ -80,8 +80,8 @@
     }
   },
   "devDependencies": {
-    "jspm": "^0.17.0-beta.12",
+    "jspm": "^0.17.0-beta.14",
     "jspm-dev-server": "^0.4.0",
-    "testem": "^1.6.0"
+    "testem": "^1.7.1"
   }
 }

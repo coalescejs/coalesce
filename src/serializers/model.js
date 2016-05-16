@@ -42,7 +42,7 @@ export default class ModelSerializer {
     if(field.transient) {
       return;
     }
-
+    
     var key = this.keyFor(name, type, opts),
         value = model[name],
         serializer;
