@@ -15,15 +15,11 @@ describe('resolver', function() {
   describe('.resolveType()', function() {
 
     subject(function() {
-      return this.resolver.resolveType(this.Model);
+      return this.resolver.resolveType("model");
     });
 
-    context('with actual class', function() {
-
-      it('returns class', function() {
-        expect(this.subject).to.eq(this.Model);
-      });
-
+    it('errors', function() {
+      expect(() => this.subject).to.throw;
     });
 
   });

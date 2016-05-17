@@ -5,8 +5,8 @@ import {defaults} from 'lodash';
 import {camelize, pluralize} from 'inflection';
 
 /**
-  The Adapter is the main object responsible for interfacing with a remote server.
-*/
+ * The Adapter is the main object responsible for interfacing with a remote server.
+ */
 export default class Adapter {
 
   constructor() {

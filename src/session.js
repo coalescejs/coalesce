@@ -1,6 +1,6 @@
 import IdManager from './session/id-manager';
 import EntitySet from './utils/entity-set';
-import Container from './container';
+import DefaultContainer from './default-container';
 
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
@@ -17,7 +17,7 @@ export default class Session {
    *
    * @params {object} options
    */
-  constructor({container=new Container()}={}) {
+  constructor({container=new DefaultContainer()}={}) {
     this.container = container;
     this.entities = new EntitySet();
     this.shadows = new EntitySet();

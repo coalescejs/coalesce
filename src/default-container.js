@@ -1,4 +1,4 @@
-import Resolver from './resolver';
+import Container from './container';
 
 import BooleanSerializer from './serializers/boolean';
 import DateSerializer from './serializers/date';
@@ -16,16 +16,16 @@ const DEFAULT_SERIALIZERS = {
   string: StringSerializer
 };
 
-
 /**
  * Default resolver which has some sensible implementations for some primitives.
  */
-export default class DefaultResolver extends Resolver {
+export default class DefaultContainer extends Container {
 
   constructor() {
     super();
     for(var key in DEFAULT_SERIALIZERS) {
       let provider = DEFAULT_SERIALIZERS[key];
+      this.registerType(key);
       this.registerProvider(key, 'serializer', provider)
     }
   }

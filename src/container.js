@@ -1,4 +1,4 @@
-import DefaultResolver from './default-resolver';
+import Resolver from './resolver';
 
 /**
  * Lighweight injection context and singleton registry.
@@ -6,8 +6,10 @@ import DefaultResolver from './default-resolver';
 export default class Container {
 
   _instances = new Map();
+  _types = {};
+  _providers = new Registry();
 
-  constructor(resolver=new DefaultResolver()) {
+  constructor(resolver=new Resolver()) {
     this.resolver = resolver;
   }
 
@@ -18,7 +20,20 @@ export default class Container {
    * @return {class}
    */
   typeFor(type) {
-    return this.resolver.resolveType(type);
+    if(typeof type === 'string') {
+      let cached = this._types[type];
+      if(!cached) {
+        cached = this._types[type] = this.resolver.resolveType(type);
+      }
+      return cached;
+    }
+
+    // OPTIMIZATION: if we see an implemented type, lets cache so that we can
+    // later access via typeKey
+    if(!this._types[type.typeKey]) {
+      this._types[type.typeKey] = type;
+    }
+    return type;
   }
 
   /**
@@ -29,8 +44,12 @@ export default class Container {
    * @return {*}            instance of provider
    */
   providerFor(type, name) {
-    let factory = this.resolver.resolveProvider(type, name);
-    return this._getInstance(factory);
+    type = this.typeFor(type);
+    let provider = this._providers.get(type, name);
+    if(!provider) {
+      provider = this.resolver.resolveProvider(type, name);
+    }
+    return this._getInstance(provider);
   }
 
   /**
@@ -47,7 +66,7 @@ export default class Container {
    * Return the cache for a type.
    *
    * @param  {*}     type
-   * @return {Cache}     cache
+   * @return {Cache}      cache
    */
   cacheFor(type) {
     return this.providerFor(type, 'cache');
@@ -57,10 +76,46 @@ export default class Container {
    * Return the merge strategy for a type.
    *
    * @param  {*}     type
-   * @return {Merge}     merge strategy
+   * @return {Merge}      merge strategy
    */
   mergeFor(type) {
     return this.providerFor(type, 'merge');
+  }
+
+  /**
+   * Return the serializer for a type.
+   *
+   * @param  {*}          type
+   * @return {Serializer}      serializer
+   */
+  serializerFor(type) {
+    return this.providerFor(type, 'serializer');
+  }
+
+
+  /**
+   * Explicitly register a type.
+   *
+   * @param  {type} type description
+   */
+  registerType(type) {
+    if(typeof type === 'string') {
+      type = {typeKey: type, primitive: true};
+    }
+    this._types[type.typeKey] = type;
+  }
+
+
+  /**
+   * Explicitly register a provider.
+   *
+   * @param  {*} type
+   * @param  {string} name
+   * @param  {*} provider
+   */
+  registerProvider(type, name, provider) {
+    type = this.typeFor(type);
+    this._providers.set(type, name, provider);
   }
 
   /**
@@ -76,6 +131,26 @@ export default class Container {
       this._instances.set(type, instance);
     }
     return instance;
+  }
+
+}
+
+
+class Registry {
+
+  _types = {};
+
+  get(type, name) {
+    let registry = this._types[type.typeKey];
+    return registry && registry[name];
+  }
+
+  set(type, name, provider) {
+    let registry = this._types[type.typeKey];
+    if(!registry) {
+      registry = this._types[type.typeKey] = {};
+    }
+    registry[name] = provider;
   }
 
 }

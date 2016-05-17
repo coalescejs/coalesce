@@ -43,8 +43,6 @@ describe('model', function() {
 
     });
 
-
-
   });
 
   describe('.schema', function() {

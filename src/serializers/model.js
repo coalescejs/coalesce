@@ -1,9 +1,9 @@
 import { singularize, camelize, underscore, dasherize } from 'inflection';
 
+
 /**
-  @namespace serializers
-  @class ModelSerializer
-*/
+ * Serializes models.
+ */
 export default class ModelSerializer {
 
   constructor(container) {
@@ -11,19 +11,21 @@ export default class ModelSerializer {
     this._keyCache = {};
   }
 
-  keyFor(name, type, opts) {
-    var key;
-    if(key = this._keyCache[name]) {
-      return key;
+  keyFor(field) {
+    if(this._keyCache[field.name]) {
+      return this._keyCache[field.name];
     }
 
-    key = opts && opts.key || this.keyForType(name, type, opts);
-    this._keyCache[name] = key;
+    const key = this._keyFor(field);
+    this._keyCache[field.name] = key;
     return key;
   }
 
-  keyForType(name, type, opts) {
-    return underscore(name);
+  /**
+   * @protected
+   */
+  _keyFor(field) {
+    return field.key || underscore(field.name);
   }
 
   serialize(model) {
@@ -42,82 +44,63 @@ export default class ModelSerializer {
     if(field.transient) {
       return;
     }
-    
-    var key = this.keyFor(name, type, opts),
-        value = model[name],
+
+    var key = this.keyFor(field),
+        value = model[field.name],
         serializer;
 
-    if(type) {
-      serializer = this.serializerFor(type);
+    if(field.type) {
+      serializer = this.serializerFor(field.type);
     }
     if(serializer) {
-      value = serializer.serialize(value, opts);
+      value = serializer.serialize(value);
     }
     if(value !== undefined) {
       serialized[key] = value;
     }
   }
 
-  deserialize(hash, opts) {
-    var model = this.createModel();
+  deserialize(hash) {
+    var model = this.createModel(hash.type);
 
-    this.extractMeta(model, hash, opts);
-    this.extractAttributes(model, hash);
-    this.extractRelationships(model, hash);
+    for(var field of model.schema.fields()) {
+      this.extractField(hash, model, field);
+    }
 
     return model;
   }
 
-  extractMeta(model, hash, opts) {
-    this.extractField(model, hash, 'id', 'id');
-    this.extractField(model, hash, 'clientId', 'string');
-    this.extractField(model, hash, 'rev', 'revision');
-    this.extractField(model, hash, 'clientRev', 'revision');
-    this.extractField(model, hash, 'errors', 'errors');
-    if(!opts || opts.reifyClientId !== false) {
-      this.idManager.reifyClientId(model);
-    }
-  }
-
-  extractAttributes(model, hash) {
-    model.eachAttribute(function(name, attribute) {
-      this.extractField(model, hash, name, attribute.type, attribute);
-    }, this);
-  }
-
-  extractRelationships(model, hash) {
-    model.eachRelationship(function(name, relationship) {
-      // we dasherize the kind for lookups for consistency
-      var kindKey = dasherize(relationship.kind);
-      this.extractField(model, hash, name, kindKey, relationship);
-    }, this);
-  }
-
-  extractField(model, hash, name, type, opts) {
-    var key = this.keyFor(name, type, opts),
+  extractField(hash, model, field) {
+    var key = this.keyFor(field),
         value = hash[key],
         serializer;
     if(typeof value === 'undefined') {
       return;
     }
-    if(type) {
-      serializer = this.serializerFor(type);
+    if(field.type) {
+      serializer = this.serializerFor(field.type);
     }
     if(serializer) {
-      value = serializer.deserialize(value, opts);
+      value = serializer.deserialize(value);
     }
     if(typeof value !== 'undefined') {
-      model[name] = value;
+      // TODO: optimize these setters, e.g. build attributes then set
+      // all at once via ImmutableJS
+      model[field.name] = value;
     }
   }
 
-  createModel() {
-    var klass = this.typeFor(this.typeKey);
-    return safeCreate(klass);
+  createModel(type) {
+    type = this.typeFor(type);
+    return new type();
   }
 
-  typeFor(typeKey) {
-    return this.context.typeFor(typeKey);
+  typeFor(type) {
+    return this._container.typeFor(type);
+  }
+
+  serializerFor(type) {
+    return this._container.serializerFor(type);
   }
 
 }

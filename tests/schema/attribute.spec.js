@@ -10,20 +10,38 @@ describe('schema/attribute', function() {
   });
 
   lazy('Model', function() {
-    let klass = class TestModel extends Model {
-
-    }
-    klass.defineSchema({
+    class TestModel extends Model {}
+    TestModel.defineSchema({
       typeKey: 'post',
       attributes: {
         [this.name]: this.opts
       }
     });
-    return klass;
+    return TestModel;
   });
 
-  it('creates property', function() {
+  it('defines property', function() {
     expect(Object.getOwnPropertyDescriptor(this.Model.prototype, 'title')).to.not.be.undefined;
+  });
+
+  describe('.get()', function() {
+
+    lazy('model', function() {
+      return new this.Model({
+        [this.name]: this.value
+      });
+    });
+
+    lazy('value', () => { return {test: true}; });
+
+    subject(function() {
+      return this.model[this.name];
+    });
+
+    it('returns value', function() {
+      expect(this.subject).to.eq(this.value);
+    });
+
   });
 
 });
