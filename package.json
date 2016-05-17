@@ -3,13 +3,13 @@
     "name": "coalesce",
     "dependencies": {
       "babel-preset-stage-0": "npm:babel-preset-stage-0@^6.5.0",
+      "babel-types": "npm:babel-types@6.8.1",
       "chai": "npm:chai@^3.5.0",
       "fetch-mock": "npm:fetch-mock@^4.5.0",
       "immutable": "npm:immutable@^3.7.6",
       "inflection": "npm:inflection@^1.8.0",
       "lodash": "npm:lodash@^4.11.1",
       "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.0",
-      "sinon": "npm:sinon@^1.17.3",
       "whatwg-fetch": "npm:whatwg-fetch@^0.11.0"
     },
     "devDependencies": {
@@ -40,11 +40,26 @@
       "zlib": "github:jspm/nodelibs-zlib@^0.2.0-alpha"
     },
     "overrides": {
-      "npm:babel-runtime@5.8.38": {
-        "main": false,
-        "dependencies": {},
-        "optionalDependencies": {
-          "core-js": "^1.2.0"
+      "npm:babel-types@6.8.1": {
+        "meta": {
+          "lib/index.js": {
+            "deps": [
+              "./definitions/init.js"
+            ],
+            "cjsDeferDepsExecute": true
+          },
+          "lib/definitions/init.js": {
+            "deps": [
+              "./index",
+              "./core",
+              "./es2015",
+              "./flow",
+              "./jsx",
+              "./misc",
+              "./experimental"
+            ],
+            "cjsDeferDepsExecute": true
+          }
         }
       },
       "npm:browserify-zlib@0.1.4": {
@@ -76,6 +91,9 @@
           "css": "*"
         },
         "registry": "jspm"
+      },
+      "npm:whatwg-fetch@0.11.1": {
+        "jspmNodeConversion": false
       }
     }
   },
