@@ -9,7 +9,8 @@ import {camelize, pluralize} from 'inflection';
  */
 export default class Adapter {
 
-  constructor() {
+  constructor(container) {
+    this._container = container;
     this.middleware = [
       ::this._build,
       ::this._serialize,
@@ -181,8 +182,25 @@ export default class Adapter {
    * Middleware to serialize/deserialize using the serialization layer.
    */
   async _serialize(ctx, next) {
-    // TODO
-    return next();
+    const serializer = this._serializerFor(ctx.context);
+    if(ctx.body) {
+      ctx.body = serializer.serialize(ctx.body);
+    }
+    let res = await next();
+    if(res) {
+      res = serializer.deserialize(res);
+    }
+    return res;
+  }
+
+  _serializerFor(ctx) {
+    let type;
+    if(ctx.isModel) {
+      type = ctx.constructor;
+    } else {
+      type = ctx;
+    }
+    return this._container.serializerFor(type);
   }
 
   /**

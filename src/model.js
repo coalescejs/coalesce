@@ -6,6 +6,7 @@ import Entity from './entity';
 import Adapter from './adapter';
 import Cache from './cache';
 import ModelMerge from './merge/model';
+import ModelSerializer from './serializers/model';
 
 
 /**
@@ -16,6 +17,7 @@ export default class Model extends Entity {
   static adapter = Adapter;
   static cache = Cache;
   static merge = ModelMerge;
+  static serializer = ModelSerializer;
 
   _mutating = 0;
   _attributes = Immutable.Map();

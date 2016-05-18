@@ -127,7 +127,7 @@ export default class Container {
     let instance = this._instances.get(type);
     if(!instance) {
       // TODO dependency injection?
-      instance = new type();
+      instance = new type(this);
       this._instances.set(type, instance);
     }
     return instance;

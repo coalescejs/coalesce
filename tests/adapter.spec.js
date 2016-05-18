@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 import fetchMock from 'fetch-mock';
 
+import DefaultContainer from 'coalesce/default-container';
 import Model from 'coalesce/model';
-
 import Adapter from 'coalesce/adapter';
 
 describe('adapter', function() {
@@ -25,7 +25,10 @@ describe('adapter', function() {
     return klass;
   });
 
-  subject('adapter', () => new Adapter());
+  lazy('container', () => new DefaultContainer())
+  subject('adapter', function() {
+    return new Adapter(this.container);
+  });
 
   describe('.load()', function() {
 
@@ -42,12 +45,14 @@ describe('adapter', function() {
     context('with a model', function() {
 
       beforeEach(function() {
-        fetchMock.mock('/posts/1', 'GET', JSON.stringify({test: true}));
+        fetchMock.mock('/posts/1', 'GET', JSON.stringify({type: 'post', id: 1, title: 'revived'}));
       });
 
       it('loads data', async function() {
         let res = await this.subject;
-        expect(res.test).to.be.true
+        expect(res).to.be.an.instanceOf(this.Post);
+        expect(res.title).to.eq('revived');
+        expect(res.id).to.eq("1");
       });
 
     });
