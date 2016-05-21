@@ -1,5 +1,6 @@
-import IdManager from './session/id-manager';
+import IdManager from './id-manager';
 import EntitySet from './utils/entity-set';
+import Graph from './graph';
 import DefaultContainer from './default-container';
 
 /**
@@ -11,7 +12,6 @@ import DefaultContainer from './default-container';
  */
 export default class Session {
 
-
   /**
    * Create a session.
    *
@@ -19,12 +19,11 @@ export default class Session {
    */
   constructor({container=new DefaultContainer()}={}) {
     this.container = container;
-    this.entities = new EntitySet();
-    this.shadows = new EntitySet();
+    this.idManager = container.get(IdManager);
+    this.entities = container.get(Graph);
+    this.shadows = container.get(Graph);
     this.newEntities = new EntitySet();
-    this.idManager = new IdManager();
   }
-
 
   /**
    * Build an instance of the type. Unlike `create`, this will not mark the
@@ -34,12 +33,12 @@ export default class Session {
    * @param  {object} hash initial attributes
    * @return {Model}       instantiated model
    */
-  build(type, hash) {
+  build(type, ...args) {
     type = this.container.typeFor(type);
-    let entity = new type(hash || {});
+    let entity = new type(this.entities, ...args);
+    this._reifyClientId(entity);
     return entity;
   }
-
 
   /**
    * Create an instance of the type. This instance will be marked for creation
@@ -49,11 +48,24 @@ export default class Session {
    * @param  {object} hash initial attributes
    * @return {type}        created model
    */
-  create(type, hash) {
-    var entity = this.build(type, hash);
-    return this._adopt(entity);
+  create(type, ...args) {
+    // TODO set isNew metadata
+    return this.push(type, ...args);
   }
 
+  /**
+   * Push data directly into the session, bypassing merging. This is useful for
+   * testing, but should be used caringly.
+   *
+   * @param  {*}      type type identifier
+   * @param  {object} hash initial attributes
+   * @return {type}        entity inside session
+   */
+  push(type, ...args) {
+    var entity = this.build(type, ...args);
+    this._adopt(entity);
+    return entity;
+  }
 
   /**
    * Get the corresponding instance of the entity within session. If the entity
@@ -220,7 +232,7 @@ export default class Session {
     if(!entity.isNew) {
       var shadow = this.shadows.get(entity);
       if(!shadow) {
-        this.shadows.add(entity.clone());
+        this.shadows.update(entity);
       }
     }
     entity.clientRev++;
@@ -273,16 +285,6 @@ export default class Session {
         serverEntity = this.parent.merge(serverEntity);
       }
       // TODO use clientRev as rev
-    }
-
-    // TODO clean this up
-    // We need to recurse to reify clientIds since we hit issues
-    // when updating the shadow
-    if(!serverEntity.clientId || serverEntity.isCollection) {
-      this._reifyClientId(serverEntity);
-      for(var childEntity of serverEntity.relatedEntities()) {
-        this._reifyClientId(childEntity);
-      }
     }
 
     var entity = this.fetch(serverEntity),
@@ -420,12 +422,12 @@ export default class Session {
       if(!original.rev || shadow && shadow.rev <= original.rev) {
         // "rollback" shadow to the original
         console.assert(this.has(original));
-        this.shadows.add(original.clone());
+        this.shadows.update(original);
       }
       return this.shadows.get(original);
     } else {
       // re-track the entity as a new entity
-      this.newEntities.add(entity.clone());
+      this.newEntities.add(entity);
       return this.newEntities.get(original);
     }
   }
@@ -449,15 +451,8 @@ export default class Session {
     this._reifyClientId(entity);
     console.assert(!entity.session || entity.session === this, "Entities cannot be moved between sessions. Use `get` or `merge` instead.");
     console.assert(!this.get(entity) || this.entities.get(entity) === entity, "An equivalent model already exists in the session!");
-
-    // if(model.isNew) {
-    //   this.newModels.add(model);
-    // }
-    // Only loaded models are stored on the session
-    if(!entity.session) {
-      this.entities.add(entity);
-      entity.session = this;
-    }
+    this.entities.add(entity);
+    entity.session = this;
     return entity;
   }
 

@@ -5,6 +5,8 @@ import {isNil} from 'lodash';
  */
 export default class NumberSerializer {
 
+  static singleton = true;
+
   deserialize(serialized) {
     return isNil(serialized) ? null : Number(serialized);
   }

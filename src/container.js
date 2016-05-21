@@ -5,12 +5,48 @@ import Resolver from './resolver';
  */
 export default class Container {
 
+  static singleton = true;
+
   _instances = new Map();
   _types = {};
   _providers = new Registry();
 
   constructor(resolver=new Resolver()) {
     this.resolver = resolver;
+    this._instances.set(Container, this);
+  }
+
+  /**
+   * Get the singleton instance corresponding to a particular type.
+   *
+   * TODO: think through singleton configuration
+   *
+   * @param  {*} type the constructor for the instance
+   * @return {*}      the instance
+   */
+  get(type) {
+    if(!type.singleton) {
+      return this.create(type);
+    }
+    let instance = this._instances.get(type);
+    if(!instance) {
+      // TODO dependency injection?
+      instance = this.create(type);
+      this._instances.set(type, instance);
+    }
+    return instance;
+  }
+
+
+  /**
+   * Instantiate the passed in type and resolve any dependencies.
+   *
+   * @param  {type} type description
+   * @return {type}      description
+   */
+  create(type) {
+    const dependencies = this.resolveDependencies(type);
+    return new type(...dependencies);
   }
 
   /**
@@ -49,7 +85,7 @@ export default class Container {
     if(!provider) {
       provider = this.resolver.resolveProvider(type, name);
     }
-    return this._getInstance(provider);
+    return this.get(provider);
   }
 
   /**
@@ -118,19 +154,17 @@ export default class Container {
     this._providers.set(type, name, provider);
   }
 
+
   /**
    * @private
    *
-   * Lookup a singleton instance within this container for the given type.
+   * TODO: circular dependency breaking
    */
-  _getInstance(type) {
-    let instance = this._instances.get(type);
-    if(!instance) {
-      // TODO dependency injection?
-      instance = new type(this);
-      this._instances.set(type, instance);
-    }
-    return instance;
+  resolveDependencies(type) {
+    let dependencies = type.dependencies || [];
+    return dependencies.map((injectionType) => {
+      return this.get(injectionType);
+    });
   }
 
 }

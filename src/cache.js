@@ -3,6 +3,8 @@
 */
 export default class Cache {
 
+  static singleton = true;
+
   constructor() {
     this.clear();
   }

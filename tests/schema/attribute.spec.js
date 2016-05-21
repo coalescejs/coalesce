@@ -1,5 +1,7 @@
 import {expect} from 'chai';
 
+import DefaultContainer from 'coalesce/default-container';
+import Graph from 'coalesce/graph';
 import Model from 'coalesce/model';
 
 describe('schema/attribute', function() {
@@ -8,6 +10,8 @@ describe('schema/attribute', function() {
   lazy('opts', () => {
     return {};
   });
+  lazy('container', () => new DefaultContainer());
+  lazy('graph', function() { return this.container.get(Graph); });
 
   lazy('Model', function() {
     class TestModel extends Model {}
@@ -27,7 +31,7 @@ describe('schema/attribute', function() {
   describe('.get()', function() {
 
     lazy('model', function() {
-      return new this.Model({
+      return new this.Model(this.graph, {
         [this.name]: this.value
       });
     });

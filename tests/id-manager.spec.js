@@ -1,8 +1,8 @@
 import {expect} from 'chai';
 
-import IdManager from 'coalesce/session/id-manager';
+import IdManager from 'coalesce/id-manager';
 
-describe('session/id-manager', function() {
+describe('id-manager', function() {
 
   subject(function() {
     return new IdManager();

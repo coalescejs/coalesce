@@ -5,30 +5,27 @@ export default class BelongsTo extends Relationship {
   defineProperty(prototype) {
     var field = this,
         name = field.name,
+        type = field.type,
         attributeName = field.attributeName;
 
     Object.defineProperty(prototype, name, {
       enumerable: true,
       configurable: true,
       get: function() {
-        if(this.session) {
-          let id = this._data[attributeName];
-          if(id) {
-            return this.session.getBy({id});
-          } else {
-            return id;
-          }
+        let clientId = this._data.get(attributeName);
+        if(clientId) {
+          return this.graph.get({clientId});
         } else {
-          return this._rels[name];
+          return clientId;
         }
       },
       set: function(value) {
-        if(this.session) {
+        const clientId = value && value.clientId;
+        console.assert(!value || value.clientId, "Value must have a client id");
+        if(clientId) {
           this.withMutations((data) => {
-            data.set(attributeName, value && value.id);
+            data.set(attributeName, clientId);
           });
-        } else {
-          this._rels[name] = value;
         }
         return value;
       }
@@ -36,7 +33,7 @@ export default class BelongsTo extends Relationship {
   }
 
   get attributeName() {
-    return `${this.name}Id`;
+    return `${this.name}`;
   }
 
 }

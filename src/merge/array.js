@@ -11,6 +11,8 @@ import {find} from 'lodash';
  */
 export default class ArrayMerge {
 
+  static singleton = true;
+
   merge(ours, ancestor, theirs) {
 
     var oursDiff = Array.from(eachUncommon(new ArrayDiff(ours, ancestor, isEqual))),

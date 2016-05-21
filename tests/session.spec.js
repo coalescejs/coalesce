@@ -2,15 +2,25 @@ import {expect} from 'chai';
 
 import Model from 'coalesce/model';
 
+import DefaultContainer from 'coalesce/default-container';
 import Session from 'coalesce/session';
+import IdManager from 'coalesce/id-manager';
+import Graph from 'coalesce/graph';
 
 describe('session', function() {
 
-  subject('session', () => new Session());
+  lazy('container', () => new DefaultContainer());
+  subject('session', function() {
+    return new Session(this.container);
+  });
 
   lazy('Post', () => {
     return class Post extends Model {
     };
+  });
+
+  lazy('graph', function() {
+    return this.container.get(Graph);
   });
 
   describe('.build', function() {
@@ -23,6 +33,23 @@ describe('session', function() {
 
     it('instantiates', function() {
       expect(this.subject).to.be.an.instanceOf(this.Post);
+      expect(this.session.get(this.subject)).to.not.eq(this.subject);
+    });
+
+  });
+
+  describe('.push', function() {
+
+    lazy('hash', () => {return {};});
+
+    subject(function() {
+      return this.session.create(this.Post, this.hash);
+    });
+
+    it('instantiates inside session', function() {
+      expect(this.subject).to.be.an.instanceOf(this.Post);
+      expect(this.subject.session).to.eq(this.session);
+      expect(this.session.get(this.subject)).to.eq(this.subject);
     });
 
   });
@@ -35,9 +62,10 @@ describe('session', function() {
       return this.session.create(this.Post, this.hash);
     });
 
-    it('instantiates and adds to session', function() {
+    it('instantiates inside session', function() {
       expect(this.subject).to.be.an.instanceOf(this.Post);
       expect(this.subject.session).to.eq(this.session);
+      expect(this.session.get(this.subject)).to.eq(this.subject);
     });
 
   });
@@ -45,7 +73,7 @@ describe('session', function() {
   describe('.get', function() {
 
     lazy('entity', function() {
-      return new this.Post({id: "1"});
+      return new this.Post(this.graph, {id: "1"});
     });
 
     subject(function() {
@@ -54,8 +82,12 @@ describe('session', function() {
 
     context('when entity is part of the session', function() {
 
+      lazy('entity', function() {
+        return this.session.push(this.Post, {id: "1"});
+      });
+
       beforeEach(function() {
-        this.session._adopt(this.entity);
+        this.entity;
       });
 
       it('returns the same entity', function() {
@@ -78,7 +110,7 @@ describe('session', function() {
   describe('.getBy', function() {
 
     lazy('entity', function() {
-      return new this.Post({id: "1"});
+      return new this.Post(this.graph, {id: "1"});
     });
 
     lazy('params', () => {});
@@ -89,8 +121,12 @@ describe('session', function() {
 
     context('when entity is part of the session', function() {
 
+      lazy('entity', function() {
+        return this.session.push(this.Post, {id: "1"});
+      });
+
       beforeEach(function() {
-        this.session._adopt(this.entity);
+        this.entity;
       });
 
       context('by clientId', function() {
@@ -120,7 +156,7 @@ describe('session', function() {
   describe('.fetch', function() {
 
     lazy('entity', function() {
-      return new this.Post({id: "1"});
+      return new this.Post(this.graph, {id: "1"});
     });
 
     subject(function() {
@@ -129,8 +165,12 @@ describe('session', function() {
 
     context('when entity is part of the session', function() {
 
+      lazy('entity', function() {
+        return this.session.push(this.Post, {id: "1"});
+      });
+
       beforeEach(function() {
-        this.session._adopt(this.entity);
+        this.entity;
       });
 
       it('returns the same entity', function() {
@@ -154,7 +194,7 @@ describe('session', function() {
   describe('.fetchBy', function() {
 
     lazy('entity', function() {
-      return new this.Post({id: "1"});
+      return new this.Post(this.graph, {id: "1"});
     });
 
     subject(function() {
@@ -163,8 +203,12 @@ describe('session', function() {
 
     context('when entity is part of the session', function() {
 
+      lazy('entity', function() {
+        return this.session.push(this.Post, {id: "1"});
+      });
+
       beforeEach(function() {
-        this.session._adopt(this.entity);
+        this.entity;
       });
 
       it('returns the same entity', function() {
@@ -201,9 +245,10 @@ describe('session', function() {
     });
 
     lazy('Adapter', function() {
+      let container = this.container;
       return class TestAdapter {
         async load(entity) {
-          let res = entity.clone();
+          let res = entity.clone(container.get(Graph));
           res.title = 'loaded title';
           res.rev = 1;
           return res;
@@ -248,7 +293,7 @@ describe('session', function() {
 
     context('with a model', function() {
       lazy('entity', function() {
-        return new this.Post({id: 1, rev: 2, title: 'merging 101'});
+        return new this.Post(this.graph, {id: 1, rev: 2, title: 'merging 101'});
       });
 
       context('when not in session', function() {
@@ -264,7 +309,7 @@ describe('session', function() {
       context('when already in session', function() {
 
         lazy('rev', () => 3);
-        lazy('existing', function() { return new this.Post({id: 1, rev: this.rev, title: 'merging 102'}); });
+        lazy('existing', function() { return new this.Post(this.graph, {id: 1, rev: this.rev, title: 'merging 102'}); });
 
         beforeEach(function() {
           this.session.merge(this.existing);
@@ -329,10 +374,10 @@ describe('session', function() {
 
     context('with a model', function() {
       lazy('original', function() {
-        return new this.Post({id: 1, rev: 2, title: 'reverting 101'});
+        return new this.Post(this.graph, {id: 1, rev: 2, title: 'reverting 101'});
       });
       lazy('shadow', function() {
-        return new this.Post({id: 1, rev: 2, title: 'reverting 102'});
+        return new this.Post(this.graph, {id: 1, rev: 2, title: 'reverting 102'});
       });
 
       beforeEach(function() {
@@ -355,7 +400,7 @@ describe('session', function() {
   describe('.touch', function() {
 
     lazy('entity', function() {
-      return this.session.merge(new this.Post({id: 1}));
+      return this.session.merge(new this.Post(this.graph, {id: 1}));
     });
 
     subject(function() { return this.session.touch(this.entity); });

@@ -1,13 +1,20 @@
-import { singularize, camelize, underscore, dasherize } from 'inflection';
+import IdManager from '../id-manager';
+import Graph from '../graph';
+import Container from '../container';
 
+import { singularize, camelize, underscore, dasherize } from 'inflection';
 
 /**
  * Serializes models.
  */
 export default class ModelSerializer {
 
+  static singleton = true;
+  static dependencies = [Container];
+
   constructor(container) {
     this._container = container;
+    this._idManager = container.get(IdManager);
     this._keyCache = {};
   }
 
@@ -60,17 +67,22 @@ export default class ModelSerializer {
     }
   }
 
-  deserialize(hash) {
-    var model = this.createModel(hash.type);
+  deserialize(hash, graph=new Graph(this._idManager)) {
+    let data = {},
+        type = hash.type;
 
-    for(var field of model.schema.fields()) {
-      this.extractField(hash, model, field);
+    console.assert(type, `Model payload must include 'type'`);
+
+    type = this.typeFor(type);
+
+    for(var field of type.schema.fields()) {
+      this.extractField(hash, data, field, graph);
     }
 
-    return model;
+    return this.createModel(type, graph, data);
   }
 
-  extractField(hash, model, field) {
+  extractField(hash, data, field, graph) {
     var key = this.keyFor(field),
         value = hash[key],
         serializer;
@@ -81,18 +93,17 @@ export default class ModelSerializer {
       serializer = this.serializerFor(field.type);
     }
     if(serializer) {
-      value = serializer.deserialize(value);
+      value = serializer.deserialize(value, graph);
     }
     if(typeof value !== 'undefined') {
       // TODO: optimize these setters, e.g. build attributes then set
       // all at once via ImmutableJS
-      model[field.name] = value;
+      data[field.name] = value;
     }
   }
 
-  createModel(type) {
-    type = this.typeFor(type);
-    return new type();
+  createModel(type, graph, data) {
+    return new type(graph, data);
   }
 
   typeFor(type) {

@@ -3,9 +3,11 @@ import isEqual from '../utils/is-equal';
 /**
  * Merge a model on a per-field basis.
  *
- * XXX: OPTIMIZE: use advanatage of immutable attributes
+ * TODO: OPTIMIZE: take advantage of immutable attributes
  */
 export default class ModelMerge {
+
+  static singleton = true;
 
   merge(ours, ancestor, theirs) {
     for(var field of ours.schema.attributes()) {

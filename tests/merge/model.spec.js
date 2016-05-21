@@ -2,6 +2,8 @@ import { expect } from 'chai';
 
 import Model from 'coalesce/model';
 import ModelMerge from 'coalesce/merge/model';
+import DefaultContainer from 'coalesce/default-container';
+import Graph from 'coalesce/graph';
 
 class Post extends Model {
 
@@ -24,6 +26,16 @@ describe('merge/model', function() {
   subject('inst', function() {
     return new ModelMerge();
   });
+  lazy('container', () => new DefaultContainer());
+  lazy('graphA', function() {
+    return this.container.get(Graph);
+  });
+  lazy('graphB', function() {
+    return this.container.get(Graph);
+  });
+  lazy('graphC', function() {
+    return this.container.get(Graph);
+  });
 
   describe('.merge', function() {
 
@@ -31,9 +43,9 @@ describe('merge/model', function() {
       return this.inst.merge(this.ours, this.ancestor, this.theirs);
     });
 
-    lazy('ours', () => new Post({title: 'A', desc: '1'}));
-    lazy('ancestor', () => new Post({title: 'A', desc: '1'}));
-    lazy('theirs', () => new Post({title: 'A', desc: '1'}));
+    lazy('ours', function() { return new Post(this.graphA, {title: 'A', desc: '1'}); });
+    lazy('ancestor', function() { return new Post(this.graphB, {title: 'A', desc: '1'}); });
+    lazy('theirs', function() { return new Post(this.graphC, {title: 'A', desc: '1'}); });
 
     it('returns a model', function() {
       expect(this.subject).to.be.an.instanceof(Model);
@@ -50,7 +62,7 @@ describe('merge/model', function() {
 
     context('when one field changed in ours', function() {
 
-      lazy('ours', () => new Post({title: 'B', desc: '1'}));
+      lazy('ours', function() { return new Post(this.graphA, {title: 'B', desc: '1'}); });
 
       it('keeps our change', function() {
         expect(this.subject.title).to.eq(this.ours.title);
@@ -61,7 +73,7 @@ describe('merge/model', function() {
 
     context('when one field changed in theirs', function() {
 
-      lazy('theirs', () => new Post({title: 'B', desc: '1'}));
+      lazy('theirs', function() { return new Post(this.graphC, {title: 'B', desc: '1'}); });
 
       it('keeps their change', function() {
         expect(this.subject.title).to.eq(this.ours.title);
@@ -72,8 +84,8 @@ describe('merge/model', function() {
 
     context('when same field changed in both', function() {
 
-      lazy('ours', () => new Post({title: 'B', desc: '1'}));
-      lazy('theirs', () => new Post({title: 'C', desc: '1'}));
+      lazy('ours', function() { return new Post(this.graphA, {title: 'B', desc: '1'}); });
+      lazy('theirs', function() { return new Post(this.graphC, {title: 'C', desc: '1'}); });
 
       it('keeps our change', function() {
         expect(this.subject.title).to.eq(this.ours.title);
@@ -84,8 +96,8 @@ describe('merge/model', function() {
 
     context('when separate field changed in both', function() {
 
-      lazy('ours', () => new Post({title: 'B', desc: '1'}));
-      lazy('theirs', () => new Post({title: 'A', desc: '2'}));
+      lazy('ours', function() { return new Post(this.graphA, {title: 'B', desc: '1'}); });
+      lazy('theirs', function() { return new Post(this.graphC, {title: 'A', desc: '2'}); });
 
       it('keeps both changes', function() {
         expect(this.subject.title).to.eq(this.ours.title);
@@ -96,8 +108,8 @@ describe('merge/model', function() {
 
     context('when ours is unloaded', function() {
 
-      lazy('ours', () => new Post({desc: '1'}));
-      lazy('ancestor', () => new Post({desc: '1'}));
+      lazy('ours', function() { return new Post(this.graphA, {desc: '1'}); });
+      lazy('ancestor', function() { return new Post(this.graphB, {desc: '1'}); });
 
       it('keeps their change', function() {
         expect(this.subject.title).to.eq(this.theirs.title);
@@ -108,7 +120,7 @@ describe('merge/model', function() {
 
     context('when theirs is unloaded', function() {
 
-      lazy('theirs', () => new Post({desc: '2'}));
+      lazy('theirs', function() { return new Post(this.graphC, {desc: '2'}); });
 
       it('keeps existing value', function() {
         expect(this.subject.title).to.eq(this.ours.title);

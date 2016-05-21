@@ -3,10 +3,15 @@ import {expect} from 'chai';
 import Model from 'coalesce/model';
 import ModelSerializer from 'coalesce/serializers/model';
 import DefaultContainer from 'coalesce/default-container';
+import Graph from 'coalesce/graph';
+import IdManager from 'coalesce/id-manager';
 
 describe('serializers/model', function() {
 
   lazy('container', () => new DefaultContainer());
+  lazy('graph', function() {
+    return new Graph(this.container.get(IdManager));
+  });
 
   subject('serializer', function() {
     return new ModelSerializer(this.container);
@@ -40,7 +45,7 @@ describe('serializers/model', function() {
   describe('.serialize()', function() {
 
     lazy('value', function() {
-      return new this.Post({
+      return new this.Post(this.graph, {
         id: "1",
         clientId: "$post1",
         rev: 1,
@@ -92,7 +97,7 @@ describe('serializers/model', function() {
     });
 
     it('deserializes all fields', function() {
-      expect(this.subject._attributes.toJS()).to.eql({
+      expect(this.subject._data.toJS()).to.eql({
         id: "1",
         clientId: "$post1",
         rev: 1,

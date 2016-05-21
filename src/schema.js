@@ -90,8 +90,10 @@ export default class Schema {
           klass;
       if(rel.kind === 'hasMany') {
         klass = HasMany;
-      } else {
+      } else if(rel.kind === 'belongsTo') {
         klass = BelongsTo;
+      } else {
+        throw `Unknown relationship kind ${rel.kind}`;
       }
       var field = new klass(this, name, rel);
       this[name] = field;

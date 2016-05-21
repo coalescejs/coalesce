@@ -8,7 +8,6 @@ import Cache from './cache';
 import ModelMerge from './merge/model';
 import ModelSerializer from './serializers/model';
 
-
 /**
  * A model is an Entity that has a defined schema and associated data.
  */
@@ -20,20 +19,21 @@ export default class Model extends Entity {
   static serializer = ModelSerializer;
 
   _mutating = 0;
-  _attributes = Immutable.Map();
-  // cache for new and detached models
-  _rels = {};
+  _data = Immutable.Map();
 
   session = null;
   clientRev = 1;
 
-  constructor(fields) {
-    super();
+  constructor(graph, fields={}) {
+    super(graph);
     for(var key in fields) {
       this[key] = fields[key];
     }
+    // TODO think through the location of this
+    graph._idManager.reifyClientId(this);
   }
 
+  // TODO: move to attribute
   get isNew() {
     return !this.id;
   }
@@ -66,26 +66,35 @@ export default class Model extends Entity {
         if(this.session) {
           this.session.touch(this);
         }
-        this._attributes = this._attributes.withMutations(fn);
+        this._data = this._data.withMutations(fn);
       } else {
-        fn.call(this, this._attributes);
+        fn.call(this, this._data);
       }
     } finally {
       this._mutating--;
     }
   }
 
-
   /**
    * @override
    */
   assign(source) {
-    this._attributes = source._attributes;
+    this._data = source._data;
     return this;
   }
 
-  clone() {
-    let clone = new this.constructor();
+  /**
+   * @override
+   */
+  ref(graph) {
+    return new this.constructor(graph, {id: this.id, clientId: this.clientId});
+  }
+
+  /**
+   * @override
+   */
+  clone(graph) {
+    let clone = this.ref(graph);
     clone.assign(this);
     return clone;
   }

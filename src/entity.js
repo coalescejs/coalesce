@@ -1,9 +1,20 @@
 /**
- * Either a Model or a collection. An entity can be associated with a session,
- * in which case it is a "managed" entity. An entity that is not associated
- * with a session is considered "detached".
+ * An entity is always associated with a Graph.
  */
 export default class Entity {
+
+  constructor(graph) {
+    console.assert(graph, `Entity must be associated with a graph`);
+    this._graph = graph;
+  }
+
+
+  /**
+   * The graph this entity is a part of.
+   */
+  get graph() {
+    return this._graph;
+  }
 
   /**
    * Iterate all related entities. Related entities correspond to relationships
@@ -22,6 +33,27 @@ export default class Entity {
    */
   assign(source) {
     return this;
+  }
+
+
+  /**
+   * Similar to `clone`, but has no data aside from identifiers.
+   *
+   * @param  {type}   graph the graph to add to
+   * @return {Entity}       the new instance
+   */
+  ref(graph) {
+    return new this.constructor(graph);
+  }
+
+  /**
+   * Clone this entity to the destination graph.
+   *
+   * @param  {type}   graph the graph to add to
+   * @return {Entity}       the new instance
+   */
+  clone(graph) {
+    return this.ref(graph);
   }
 
 }

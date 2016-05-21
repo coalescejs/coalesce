@@ -1,8 +1,15 @@
 import {expect} from 'chai';
 
+import DefaultContainer from 'coalesce/container';
+import Graph from 'coalesce/graph';
 import Model from 'coalesce/model';
 
 describe('model', function() {
+
+  lazy('container', () => new DefaultContainer());
+  lazy('graph', function() {
+    return this.container.get(Graph);
+  });
 
   lazy('Post', function() {
     let klass = class Post extends Model {}
@@ -23,7 +30,7 @@ describe('model', function() {
       return {title: 'test'};
     });
     lazy('post', function() {
-      return new this.Post(this.fields);
+      return new this.Post(this.graph, this.fields);
     });
 
     describe('getter', function() {
@@ -80,27 +87,28 @@ describe('model', function() {
 
   describe('.assign()', function() {
 
-    lazy('source', function() { return new this.Post({title: 'A'}); });
-    lazy('target', function() { return new this.Post({title: 'B'}); });
+    lazy('source', function() { return new this.Post(this.graph, {title: 'A'}); });
+    lazy('target', function() { return new this.Post(this.graph, {title: 'B'}); });
 
     subject(function() { return this.target.assign(this.source); });
 
     it('copies attributes', function() {
       expect(this.subject.title).to.eq('A');
-      expect(this.subject._attributes).to.eq(this.source._attributes);
+      expect(this.subject._data).to.eq(this.source._data);
     });
 
   });
 
   describe('.clone()', function() {
 
-    lazy('source', function() { return new this.Post({title: 'A'}); });
+    lazy('source', function() { return new this.Post(this.graph, {title: 'A'}); });
+    lazy('destGraph', function() { return this.container.get(Graph); });
 
-    subject(function() { return this.source.clone(); });
+    subject(function() { return this.source.clone(this.destGraph); });
 
     it('returns new instance with same attributes', function() {
       expect(this.subject).to.not.eq(this.source);
-      expect(this.subject._attributes).to.eq(this.source._attributes);
+      expect(this.subject._data).to.eq(this.source._data);
     });
 
   });

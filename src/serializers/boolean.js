@@ -2,6 +2,9 @@
  * Serializes Boolean values
  */
 export default class BooleanSerializer {
+
+  static singleton = true;
+
   deserialize(serialized) {
     var type = typeof serialized;
 

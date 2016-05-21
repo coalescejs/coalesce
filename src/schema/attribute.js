@@ -12,7 +12,7 @@ export default class Attribute extends Field {
       enumerable: true,
       configurable: true,
       get: function() {
-        var value = this._attributes.get(name);
+        var value = this._data.get(name);
         return value;
       },
       set: function(value) {

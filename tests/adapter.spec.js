@@ -4,6 +4,8 @@ import fetchMock from 'fetch-mock';
 import DefaultContainer from 'coalesce/default-container';
 import Model from 'coalesce/model';
 import Adapter from 'coalesce/adapter';
+import Session from 'coalesce/session';
+import Graph from 'coalesce/graph';
 
 describe('adapter', function() {
 
@@ -33,10 +35,10 @@ describe('adapter', function() {
   describe('.load()', function() {
 
     lazy('entity', function() {
-      return new this.Post({id: 1});
+      return this.session.build(this.Post, {id: 1});
     });
     lazy('opts', () => {{}});
-    lazy('session', () => null);
+    lazy('session', () => new Session());
 
     subject(function() {
       return this.adapter.load(this.entity, this.opts, this.session);
@@ -62,7 +64,7 @@ describe('adapter', function() {
   describe('.resolveUrl()', function() {
 
     lazy('context', function() {
-      return new this.Post({id: 1});
+      return new this.Post(this.container.get(Graph), {id: 1});
     });
     lazy('action', () => undefined);
 

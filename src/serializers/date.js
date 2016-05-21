@@ -7,6 +7,8 @@ import parseDate from '../utils/parse-date';
  */
 export default class DateSerializer {
 
+  static singleton = true;
+
   deserialize(serialized) {
     var type = typeof serialized;
 

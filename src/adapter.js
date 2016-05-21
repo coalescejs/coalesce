@@ -9,6 +9,8 @@ import {camelize, pluralize} from 'inflection';
  */
 export default class Adapter {
 
+  static singleton = true;
+
   constructor(container) {
     this._container = container;
     this.middleware = [
