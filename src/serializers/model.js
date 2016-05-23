@@ -1,22 +1,13 @@
-import IdManager from '../id-manager';
-import Graph from '../graph';
-import Container from '../container';
+import EntitySerializer from './entity';
 
 import { singularize, camelize, underscore, dasherize } from 'inflection';
 
 /**
  * Serializes models.
  */
-export default class ModelSerializer {
+export default class ModelSerializer extends EntitySerializer {
 
-  static singleton = true;
-  static dependencies = [Container];
-
-  constructor(container) {
-    this._container = container;
-    this._idManager = container.get(IdManager);
-    this._keyCache = {};
-  }
+  _keyCache = {};
 
   keyFor(field) {
     if(this._keyCache[field.name]) {
@@ -67,7 +58,8 @@ export default class ModelSerializer {
     }
   }
 
-  deserialize(hash, graph=new Graph(this._idManager)) {
+  // TODO pass type in?
+  deserialize(graph, hash) {
     let data = {},
         type = hash.type;
 
@@ -79,7 +71,7 @@ export default class ModelSerializer {
       this.extractField(hash, data, field, graph);
     }
 
-    return this.createModel(type, graph, data);
+    return this.create(graph, type, data);
   }
 
   extractField(hash, data, field, graph) {
@@ -100,18 +92,6 @@ export default class ModelSerializer {
       // all at once via ImmutableJS
       data[field.name] = value;
     }
-  }
-
-  createModel(type, graph, data) {
-    return new type(graph, data);
-  }
-
-  typeFor(type) {
-    return this._container.typeFor(type);
-  }
-
-  serializerFor(type) {
-    return this._container.serializerFor(type);
   }
 
 }

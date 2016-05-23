@@ -1,14 +1,20 @@
 
 export * from './adapter.spec';
 
+export * from './collection.spec';
+
 export * from './container.spec';
 
 export * from './default-container.spec';
+
+export * from './has-many.spec';
 
 export * from './merge/array.spec';
 export * from './merge/model.spec';
 
 export * from './model.spec';
+
+export * from './query.spec';
 
 export * from './resolver.spec';
 
@@ -25,5 +31,6 @@ export * from './id-manager.spec';
 export * from './schema.spec';
 export * from './schema/attribute.spec';
 export * from './schema/belongs-to.spec';
+export * from './schema/has-many.spec';
 
 export * from './utils/entity-set.spec';

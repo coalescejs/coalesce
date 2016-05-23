@@ -18,19 +18,20 @@ export default class Model extends Entity {
   static merge = ModelMerge;
   static serializer = ModelSerializer;
 
-  _mutating = 0;
   _data = Immutable.Map();
 
   session = null;
   clientRev = 1;
 
-  constructor(graph, fields={}) {
+  constructor(graph, {id, clientId, ...rest}) {
     super(graph);
-    for(var key in fields) {
-      this[key] = fields[key];
-    }
+    this.id = id;
+    this.clientId = clientId;
     // TODO think through the location of this
     graph._idManager.reifyClientId(this);
+    for(var key in rest) {
+      this[key] = rest[key];
+    }
   }
 
   // TODO: move to attribute
@@ -60,29 +61,6 @@ export default class Model extends Entity {
     }
   }
 
-  withMutations(fn) {
-    try {
-      if(this._mutating++ === 0) {
-        if(this.session) {
-          this.session.touch(this);
-        }
-        this._data = this._data.withMutations(fn);
-      } else {
-        fn.call(this, this._data);
-      }
-    } finally {
-      this._mutating--;
-    }
-  }
-
-  /**
-   * @override
-   */
-  assign(source) {
-    this._data = source._data;
-    return this;
-  }
-
   /**
    * @override
    */
@@ -90,19 +68,9 @@ export default class Model extends Entity {
     return new this.constructor(graph, {id: this.id, clientId: this.clientId});
   }
 
-  /**
-   * @override
-   */
-  clone(graph) {
-    let clone = this.ref(graph);
-    clone.assign(this);
-    return clone;
-  }
-
   get schema() {
     return this.constructor.schema;
   }
-
 
   /**
    * @override

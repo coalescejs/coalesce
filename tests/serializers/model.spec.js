@@ -14,7 +14,7 @@ describe('serializers/model', function() {
   });
 
   subject('serializer', function() {
-    return new ModelSerializer(this.container);
+    return this.container.get(ModelSerializer);
   });
 
   lazy('Post', function() {
@@ -93,7 +93,7 @@ describe('serializers/model', function() {
     });
 
     subject(function() {
-      return this.serializer.deserialize(this.value);
+      return this.serializer.deserialize(this.graph, this.value);
     });
 
     it('deserializes all fields', function() {

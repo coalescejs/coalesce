@@ -5,11 +5,11 @@ import DefaultContainer from 'coalesce/default-container';
 import Graph from 'coalesce/graph';
 import Session from 'coalesce/session';
 
-describe('schema/belongs-to', function() {
+describe('schema/has-many', function() {
 
-  lazy('name', () => 'user');
+  lazy('name', () => 'comments');
   lazy('opts', () => {
-    return {kind: 'belongsTo', type: 'user'};
+    return {kind: 'hasMany', type: 'comment'};
   });
   lazy('container', () => new DefautContainer());
   lazy('graph', function() {
@@ -27,12 +27,12 @@ describe('schema/belongs-to', function() {
     return TestModel;
   });
 
-  lazy('User', function() {
-    class User extends Model {}
-    User.defineSchema({
-      typeKey: 'user'
+  lazy('Comment', function() {
+    class Comment extends Model {}
+    Comment.defineSchema({
+      typeKey: 'comment'
     });
-    return User;
+    return Comment;
   });
 
   lazy('container', function() {
@@ -45,7 +45,7 @@ describe('schema/belongs-to', function() {
 
   beforeEach(function() {
     this.container.registerType(this.Model);
-    this.container.registerType(this.User);
+    this.container.registerType(this.Comment);
   });
 
   it('defines property', function() {
@@ -55,51 +55,34 @@ describe('schema/belongs-to', function() {
   describe('.get()', function() {
 
     lazy('model', function() {
-      return new this.Model(this.graph, {
+      return this.graph.create(this.Model, {
         id: 1,
         [this.name]: this.value
       });
     });
 
     lazy('value', function() {
-      return new this.User(this.graph, {id: 2});
+      return [this.graph.create(this.Comment, {id: 2})];
     });
 
     subject(function() {
-      this.graph.add(this.model);
-      this.graph.add(this.value);
       return this.model[this.name];
     });
 
     it('returns value', function() {
-      expect(this.subject).to.eq(this.value);
+      expect(Array.from(this.subject)).to.eql(this.value);
     });
 
     context('without a value set', function() {
 
       lazy('model', function() {
-        return new this.Model(this.graph, {
+        return this.graph.create(this.Model, {
           id: 1
         });
       });
 
-      it('returns undefined', function() {
-        expect(this.subject).to.be.undefined;
-      });
-
-    });
-
-    context('with null value set', function() {
-
-      lazy('model', function() {
-        return new this.Model(this.graph, {
-          id: 1,
-          [this.name]: null
-        });
-      });
-
-      it('returns null', function() {
-        expect(this.subject).to.be.null;
+      it('returns unloaded has-many collection', function() {
+        expect(this.subject).to.not.be.undefined;
       });
 
     });

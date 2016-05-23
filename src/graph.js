@@ -16,6 +16,19 @@ export default class Graph extends EntitySet {
 
 
   /**
+   * Construct and add an entity to this graph.
+   *
+   * @param  {type} type    the type of the entity
+   * @param  {type} ...args
+   * @return {type}         the newly constructed entity in this graph
+   */
+  create(type, ...args) {
+    let res = new type(this, ...args);
+    this.add(res);
+    return res;
+  }
+
+  /**
    * @override
    */
   add(entity) {

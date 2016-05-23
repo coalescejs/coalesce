@@ -1,7 +1,8 @@
+import Container from './container';
+import Graph from './graph';
+
 import 'whatwg-fetch';
-
 import {defaults} from 'lodash';
-
 import {camelize, pluralize} from 'inflection';
 
 /**
@@ -10,6 +11,7 @@ import {camelize, pluralize} from 'inflection';
 export default class Adapter {
 
   static singleton = true;
+  static dependencies = [Container];
 
   constructor(container) {
     this._container = container;
@@ -184,13 +186,14 @@ export default class Adapter {
    * Middleware to serialize/deserialize using the serialization layer.
    */
   async _serialize(ctx, next) {
+    let graph = this._container.get(Graph);
     const serializer = this._serializerFor(ctx.context);
     if(ctx.body) {
       ctx.body = serializer.serialize(ctx.body);
     }
     let res = await next();
     if(res) {
-      res = serializer.deserialize(res);
+      res = serializer.deserialize(graph, res);
     }
     return res;
   }

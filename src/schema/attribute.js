@@ -16,8 +16,8 @@ export default class Attribute extends Field {
         return value;
       },
       set: function(value) {
-        this.withMutations((data) => {
-          data.set(name, value);
+        this.withChangeTracking(() => {
+          this._data = this._data.set(name, value);
         });
         return value;
       }

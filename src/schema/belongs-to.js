@@ -22,18 +22,16 @@ export default class BelongsTo extends Relationship {
       set: function(value) {
         const clientId = value && value.clientId;
         console.assert(!value || value.clientId, "Value must have a client id");
-        if(clientId) {
-          this.withMutations((data) => {
-            data.set(attributeName, clientId);
-          });
-        }
+        this.withChangeTracking(() => {
+          this._data = this._data.set(attributeName, clientId);
+        });
         return value;
       }
     });
   }
 
   get attributeName() {
-    return `${this.name}`;
+    return `$${this.name}`;
   }
 
 }
