@@ -6,6 +6,7 @@ import DefaultContainer from 'coalesce/default-container';
 import Session from 'coalesce/session';
 import IdManager from 'coalesce/id-manager';
 import Graph from 'coalesce/graph';
+import Query from 'coalesce/query';
 
 describe('session', function() {
 
@@ -15,8 +16,10 @@ describe('session', function() {
   });
 
   lazy('Post', () => {
-    return class Post extends Model {
+    class Post extends Model {
     };
+    Post.defineSchema({typeKey: 'post'});
+    return Post;
   });
 
   lazy('graph', function() {
@@ -153,6 +156,28 @@ describe('session', function() {
 
   });
 
+  describe('.getQuery', function() {
+
+    lazy('entity', function() {
+      return this.session.push(Query, this.Post, this.params);
+    });
+
+    beforeEach(function() {
+      this.entity
+    });
+
+    lazy('params', () => { return {}; });
+
+    subject(function() {
+      return this.session.getQuery(this.Post, this.params);
+    });
+
+    it('returns query', function() {
+      expect(this.subject).to.eq(this.entity);
+    });
+
+  });
+
   describe('.fetch', function() {
 
     lazy('entity', function() {
@@ -222,6 +247,48 @@ describe('session', function() {
       it('returns an entity', function() {
         expect(this.subject).to.not.eq(this.entity);
         expect(this.subject.id).to.eq(this.entity.id);
+      });
+
+    });
+
+  });
+
+  describe('.fetchQuery', function() {
+
+    lazy('entity', function() {
+      return this.graph.create(Query, this.Post, this.params);
+    });
+
+    subject(function() {
+      return this.session.fetchQuery(this.Post, this.params);
+    });
+
+    context('when entity is part of the session', function() {
+
+      lazy('entity', function() {
+        return this.session.push(Query, this.Post, this.params);
+      });
+
+      beforeEach(function() {
+        this.entity
+      });
+
+      beforeEach(function() {
+        this.entity;
+      });
+
+      it('returns the same entity', function() {
+        expect(this.subject).to.eq(this.entity);
+      });
+
+    });
+
+    context('when entity is not part of the session', function() {
+
+      it('returns an entity', function() {
+        expect(this.subject).to.not.eq(this.entity);
+        expect(this.subject.id).to.eq(this.entity.id);
+        expect(this.subject.session).to.eq(this.session);
       });
 
     });

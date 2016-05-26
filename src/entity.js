@@ -17,6 +17,10 @@ export default class Entity {
     return this._graph;
   }
 
+  get isEntity() {
+    return true;
+  }
+
   /**
    * Iterate all related entities. Related entities correspond to relationships
    * and could be either a model (has one) or a collection (has many).

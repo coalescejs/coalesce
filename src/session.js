@@ -2,6 +2,7 @@ import IdManager from './id-manager';
 import EntitySet from './utils/entity-set';
 import Graph from './graph';
 import DefaultContainer from './default-container';
+import Query from './query';
 
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
@@ -107,9 +108,17 @@ export default class Session {
     return this.entities.get({clientId});
   }
 
-  // TODO
-  getQuery(type, params) {
 
+  /**
+   * Get the corresponding query based on the type and params.
+   *
+   * @param  {*} type      the type
+   * @param  {type} params the params for the query
+   * @return {type}        the query in this session
+   */
+  getQuery(type, params) {
+    let clientId = Query.clientId(type, params);
+    return this.entities.get({clientId});
   }
 
   /**
@@ -148,8 +157,21 @@ export default class Session {
     return entity;
   }
 
+  /**
+   * Fetch the corresponding query based on the type and params. If a query
+   * for this type/params combination does not already exist, it will be
+   * built.
+   *
+   * @param  {*} type      the type
+   * @param  {type} params the params for the query
+   * @return {type}        the query in this session
+   */
   fetchQuery(type, params) {
-    // TODO
+    let res = this.getQuery(type, params);
+    if(!res) {
+      res = this._adopt(this.build(Query, type, params));
+    }
+    return res;
   }
 
   /**

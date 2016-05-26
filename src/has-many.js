@@ -22,6 +22,13 @@ export default class HasMany extends Collection {
     return this.graph.get({clientId});
   }
 
+  /**
+   * @override
+   */
+  ref(graph) {
+    return new this.constructor(graph, graph.fetch(this.owner), this.name);
+  }
+
   static clientId(owner, name) {
     return `${owner.clientId}$${name}`;
   }

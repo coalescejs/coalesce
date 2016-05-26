@@ -15,6 +15,13 @@ export default class Query extends Collection {
     return this.constructor.clientId(this.type, this.params);
   }
 
+  /**
+   * @override
+   */
+  ref(graph) {
+    return new this.constructor(graph, this.type, this.params);
+  }
+
   static clientId(type, params) {
     return `$${type.typeKey}$${JSON.stringify(params)}`;
   }

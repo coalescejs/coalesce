@@ -1,11 +1,3 @@
-function guidFor(model) {
-  return model.clientId;
-}
-
-function isEqual(a, b) {
-  return guidFor(a) === guidFor(b);
-}
-
 /**
   An unordered collection of unique models.
 
@@ -153,4 +145,12 @@ export default class EntitySet {
   *[Symbol.iterator]() {
     yield* this.values();
   }
+}
+
+function guidFor(model) {
+  return model.clientId;
+}
+
+function isEqual(a, b) {
+  return guidFor(a) === guidFor(b);
 }
