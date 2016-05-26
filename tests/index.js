@@ -33,4 +33,5 @@ export * from './schema/attribute.spec';
 export * from './schema/belongs-to.spec';
 export * from './schema/has-many.spec';
 
+export * from './utils/diff.spec';
 export * from './utils/entity-set.spec';

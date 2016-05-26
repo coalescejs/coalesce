@@ -27,6 +27,9 @@ Post.defineSchema({
   attributes: {
     title: {
       type: 'string'
+    },
+    content: {
+      type: 'string'
     }
   },
   relationships: {

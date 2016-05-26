@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import fetchMock from 'fetch-mock';
 
-import DefaultContainer from 'coalesce/default-container';
+import Container, {Post} from './support/simple-hierarchy';
 import Model from 'coalesce/model';
 import Adapter from 'coalesce/adapter';
 import Session from 'coalesce/session';
@@ -12,30 +12,15 @@ describe('adapter', function() {
   beforeEach(function() {
     fetchMock.restore();
   });
-
-  lazy('Post', function() {
-    let klass = class Post extends Model {}
-    klass.adapter = this.Adapter;
-    klass.defineSchema({
-      typeKey: 'post',
-      attributes: {
-        title: {
-          type: 'string'
-        }
-      }
-    });
-    return klass;
-  });
-
-  lazy('container', () => new DefaultContainer())
+  lazy('container', () => new Container())
   subject('adapter', function() {
-    return new Adapter(this.container);
+    return this.container.get(Adapter);
   });
 
   describe('.load()', function() {
 
     lazy('entity', function() {
-      return this.session.build(this.Post, {id: 1});
+      return this.session.build(Post, {id: 1});
     });
     lazy('opts', () => {{}});
     lazy('session', () => new Session());
@@ -50,11 +35,82 @@ describe('adapter', function() {
         fetchMock.mock('/posts/1', 'GET', JSON.stringify({type: 'post', id: 1, title: 'revived'}));
       });
 
-      it('loads data', async function() {
+      it('GETs data and resolves model', async function() {
         let res = await this.subject;
-        expect(res).to.be.an.instanceOf(this.Post);
+        expect(res).to.be.an.instanceOf(Post);
         expect(res.title).to.eq('revived');
         expect(res.id).to.eq("1");
+      });
+
+    });
+
+  });
+
+  describe('.persist()', function() {
+
+    lazy('session', () => new Session());
+    lazy('entity', function() {
+      return this.session.create(Post, {title: 'Be Persistent'});
+    });
+    lazy('shadow', function() {});
+    lazy('opts', function() {
+      return {};
+    });
+    subject(function() {
+      return this.adapter.persist(this.entity, this.session, this.opts, this.session);
+    });
+
+    context('with new entity', function() {
+
+      beforeEach(function() {
+        fetchMock.mock('/posts', 'POST', JSON.stringify({type: 'post', id: 1, title: 'Be Persistent'}));
+      });
+
+      it('POSTs and resolves model', async function() {
+        let model = await this.subject;
+        expect(model.id).to.eq('1');
+        expect(model.isNew).to.be.false;
+      });
+
+    });
+
+    context('with deleted entity', function() {
+
+      lazy('entity', function() {
+        let entity = this.session.push(Post, {id: 1, title: 'Beyond the grave'});
+        this.session.delete(entity);
+        return entity;
+      });
+
+      beforeEach(function() {
+        fetchMock.mock('/posts/1', 'DELETE', JSON.stringify({type: 'post', id: 1, title: 'Beyond the grave'}));
+      });
+
+      it('DELETEs and resolves model', async function() {
+        let model = await this.subject;
+        expect(model.id).to.eq('1');
+        expect(model.isDeleted).to.be.true;
+      });
+
+    });
+
+    context('with updated entity', function() {
+
+      lazy('entity', function() {
+        let entity = this.session.push(Post, {id: 1, title: 'Be Persistent'});
+        entity.title = 'More Persistent';
+        return entity;
+      });
+
+      beforeEach(function() {
+        fetchMock.mock('/posts/1', 'PUT', JSON.stringify({type: 'post', id: 1, title: 'More Persistent'}));
+      });
+
+      it('PUTs and resolves model', async function() {
+        let model = await this.subject;
+        expect(model.id).to.eq('1');
+        expect(model.title).to.eq('More Persistent');
+        expect(model.isNew).to.be.false;
       });
 
     });
@@ -64,7 +120,7 @@ describe('adapter', function() {
   describe('.resolveUrl()', function() {
 
     lazy('context', function() {
-      return new this.Post(this.container.get(Graph), {id: 1});
+      return new Post(this.container.get(Graph), {id: 1});
     });
     lazy('action', () => undefined);
 

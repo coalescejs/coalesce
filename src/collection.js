@@ -4,7 +4,6 @@ import Immutable from 'immutable';
 
 export default class Collection extends Entity {
 
-  isCollection = true;
   _data = null;
 
   constructor(graph, iterable) {
@@ -17,6 +16,15 @@ export default class Collection extends Entity {
       }
     }
     this._data = Immutable.List(clientIds(iterable));
+  }
+
+  // currently all collections are transient
+  get isTransient() {
+    return true;
+  }
+
+  get isCollection() {
+    return true;
   }
 
   *[Symbol.iterator]() {

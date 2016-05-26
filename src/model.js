@@ -18,7 +18,9 @@ export default class Model extends Entity {
   static merge = ModelMerge;
   static serializer = ModelSerializer;
 
-  _data = Immutable.Map();
+  static defaults = Immutable.Map({isNew: false, isDeleted: false});
+
+  _data = this.constructor.defaults;
 
   session = null;
   clientRev = 1;
@@ -32,11 +34,6 @@ export default class Model extends Entity {
     for(var key in rest) {
       this[key] = rest[key];
     }
-  }
-
-  // TODO: move to attribute
-  get isNew() {
-    return !this.id;
   }
 
   get isModel() {

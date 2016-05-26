@@ -1,6 +1,6 @@
 /**
-  Maintains a cache of entity-related promises
-*/
+ * Maintains a cache of entity-related promises
+ */
 export default class Cache {
 
   static singleton = true;

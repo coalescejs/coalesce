@@ -39,7 +39,7 @@ export default class ModelSerializer extends EntitySerializer {
   }
 
   addField(serialized, model, field) {
-    if(field.transient) {
+    if(field.transient || field.writable === false) {
       return;
     }
 

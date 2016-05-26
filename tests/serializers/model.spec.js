@@ -105,7 +105,9 @@ describe('serializers/model', function() {
         title: 'Serializing',
         longTitle: 'Serializing in Seattle',
         custom: 3,
-        raw: {test: true}
+        raw: {test: true},
+        isDeleted: false,
+        isNew: false
       });
     });
 

@@ -3,6 +3,7 @@ import EntitySet from './utils/entity-set';
 import Graph from './graph';
 import DefaultContainer from './default-container';
 import Query from './query';
+import Plan from './session/plan';
 
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
@@ -50,8 +51,7 @@ export default class Session {
    * @return {type}        created model
    */
   create(type, ...args) {
-    // TODO set isNew metadata
-    return this.push(type, ...args);
+    return this.push(type, {...args, isNew: true});
   }
 
   /**
@@ -238,10 +238,13 @@ export default class Session {
 
   }
 
+
   /**
-    Mark an entity as dirty. This will cause the model to be diffed against
-    its shadow during the next flush.
-  */
+   * Mark an entity as dirty. This will cause the model to be diffed against
+   * its shadow during the next flush.
+   *
+   * @param  {type} entity the entity to mark dirty
+   */
   touch(entity) {
     if(this._dirtyCheckingSuspended) {
       return;
@@ -276,10 +279,16 @@ export default class Session {
   }
 
   /**
-    Delete the entity.
-  */
+   * Delete an entity.
+   *
+   * @param  {type} entity the entity to delete
+   */
   delete(entity) {
-
+    if(entity.isNew) {
+      this.newEntities.remove(entity);
+    }
+    entity.isDeleted = true;
+    return entity;
   }
 
 
@@ -455,12 +464,27 @@ export default class Session {
   }
 
   /**
-    Flush local changes back down to the remote server.
-  */
-  flush(entities) {
-
+   * Return a plan consisting of what operations would take place if the passed
+   * in collection of entities is persisted.
+   *
+   * @param  [iterable] entities the entities to persist, defaults to all dirty entities
+   * @return {Plan}              the plan
+   */
+  plan(entities=this.dirtyEntities) {
+    return container.create(Plan, this, entities);
   }
 
+  /**
+   * Persist all of the passed in entities.
+   *
+   * @param  [iterable] entities the entities to persist, defaults to all dirty entities
+   * @return {Promise}           a promise that resolves to all entities persisted
+   */
+  flush(entities=this.dirtyEntities) {
+    let plan = this.plan(entities);
+    // TODO optimistically update shadows etc. set isNew = false
+    return plan.execute();
+  }
 
   /**
    * @private

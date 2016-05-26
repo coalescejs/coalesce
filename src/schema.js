@@ -68,6 +68,9 @@ export default class Schema {
     this.isDeleted = new Meta(this, 'isDeleted', {
       writable: false
     });
+    this.isNew = new Meta(this, 'isNew', {
+      writable: false
+    });
     this.errors = new Meta(this, 'errors', {
       writable: false
     });

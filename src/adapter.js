@@ -1,6 +1,8 @@
 import Container from './container';
 import Graph from './graph';
 
+import diff from './utils/diff';
+
 import 'whatwg-fetch';
 import {defaults} from 'lodash';
 import {camelize, pluralize} from 'inflection';
@@ -32,10 +34,29 @@ export default class Adapter {
    * @return {Promise}
    */
   load(entity, opts={}, session) {
-    defaults(opts, {
-      method: 'GET'
+    return this._invoke({
+      context: entity,
+      session,
+      method: 'GET',
+      ...opts
     });
-    return this._invoke({context: entity, session, ...opts});
+  }
+
+  /**
+   * Provides a hook for the adapter to register dependencies required by the
+   * persistence of the passed in entity.
+   *
+   * @param  {Entity} entity the entity to plan against
+   * @param  {Entity} shadow the shadow
+   */
+  plan(entity, shadow, plan) {
+    for(let d of diff(entity, shadow)) {
+      // for a belongsTo, we depend on the relationship being persisted
+      // before we can save this entity
+      if(d.field.kind === 'belongsTo' && d.lhs && d.lhs.isNew) {
+        plan.addDependency(entity, d.lhs);
+      }
+    }
   }
 
   /**
@@ -48,7 +69,63 @@ export default class Adapter {
    * @return {Promise}
    */
   persist(entity, shadow, opts, session) {
-    throw new Error(`${this} does not support persist()`);
+    console.assert(!entity.isNew || !entity.isDeleted, "Cannot persist a new and deleted entity.");
+    if(entity.isNew) {
+      return this.create(entity, opts, session);
+    } else if(entity.isDeleted) {
+      return this.delete(entity, shadow, opts, session);
+    } else {
+      return this.update(entity, shadow, opts, session);
+    }
+  }
+
+  /**
+   * @private
+   *
+   * Update an entity.
+   */
+  update(entity, shadow, opts, session) {
+    return this._invoke({
+      context: entity,
+      shadow,
+      method: 'PUT',
+      ...opts,
+      session
+    });
+  }
+
+  /**
+   * @private
+   *
+   * Create an entity.
+   */
+  async create(entity, opts, session) {
+    let created = await this._invoke({
+      context: entity,
+      method: 'POST',
+      ...opts,
+      session
+    });
+    created.isNew = false;
+    return created;
+  }
+
+
+  /**
+   * @private
+   *
+   * Delete an entity.
+   */
+  async delete(entity, shadow, opts, session) {
+    let deleted = await this._invoke({
+      context: entity,
+      shadow,
+      method: 'DELETE',
+      ...opts,
+      session
+    });
+    deleted.isDeleted = true;
+    return deleted;
   }
 
   /**
@@ -61,10 +138,15 @@ export default class Adapter {
    * @return {Promise}
    */
   remoteCall(context, action, params, opts, session) {
-    throw new Error(`${this} does not support remoteCall()`);
+    let ctx = {
+      context: entity,
+      shadow,
+      ...opts,
+      session,
+      action
+    }
+    return this._invoke(ctx);
   }
-
-
 
   /**
    * Determine the url for the given request context
