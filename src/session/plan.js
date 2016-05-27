@@ -19,7 +19,6 @@ export default class Plan {
     }
   }
 
-
   /**
    * Add an entity to this plan.
    *
@@ -46,9 +45,15 @@ export default class Plan {
 
     console.assert(shadow, "Entity must have a shadow in order to be persisted");
 
-    op = new Operation(adapter, entity, shadow, opts, session);
+    // Snapshot the entity and the shadow since the execution of the operations
+    // will be asynchronous and we want to persist the state of the graph when
+    // the plan was created (as oppposed to including future modifications).
+    let copiedEntity = this.entities.update(entity),
+        copiedShadow = this.shadows.update(shadow);
+
+    op = new Operation(adapter, copiedEntity, copiedShadow, opts, session);
     // NOTE: important to add the operation here to break recursion
-    this.operations.set(entity, op);
+    this.operations.set(copiedEntity, op);
 
     // provide the adapter the opportunity to add dependencies
     adapter.plan(entity, shadow, this);

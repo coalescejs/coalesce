@@ -5,14 +5,18 @@ export default class Query extends Collection {
 
   static serializer = QuerySerializer;
 
-  constructor(graph, type, params) {
-    super(graph);
+  constructor(graph, type, params, iterable) {
+    super(graph, iterable);
     this.type = type;
     this.params = params;
   }
 
   get clientId() {
     return this.constructor.clientId(this.type, this.params);
+  }
+
+  get isQuery() {
+    return true;
   }
 
   /**

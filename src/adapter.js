@@ -40,6 +40,7 @@ export default class Adapter {
       context: entity,
       session,
       method: 'GET',
+      serialize: entity.isModel,
       ...opts
     });
   }
@@ -284,25 +285,29 @@ export default class Adapter {
    * Middleware to serialize/deserialize using the serialization layer.
    */
   async _serialize(ctx, next) {
-    let graph = this._container.get(Graph);
     const serializer = this._serializerFor(ctx.context);
-    if(ctx.body) {
-      ctx.body = serializer.serialize(ctx.body);
+    if(ctx.serialize !== false) {
+      if(ctx.body) {
+        ctx.body = serializer.serialize(ctx.body);
+      }
     }
     let res = await next();
     if(res) {
-      res = serializer.deserialize(graph, res);
+      let graph = this._container.get(Graph),
+          args,
+          entity = ctx.context;
+      if(entity.isQuery) {
+        args = [entity.type, entity.params];
+      } else {
+        args = [];
+      }
+      res = serializer.deserialize(graph, res, ...args);
     }
     return res;
   }
 
   _serializerFor(ctx) {
-    let type;
-    if(ctx.isModel) {
-      type = ctx.constructor;
-    } else {
-      type = ctx;
-    }
+    let type = ctx.constructor;
     return this._container.serializerFor(type);
   }
 

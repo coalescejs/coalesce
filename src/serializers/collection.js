@@ -18,13 +18,11 @@ export default class CollectionSerializer extends EntitySerializer {
 
   deserialize(graph, data, ...args) {
     let self = this;
-    return this.create(graph, this.type, ...args, function*() {
-      for(let hash of data) {
-        const {type} = hash;
-        let serializer = self.serializerFor(type);
-        yield serializer.deserialize(graph, hash);
-      }
-    });
+    return this.create(graph, this.type, ...args, data.map(function(hash) {
+      const {type} = hash;
+      let serializer = self.serializerFor(type);
+      return serializer.deserialize(graph, hash);
+    }));
   }
 
 

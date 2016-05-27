@@ -45,6 +45,26 @@ describe('adapter', function() {
 
     });
 
+    context('with a query', function() {
+
+      lazy('entity', function() {
+        return this.session.fetchQuery(Post, {});
+      });
+
+      beforeEach(function() {
+        fetchMock.mock('/posts', 'GET', JSON.stringify([{type: 'post', id: 1, title: 'a'}, {type: 'post', id: 2, title: 'b'}]));
+      });
+
+      it('GETs data and resolves query', async function() {
+        let res = await this.subject;
+        expect(res).to.be.an.instanceOf(Query);
+        let arr = Array.from(res)
+        expect(arr.length).to.eq(2);
+        expect(arr[0]).to.be.an.instanceOf(Post);
+      });
+
+    });
+
   });
 
   describe('.persist()', function() {

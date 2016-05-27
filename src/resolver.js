@@ -9,7 +9,6 @@ export default class Resolver {
   }
 
   resolveProvider(type, name) {
-    let provider;
     // 1. Check type for decorator/static property
     if(type[name]) {
       return type[name];

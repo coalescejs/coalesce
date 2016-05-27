@@ -23,6 +23,7 @@ export * from './serializers/date.spec.js';
 export * from './serializers/id.spec.js';
 export * from './serializers/model.spec.js';
 export * from './serializers/number.spec.js';
+export * from './serializers/query.spec.js';
 export * from './serializers/revision.spec.js';
 export * from './serializers/string.spec.js';
 
