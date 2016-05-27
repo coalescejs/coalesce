@@ -220,7 +220,8 @@ export default class Session {
     Perform the query immediately
   */
   query(type, params) {
-
+    let query = this.fetchQuery(type, params);
+    return this.load(query);
   }
 
   /**

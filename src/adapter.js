@@ -4,7 +4,9 @@ import Graph from './graph';
 import diff from './utils/diff';
 
 import 'whatwg-fetch';
-import {defaults} from 'lodash';
+import qs from 'qs';
+
+import {defaults, isEmpty} from 'lodash';
 import {camelize, pluralize} from 'inflection';
 
 /**
@@ -158,10 +160,11 @@ export default class Adapter {
     let typeKey,
         id;
         url = [];
+
     if(typeof context === 'string') {
       typeKey = context;
-    } else if(context.isQuery) {
-      typeKey = context.typeKey;
+    } else if(context.isCollection) {
+      typeKey = context.type.typeKey;
     } else {
       typeKey = context.typeKey;
       id = context.id;
@@ -170,7 +173,20 @@ export default class Adapter {
     if(action) {
       url = `${url}/${action}`;
     }
+
+    let queryParams = context.isCollection && context.params;
+    if(queryParams && !isEmpty(queryParams)) {
+      url = `${url}?${this._buildQuery(queryParams)}`;
+    }
+
     return url;
+  }
+
+  /**
+   * @private
+   */
+  _buildQuery(params) {
+    return qs.stringify(params);
   }
 
   /**

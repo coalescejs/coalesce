@@ -6,6 +6,7 @@ import Model from 'coalesce/model';
 import Adapter from 'coalesce/adapter';
 import Session from 'coalesce/session';
 import Graph from 'coalesce/graph';
+import Query from 'coalesce/query';
 
 describe('adapter', function() {
 
@@ -119,8 +120,11 @@ describe('adapter', function() {
 
   describe('.resolveUrl()', function() {
 
+    lazy('graph', function() {
+      return this.container.get(Graph);
+    });
     lazy('context', function() {
-      return new Post(this.container.get(Graph), {id: 1});
+      return this.graph.create(Post, {id: 1});
     });
     lazy('action', () => undefined);
 
@@ -128,10 +132,33 @@ describe('adapter', function() {
       return this.adapter.resolveUrl({context: this.context, action: this.action});
     });
 
-    context('with entity as context', function() {
+    context('with model as context', function() {
 
       it('resolves to singular resource root', function() {
         expect(this.subject).to.eq(`/posts/1`);
+      });
+
+    });
+
+    context('with query as context', function() {
+
+      lazy('context', function() {
+        return this.graph.create(Query, Post, {});
+      });
+
+      it('resolves to collective resource root', function() {
+        expect(this.subject).to.eq(`/posts`);
+      });
+
+      context('with params', function() {
+        lazy('context', function() {
+          return this.graph.create(Query, Post, {q: 'asd'});
+        });
+
+        it('adds params', function() {
+          expect(this.subject).to.eq(`/posts?q=asd`);
+        });
+
       });
 
     });

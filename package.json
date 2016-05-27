@@ -10,6 +10,7 @@
       "inflection": "npm:inflection@^1.8.0",
       "lodash": "npm:lodash@^4.11.1",
       "mocha-lazy-bdd": "npm:mocha-lazy-bdd@^0.1.0",
+      "qs": "npm:qs@^6.2.0",
       "whatwg-fetch": "npm:whatwg-fetch@^0.11.0"
     },
     "devDependencies": {
