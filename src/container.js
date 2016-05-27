@@ -41,12 +41,12 @@ export default class Container {
   /**
    * Instantiate the passed in type and resolve any dependencies.
    *
-   * @param  {type} type description
-   * @return {type}      description
+   * @param  {type} type the type
+   * @return {type}      an instance of the specified type
    */
-  create(type) {
+  create(type, ...args) {
     const dependencies = this.resolveDependencies(type);
-    return new type(...dependencies);
+    return new type(...dependencies, ...args);
   }
 
   /**

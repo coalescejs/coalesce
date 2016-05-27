@@ -110,6 +110,10 @@ export default class Model extends Entity {
     return this._schema;
   }
 
+  toString() {
+    return `${this.constructor.name}<${this.clientId}, id: ${this.id}>`;
+  }
+
 }
 
 // apply the default fields

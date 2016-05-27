@@ -1,10 +1,13 @@
 import Operation from './operation';
 import Graph from '../graph';
+import Container from '../container';
 
 /**
  * A plan represents a plan of action for persisting a collection of models.
  */
 export default class Plan {
+
+  static dependencies = [Container];
 
   constructor(container, session, iterable) {
     this.container = container;
@@ -43,13 +46,11 @@ export default class Plan {
           shadow = this.session.shadows.get(entity),
           session = this.session;
 
-    console.assert(shadow, "Entity must have a shadow in order to be persisted");
-
     // Snapshot the entity and the shadow since the execution of the operations
     // will be asynchronous and we want to persist the state of the graph when
     // the plan was created (as oppposed to including future modifications).
     let copiedEntity = this.entities.update(entity),
-        copiedShadow = this.shadows.update(shadow);
+        copiedShadow = shadow && this.shadows.update(shadow);
 
     op = new Operation(adapter, copiedEntity, copiedShadow, opts, session);
     // NOTE: important to add the operation here to break recursion
@@ -80,6 +81,17 @@ export default class Plan {
     return Promise.all(Array.from(this.operations.values()).map((op) => {
       return op.execute();
     }));
+  }
+
+  /**
+   * @override
+   */
+  toString() {
+    let res = "Plan:";
+    for(let op of this.operations.values()) {
+      res += `\n${op.toString()}`;
+    }
+    return res;
   }
 
 }

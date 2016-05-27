@@ -83,4 +83,8 @@ export default class Entity {
     }
   }
 
+  toString() {
+    return `${this.constructor.name}<${this.clientId}>`;
+  }
+
 }

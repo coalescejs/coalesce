@@ -472,7 +472,7 @@ export default class Session {
    * @return {Plan}              the plan
    */
   plan(entities=this.dirtyEntities) {
-    return container.create(Plan, this, entities);
+    return this.container.create(Plan, this, entities);
   }
 
   /**

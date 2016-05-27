@@ -1,7 +1,7 @@
 /**
  * A "node" within a plan that can depend on other operations.
  */
-class Operation {
+export default class Operation {
 
   constructor(adapter, entity, shadow, opts, session) {
     this.adapter = adapter;
@@ -52,6 +52,19 @@ class Operation {
     return Promise.all(Array.from(this.deps.values()).map(function(dep) {
       return dep._promise;
     }));
+  }
+
+
+  /**
+   * @override
+   */
+  toString() {
+    let deps = Array.from(this._deps.values()),
+        depString = "";
+    if(deps.length > 0) {
+      depString = ` depends on ${deps.map((d) => d.entity.toString()).join(', ')}`;
+    }
+    return `${this.entity.toString()}${depString}`;
   }
 
 }

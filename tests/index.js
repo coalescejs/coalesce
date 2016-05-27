@@ -28,6 +28,8 @@ export * from './serializers/revision.spec.js';
 export * from './serializers/string.spec.js';
 
 export * from './session.spec';
+export * from './session/plan.spec';
+
 export * from './id-manager.spec';
 export * from './schema.spec';
 export * from './schema/attribute.spec';
