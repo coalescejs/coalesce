@@ -2,6 +2,7 @@ import IdManager from './id-manager';
 import EntitySet from './utils/entity-set';
 import Graph from './graph';
 import DefaultContainer from './default-container';
+import Container from './container';
 import Query from './query';
 import Plan from './session/plan';
 
@@ -10,21 +11,34 @@ import Plan from './session/plan';
  * bridges the top-level interfaces with the lower-level adapters.
  *
  * A session and its contained entities are essentially a "graph" of models
- * and colections.
+ * and collections.
  */
 export default class Session {
+
+  static dependencies = [Container];
 
   /**
    * Create a session.
    *
-   * @params {object} options
+   * @params {Container} the container
    */
-  constructor({container=new DefaultContainer()}={}) {
+  constructor(container=new DefaultContainer(), parent) {
     this.container = container;
+    this.parent = parent;
     this.idManager = container.get(IdManager);
     this.entities = container.get(Graph);
     this.shadows = container.get(Graph);
     this.newEntities = new EntitySet();
+  }
+
+
+  /**
+   * Return a new child session.
+   *
+   * @return {Session}  session
+   */
+  child() {
+    return this.container.create(Session, this);
   }
 
   /**
@@ -73,12 +87,21 @@ export default class Session {
    * is already part of this session it will return the same entity.
    *
    * @param  {Entity} entity entity
-   * @return {Entity}        the entity within this session
+   * @return {Entity}        the entity within this session or undefined if it does not exist
    */
   get(entity) {
-    return this.entities.get(entity);
+    let res = this.entities.get(entity);
+    // if we are in a child session, we want to pull from the parent
+    if(!res && this.parent) {
+      res = this.parent.get(entity);
+      if(res) {
+        // TODO: swap revisions?
+        res = res.clone(this.entities);
+        this._adopt(res);
+      }
+    }
+    return res;
   }
-
 
   /**
    * Test if the given entity exists in the session.
@@ -87,7 +110,7 @@ export default class Session {
    * @return {boolean}        does the entity exist in the session
    */
   has(entity) {
-    return !!this.get(entity);
+    return !!this.entities.get(entity) || this.parent && this.parent.has(entity);
   }
 
 
@@ -105,7 +128,7 @@ export default class Session {
       id = id+'';
       clientId = this.idManager.getClientId(type.typeKey, id);
     }
-    return this.entities.get({clientId});
+    return this.get({clientId});
   }
 
 
@@ -497,7 +520,7 @@ export default class Session {
   _adopt(entity) {
     this._reifyClientId(entity);
     console.assert(!entity.session || entity.session === this, "Entities cannot be moved between sessions. Use `get` or `merge` instead.");
-    console.assert(!this.get(entity) || this.entities.get(entity) === entity, "An equivalent model already exists in the session!");
+    console.assert(!this.entities.get(entity) || this.entities.get(entity) === entity, "An equivalent model already exists in the session!");
     this.entities.add(entity);
     entity.session = this;
     return entity;

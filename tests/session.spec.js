@@ -12,7 +12,7 @@ describe('session', function() {
 
   lazy('container', () => new DefaultContainer());
   subject('session', function() {
-    return new Session(this.container);
+    return this.container.get(Session);
   });
 
   lazy('Post', () => {
@@ -26,7 +26,20 @@ describe('session', function() {
     return this.container.get(Graph);
   });
 
-  describe('.build', function() {
+  describe('.child()', function() {
+
+    subject(function() {
+      return this.session.child();
+    });
+
+    it('returns a child session', function() {
+      expect(this.subject).to.be.an.instanceOf(Session);
+      expect(this.subject.parent).to.eq(this.session);
+    });
+
+  });
+
+  describe('.build()', function() {
 
     lazy('hash', () => {return {};});
 
@@ -41,7 +54,7 @@ describe('session', function() {
 
   });
 
-  describe('.push', function() {
+  describe('.push()', function() {
 
     lazy('hash', () => {return {};});
 
@@ -57,7 +70,7 @@ describe('session', function() {
 
   });
 
-  describe('.create', function() {
+  describe('.create()', function() {
 
     lazy('hash', () => {return {};});
 
@@ -73,7 +86,7 @@ describe('session', function() {
 
   });
 
-  describe('.get', function() {
+  describe('.get()', function() {
 
     lazy('entity', function() {
       return new this.Post(this.graph, {id: "1"});
@@ -103,14 +116,39 @@ describe('session', function() {
 
       it('returns an entity', function() {
         expect(this.subject).to.not.eq(this.entity);
-        expect(this.subject).to.not.eq(null);
+        expect(this.subject).to.be.undefined
+      });
+
+      context('but is part of parent session', function() {
+
+        lazy('parentSession', function() {
+          return this.container.get(Session);
+        });
+
+        lazy('session', function() {
+          return this.parentSession.child();
+        });
+
+        lazy('entity', function() {
+          return this.parentSession.push(this.Post, {id: "1"});
+        });
+
+        beforeEach(function() {
+          this.entity;
+        });
+
+        it('returns an entity', function() {
+          expect(this.subject).to.not.eq(this.entity);
+          expect(this.subject.clientId).to.eq(this.entity.clientId);
+        });
+
       });
 
     });
 
   });
 
-  describe('.getBy', function() {
+  describe('.getBy()', function() {
 
     lazy('entity', function() {
       return new this.Post(this.graph, {id: "1"});
@@ -156,7 +194,7 @@ describe('session', function() {
 
   });
 
-  describe('.getQuery', function() {
+  describe('.getQuery()', function() {
 
     lazy('entity', function() {
       return this.session.push(Query, this.Post, this.params);
@@ -178,7 +216,7 @@ describe('session', function() {
 
   });
 
-  describe('.fetch', function() {
+  describe('.fetch()', function() {
 
     lazy('entity', function() {
       return new this.Post(this.graph, {id: "1"});
@@ -216,7 +254,7 @@ describe('session', function() {
 
   });
 
-  describe('.fetchBy', function() {
+  describe('.fetchBy()', function() {
 
     lazy('entity', function() {
       return new this.Post(this.graph, {id: "1"});
@@ -253,7 +291,7 @@ describe('session', function() {
 
   });
 
-  describe('.fetchQuery', function() {
+  describe('.fetchQuery()', function() {
 
     lazy('entity', function() {
       return this.graph.create(Query, this.Post, this.params);
@@ -295,7 +333,7 @@ describe('session', function() {
 
   });
 
-  describe('.load', function() {
+  describe('.load()', function() {
 
     lazy('Post', function() {
       let klass = class Post extends Model {}
@@ -339,7 +377,7 @@ describe('session', function() {
 
   });
 
-  describe('.merge', function() {
+  describe('.merge()', function() {
 
     lazy('Post', function() {
       let klass = class Post extends Model {}
@@ -420,7 +458,7 @@ describe('session', function() {
     });
   });
 
-  describe('.revert', function() {
+  describe('.revert()', function() {
 
     lazy('Post', function() {
       let klass = class Post extends Model {}
@@ -464,7 +502,7 @@ describe('session', function() {
 
   });
 
-  describe('.touch', function() {
+  describe('.touch()', function() {
 
     lazy('entity', function() {
       return this.session.merge(new this.Post(this.graph, {id: 1}));
