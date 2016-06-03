@@ -50,8 +50,10 @@ export default class Session extends Graph {
    * @param  {object} hash initial attributes
    * @return {type}        created model
    */
-  create(type, ...args) {
-    return this.build(type, {isNew: true, ...args});
+  create(type, attrs) {
+    let entity = this.build(type, {isNew: true, ...attrs});
+    this.newEntities.add(entity);
+    return entity;
   }
 
   /**
@@ -149,7 +151,7 @@ export default class Session extends Graph {
       return this.merge(serverEntity);
     }, (error) => {
       // TODO: think through 404 errors, delete the entity?
-      throw this.revert(entity);
+      throw this.rollback(entity);
     });
 
     cache.add(entity, promise);
@@ -312,7 +314,7 @@ export default class Session extends Graph {
     for(var childEntity of serverEntity.relatedEntities()) {
       // recurse on detached/embedded children entities
       // TODO needs to be embedded only in "this" relationship
-      if(childEntity.isEmbedded || !!childEntity.session) {
+      if(childEntity.isEmbedded || !childEntity.session) {
         childrenToRecurse.push(childEntity);
       }
     }
@@ -323,7 +325,6 @@ export default class Session extends Graph {
       this._withDirtyCheckingSuspended(function() {
         entity = this.update(serverEntity);
       });
-
       // TODO: move this check to update?
       if(!entity.isNew) {
         this.newEntities.delete(entity);
@@ -334,7 +335,7 @@ export default class Session extends Graph {
       }, this);
 
       if(entity.isDeleted) {
-        this.delete(merged);
+        this.delete(entity);
       } else {
         // After a successful merge we update the shadow to the
         // last known value from the server. As an optimization,
@@ -350,9 +351,9 @@ export default class Session extends Graph {
     // this._cacheFor(serverEntity).add(serverEntity);
 
     // recurse on detached and embedded children
-    childrenToRecurse.forEach(function(child) {
+    for(var child of childrenToRecurse) {
       this.merge(child);
-    }, this);
+    }
 
     return entity;
   }
@@ -385,24 +386,24 @@ export default class Session extends Graph {
 
 
   /**
-   * Invoked when a server operation fails and the shadow needs to be reverted
+   * Invoked when a server operation fails and the shadow needs to be rolled
    * back to an earlier version.
    *
-   * @param  {type} original the value to revert to
-   * @return {type}          the reverted entity
+   * @param  {type} original the value to rollback to
+   * @return {type}          the rolled back entity
    */
-  revert(original) {
+  rollback(original) {
     if(this.parent) {
-      original = this.parent.revert(original);
+      original = this.parent.rollback(original);
     }
 
     // TODO: traverse embedded relationships a la merge
 
-    var entity = this.get(original);
-    console.assert(!!entity, "Cannot revert non-existant entity");
+    let entity = this.get(original);
+    console.assert(!!entity, "Cannot rollback non-existant entity");
 
     if(!entity.isNew) {
-      var shadow = this.shadows.get(original);
+      let shadow = this.shadows.get(original);
       if(!original.rev || shadow && shadow.rev <= original.rev) {
         // "rollback" shadow to the original
         console.assert(this.has(original));
@@ -414,6 +415,23 @@ export default class Session extends Graph {
       this.newEntities.add(entity);
       return this.newEntities.get(original);
     }
+  }
+
+  /**
+   * Mark the entity as clean, effectively making any local modifications to
+   * the entity appear as persisted.
+   *
+   * @param  {type}   entity the entity to commit
+   * @return {Entity}        the entity
+   */
+  commit(entity) {
+    if(entity.isNew) {
+      entity.isNew = false;
+      this.newEntities.delete(entity);
+    } else {
+      this.shadows.delete(entity);
+    }
+    return entity;
   }
 
   /**
@@ -435,7 +453,9 @@ export default class Session extends Graph {
    */
   flush(entities=this.dirtyEntities) {
     let plan = this.plan(entities);
-    // TODO optimistically update shadows etc. set isNew = false
+    for(var entity of entities) {
+      this.commit(entity);
+    }
     return plan.execute();
   }
 

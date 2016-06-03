@@ -27,7 +27,7 @@ export default class Operation {
    * @return {type}  description
    */
   execute() {
-    this._depsPromise().then((res) => {
+    this._depsPromise.then((res) => {
       this._execute().then((res) => {
         this._resolve(res);
       });
@@ -49,7 +49,7 @@ export default class Operation {
    * The promise of the resolution of all dependencies.
    */
   get _depsPromise() {
-    return Promise.all(Array.from(this.deps.values()).map(function(dep) {
+    return Promise.all(Array.from(this._deps.values()).map(function(dep) {
       return dep._promise;
     }));
   }

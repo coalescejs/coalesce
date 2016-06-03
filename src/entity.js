@@ -115,8 +115,11 @@ export default class Entity {
   }
 
   isEqual(other) {
+    if(!other) {
+      return false;
+    }
     console.assert(this.clientId && other.clientId, "Must have clientId's set");
     return other.clientId === this.clientId;
   }
-  
+
 }

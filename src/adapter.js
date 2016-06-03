@@ -299,7 +299,9 @@ export default class Adapter {
       if(entity.isQuery) {
         args = [entity.type, entity.params];
       } else {
-        args = [];
+        // Some backends might not pass-through the client-id. In which case,
+        // it is important to ensure it gets set during create operations.
+        args = [{clientId: entity.clientId}];
       }
       res = serializer.deserialize(graph, res, ...args);
     }

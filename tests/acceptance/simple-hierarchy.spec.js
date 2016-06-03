@@ -22,10 +22,12 @@ describe('acceptance/simple hierarchy of models', function() {
 
   it('loads, creates, updates, and deletes', async function() {
     let {session} = this;
+    let parentSession = session;
 
     fetchMock.mock('/users/1', 'GET', JSON.stringify({
       type: 'user',
       id: 1,
+      rev: 1,
       name: 'Brogrammer'
     }));
 
@@ -40,14 +42,30 @@ describe('acceptance/simple hierarchy of models', function() {
       user_id: 1
     }, {
       type: 'post',
-      id: 1,
+      id: 2,
       rev: 1,
       title: 'Post B',
       user_id: 1
     }]));
 
     let posts = await currentUser.posts.load();
-    expect(Array.from(posts).length).to.eq(2);
+    let postsArray = Array.from(posts);
+    expect(postsArray.length).to.eq(2);
+    expect(postsArray[0].title).to.eq('Post A');
+
+    session = parentSession.child();
+
+    let newPost = session.create(Post, {title: 'New Post', user: currentUser});
+    fetchMock.mock('/posts', 'POST', JSON.stringify({
+      type: 'post',
+      id: 3,
+      rev: 1,
+      title: 'New Post',
+      user_id: 1
+    }));
+    await session.flush();
+    expect(newPost.id).to.eq("3");
+    expect(newPost.user.name).to.eq('Brogrammer');
 
   });
 

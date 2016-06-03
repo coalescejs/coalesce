@@ -67,7 +67,7 @@ describe('diff', function() {
 
     it('returns all fields', function() {
       let arr = Array.from(this.subject);
-      expect(arr.length).to.eq(5);
+      expect(arr.length).to.eq(1);
     });
 
 

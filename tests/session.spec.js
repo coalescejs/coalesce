@@ -458,7 +458,7 @@ describe('session', function() {
     });
   });
 
-  describe('.revert()', function() {
+  describe('.rollback()', function() {
 
     lazy('Post', function() {
       let klass = class Post extends Model {}
@@ -474,7 +474,7 @@ describe('session', function() {
     });
 
     subject(function() {
-      return this.session.revert(this.original);
+      return this.session.rollback(this.original);
     });
 
     context('with a model', function() {

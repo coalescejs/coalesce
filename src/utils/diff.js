@@ -13,6 +13,10 @@ export default function* diff(lhs, rhs) {
   let schema = lhs.schema;
 
   for(let field of schema.dataFields()) {
+    if(field.kind === 'meta') {
+      continue;
+    }
+
     let left = lhs[field.name],
         right = rhs && rhs[field.name];
 

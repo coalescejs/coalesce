@@ -59,8 +59,8 @@ export default class ModelSerializer extends EntitySerializer {
   }
 
   // TODO pass type in?
-  deserialize(graph, hash) {
-    let data = {},
+  deserialize(graph, hash, defaults) {
+    let data = {...defaults},
         type = hash.type;
 
     console.assert(type, `Model payload must include 'type'`);

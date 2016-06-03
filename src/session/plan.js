@@ -79,7 +79,11 @@ export default class Plan {
    */
   execute() {
     return Promise.all(Array.from(this.operations.values()).map((op) => {
-      return op.execute();
+      return op.execute().then((entity) => {
+        this.session.merge(entity);
+      }, (error) => {
+        this.session.rollback(error);
+      });
     }));
   }
 

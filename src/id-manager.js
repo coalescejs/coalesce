@@ -6,6 +6,9 @@
   @class IdManager
 */
 export default class IdManager {
+
+  static singleton = true;
+
   constructor() {
     this.idMaps = {};
     this.uuid = 1;
