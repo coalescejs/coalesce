@@ -6,6 +6,8 @@ import Container from './container';
 import Query from './query';
 import Plan from './session/plan';
 
+import isSuperset from './utils/is-superset';
+
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
  * bridges the top-level interfaces with the lower-level adapters.
@@ -13,9 +15,7 @@ import Plan from './session/plan';
  * A session and its contained entities are essentially a "graph" of models
  * and collections.
  */
-export default class Session {
-
-  static dependencies = [Container];
+export default class Session extends Graph {
 
   /**
    * Create a session.
@@ -23,14 +23,15 @@ export default class Session {
    * @params {Container} the container
    */
   constructor(container=new DefaultContainer(), parent) {
-    this.container = container;
+    super(container);
     this.parent = parent;
-    this.idManager = container.get(IdManager);
-    this.entities = container.get(Graph);
     this.shadows = container.get(Graph);
     this.newEntities = new EntitySet();
   }
 
+  get isSession() {
+    return true;
+  }
 
   /**
    * Return a new child session.
@@ -42,21 +43,6 @@ export default class Session {
   }
 
   /**
-   * Build an instance of the type. Unlike `create`, this will not mark the
-   * entity for creation.
-   *
-   * @param  {*}      type type identifier
-   * @param  {object} hash initial attributes
-   * @return {Model}       instantiated model
-   */
-  build(type, ...args) {
-    type = this.container.typeFor(type);
-    let entity = new type(this.entities, ...args);
-    this._reifyClientId(entity);
-    return entity;
-  }
-
-  /**
    * Create an instance of the type. This instance will be marked for creation
    * and will be persisted on the next call to `.flush()`.
    *
@@ -65,24 +51,12 @@ export default class Session {
    * @return {type}        created model
    */
   create(type, ...args) {
-    return this.push(type, {...args, isNew: true});
+    return this.build(type, {isNew: true, ...args});
   }
 
   /**
-   * Push data directly into the session, bypassing merging. This is useful for
-   * testing, but should be used caringly.
+   * @override
    *
-   * @param  {*}      type type identifier
-   * @param  {object} hash initial attributes
-   * @return {type}        entity inside session
-   */
-  push(type, ...args) {
-    var entity = this.build(type, ...args);
-    this._adopt(entity);
-    return entity;
-  }
-
-  /**
    * Get the corresponding instance of the entity within session. If the entity
    * is already part of this session it will return the same entity.
    *
@@ -90,45 +64,32 @@ export default class Session {
    * @return {Entity}        the entity within this session or undefined if it does not exist
    */
   get(entity) {
-    let res = this.entities.get(entity);
+    let res = super.get(entity);
     // if we are in a child session, we want to pull from the parent
     if(!res && this.parent) {
       res = this.parent.get(entity);
       if(res) {
         // TODO: swap revisions?
-        res = res.clone(this.entities);
-        this._adopt(res);
+        res = res.fork(this);
+        this.add(res);
       }
     }
     return res;
   }
 
   /**
+   * @override
+   *
    * Test if the given entity exists in the session.
+   *
+   * This *does not* take into account whether the entity exists in the parent
+   * session.
    *
    * @param  {Entity}  entity entity to check for
    * @return {boolean}        does the entity exist in the session
    */
   has(entity) {
-    return !!this.entities.get(entity) || this.parent && this.parent.has(entity);
-  }
-
-
-  /**
-   * Get the corresponding instance of the entity for this session based on its
-   * id or clientId.
-   *
-   * @param  {*}      type   type identifier
-   * @param  {object} params hash containing `id` or `clientId`
-   * @return {Entity}        the entity within this session
-   */
-  getBy(type, {id, clientId}) {
-    type = this.container.typeFor(type);
-    if(id) {
-      id = id+'';
-      clientId = this.idManager.getClientId(type.typeKey, id);
-    }
-    return this.get({clientId});
+    return super.has(entity);
   }
 
 
@@ -141,43 +102,7 @@ export default class Session {
    */
   getQuery(type, params) {
     let clientId = Query.clientId(type, params);
-    return this.entities.get({clientId});
-  }
-
-  /**
-   * Get the corresponding instance of the entity for this session or
-   * initializes one if one does not exist. Unlike `.get`, this method will
-   * always return an entity, regardless of whether it is already in the
-   * session.
-   *
-   * @param  {Entity} entity
-   * @return {Entity} entity within the session
-   */
-  fetch(entity) {
-    let res = this.get(entity);
-    if(!res) {
-      let {id, clientId} = entity;
-      res = this._adopt(this.build(entity.constructor, {id, clientId}));
-    }
-    return res;
-  }
-
-  /**
-   * Similar to `.fetch()`, but allows lookup via `id`.
-   *
-   * @param  {*}      type identifier
-   * @param  {object} object containing an `id` property
-   * @return {Entity} entity within the session
-   */
-  fetchBy(type, {id}) {
-    type = this.container.typeFor(type);
-    id = id+'';
-    let entity = this.getBy(type, {id});
-    if(!entity) {
-      entity = this.build(type, {id: id});
-      this._adopt(entity);
-    }
-    return entity;
+    return this.get({clientId});
   }
 
   /**
@@ -190,11 +115,7 @@ export default class Session {
    * @return {type}        the query in this session
    */
   fetchQuery(type, params) {
-    let res = this.getQuery(type, params);
-    if(!res) {
-      res = this._adopt(this.build(Query, type, params));
-    }
-    return res;
+    return this.fetchBy(Query, type, params);
   }
 
   /**
@@ -210,9 +131,10 @@ export default class Session {
     };
 
     console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
+
     // TODO: this should be done on a per-attribute bases
     let cache = this.container.cacheFor(entity.constructor),
-        adapter = this.container.adapterFor(entity.constructor),
+        adapter = this.container.adapterFor(entity),
         promise;
 
     if(!opts.skipCache) {
@@ -220,28 +142,40 @@ export default class Session {
     }
 
     if(promise) {
-      // the cache's promise is not guaranteed to return anything
-      promise = promise.then(function() {
-        return entity;
-      });
-    } else {
-      promise = adapter.load(entity, opts, this);
-      cache.add(entity, promise);
+      return promise;
     }
 
-    promise = promise.then((serverEntity) => {
+    promise = adapter.load(entity, opts, this).then((serverEntity) => {
       return this.merge(serverEntity);
     }, (error) => {
       // TODO: think through 404 errors, delete the entity?
-      return this.revert(entity);
+      throw this.revert(entity);
     });
+
+    cache.add(entity, promise);
 
     return promise;
   }
 
   /**
-    Perform the query immediately
-  */
+   * Fetch and load a model immediately.
+   *
+   * @param  {*}       type
+   * @param  {Id}      id
+   * @return {Promise}
+   */
+  find(type, id, ...opts) {
+    let model = this.fetchBy(type, {id});
+    return this.load(model, ...opts);
+  }
+
+  /**
+   * Fetch and perform a query immediately.
+   *
+   * @param  {*}       type   the type
+   * @param  {type}    params the params for the query
+   * @return {Promise}
+   */
   query(type, params) {
     let query = this.fetchQuery(type, params);
     return this.load(query);
@@ -290,7 +224,7 @@ export default class Session {
   get dirtyEntities() {
     var entities = new EntitySet();
     for(var entity of this.shadows) {
-      entities.add(this.entities.get(entity));
+      entities.add(this.get(entity));
     }
     for(var entity of this.newEntities) {
       entities.add(entity);
@@ -303,11 +237,16 @@ export default class Session {
   }
 
   /**
-   * Delete an entity.
+   * Mark an entity as destroyed. This will cause the underlying adapter to
+   * delete the model next time `.flush()` is called. Once that happens, the
+   * entity will be removed from the session.
+   *
+   * This is different from `.delete()`, which removes the entity from the session
+   * immediately.
    *
    * @param  {type} entity the entity to delete
    */
-  delete(entity) {
+  destroy(entity) {
     if(entity.isNew) {
       this.newEntities.remove(entity);
     }
@@ -317,15 +256,12 @@ export default class Session {
 
 
   /**
-   * Update the corresponding entity in the session with the data contained
-   * in the passed in entity.
-   *
-   * @param  {Entity} entity the source entity
-   * @return {Entity}        the updated entity
+   * @override
    */
-  update(entity) {
-    let target = this.fetch(entity);
-    return target.assign(entity);
+  delete(entity) {
+    this.shadows.delete(entity);
+    this.newEntities.delete(entity);
+    super.delete(entity);
   }
 
   /**
@@ -345,12 +281,6 @@ export default class Session {
     var entity = this.fetch(serverEntity),
         shadow = this.shadows.get(serverEntity);
 
-    // Unloaded entities do not have any data to merge, nor should they
-    // have versioning information
-    if(!serverEntity.isLoaded) {
-      return entity;
-    }
-
     // Some backends will not return versioning information. In this
     // case we just fabricate our own server versioning, assuming that
     // all new entities are a newer version.
@@ -365,7 +295,8 @@ export default class Session {
     }
 
     // Have we already seen this version?
-    if(entity.rev && entity.rev >= serverEntity.rev) {
+    // NOTE: we also call `isSuperset` to ensure that the entity also has all of the fields
+    if(entity.rev && entity.rev >= serverEntity.rev && isSuperset(entity, serverEntity)) {
       return entity;
     }
 
@@ -373,7 +304,7 @@ export default class Session {
     // shadow it is to be merged against, then the common ancestor is
     // no longer tracked. In this scenario we currently just toss out.
     if(shadow && shadow.clientRev > serverEntity.clientRev) {
-      console.warn(`Not merging stale entity ${serverEntity}`)
+      console.warn(`Not merging stale entity ${serverEntity}`);
       return entity;
     }
 
@@ -381,7 +312,7 @@ export default class Session {
     for(var childEntity of serverEntity.relatedEntities()) {
       // recurse on detached/embedded children entities
       // TODO needs to be embedded only in "this" relationship
-      if(childEntity.isLoaded && (childEntity.isEmbedded || childEntity.isDetached)) {
+      if(childEntity.isEmbedded || !!childEntity.session) {
         childrenToRecurse.push(childEntity);
       }
     }
@@ -465,11 +396,9 @@ export default class Session {
       original = this.parent.revert(original);
     }
 
-    this._reifyClientId(original);
-
     // TODO: traverse embedded relationships a la merge
 
-    var entity = this.entities.get(original);
+    var entity = this.get(original);
     console.assert(!!entity, "Cannot revert non-existant entity");
 
     if(!entity.isNew) {
@@ -512,32 +441,6 @@ export default class Session {
 
   /**
    * @private
-   * Adds the entity to the session.
-   *
-   * @param  {Entity} entity
-   * @return {Entity}
-   */
-  _adopt(entity) {
-    this._reifyClientId(entity);
-    console.assert(!entity.session || entity.session === this, "Entities cannot be moved between sessions. Use `get` or `merge` instead.");
-    console.assert(!this.entities.get(entity) || this.entities.get(entity) === entity, "An equivalent model already exists in the session!");
-    this.entities.add(entity);
-    entity.session = this;
-    return entity;
-  }
-
-  /**
-    @private
-
-    Ensure the passed in entity has a clientId
-  */
-  _reifyClientId(entity) {
-    this.idManager.reifyClientId(entity);
-  }
-
-
-  /**
-   * @private
    */
   _withDirtyCheckingSuspended(callback, binding) {
     // could be nested
@@ -552,6 +455,5 @@ export default class Session {
       this._dirtyCheckingSuspended = false;
     }
   }
-
 
 }

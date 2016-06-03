@@ -36,8 +36,8 @@ describe('collection', function() {
 
       lazy('arg', function() {
         return [
-          this.graph.create(this.Post, {id: '1', title: 'a'}),
-          this.graph.create(this.Post, {id: '2', title: 'b'})
+          this.graph.build(this.Post, {id: '1', title: 'a'}),
+          this.graph.build(this.Post, {id: '2', title: 'b'})
         ]
       });
 

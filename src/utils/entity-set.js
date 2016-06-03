@@ -1,8 +1,8 @@
 /**
-  An unordered collection of unique models.
+  An unordered collection of unique entities.
 
-  Uniqueness is determined by the `clientId`. If a model is added and an
-  equivalent model already exists in the EntitySet, the existing model will be
+  Uniqueness is determined by the `clientId`. If a entity is added and an
+  equivalent entity already exists in the EntitySet, the existing entity will be
   overwritten.
 
   @class EntitySet
@@ -27,10 +27,10 @@ export default class EntitySet {
     without having to recreate it.
 
     ```javascript
-    var models = new EntitySet([post1, post2, post3]);
-    models.size;  // 3
-    models.clear();
-    models.size;  // 0
+    var entities = new EntitySet([post1, post2, post3]);
+    entities.size;  // 3
+    entities.clear();
+    entities.size;  // 0
     ```
 
     @method clear
@@ -43,7 +43,7 @@ export default class EntitySet {
     var guid;
 
     for (var i=0; i < len; i++){
-      guid = guidFor(this[i]);
+      guid = this._guidFor(this[i]);
       delete this[guid];
       delete this[i];
     }
@@ -55,11 +55,11 @@ export default class EntitySet {
 
   add(obj) {
 
-    var guid = guidFor(obj),
+    var guid = this._guidFor(obj),
         idx  = this[guid],
         len  = this._size;
 
-    if (idx>=0 && idx<len && (this[idx] && isEqual(this[idx], obj))) {
+    if (idx>=0 && idx<len && (this[idx] && this._isEqual(this[idx], obj))) {
       // overwrite the existing version
       if(this[idx] !== obj) {
         this[idx] = obj;
@@ -77,7 +77,7 @@ export default class EntitySet {
 
   delete(obj) {
 
-    var guid = guidFor(obj),
+    var guid = this._guidFor(obj),
         idx  = this[guid],
         len = this._size,
         isFirst = idx === 0,
@@ -85,12 +85,12 @@ export default class EntitySet {
         last;
 
 
-    if (idx>=0 && idx<len && (this[idx] && isEqual(this[idx], obj))) {
+    if (idx>=0 && idx<len && (this[idx] && this._isEqual(this[idx], obj))) {
       // swap items - basically move the item to the end so it can be removed
       if (idx < len-1) {
         last = this[len-1];
         this[idx] = last;
-        this[guidFor(last)] = idx;
+        this[this._guidFor(last)] = idx;
       }
 
       delete this[guid];
@@ -103,7 +103,7 @@ export default class EntitySet {
   }
 
   has(obj) {
-    return this[guidFor(obj)]>=0;
+    return this[this._guidFor(obj)]>=0;
   }
 
   copy(deep=false) {
@@ -111,7 +111,7 @@ export default class EntitySet {
     ret._size = loc;
     while(--loc>=0) {
       ret[loc] = deep ? this[loc].copy() : this[loc];
-      ret[guidFor(this[loc])] = loc;
+      ret[this._guidFor(this[loc])] = loc;
     }
     return ret;
   }
@@ -130,8 +130,8 @@ export default class EntitySet {
     return `EntitySet<${array.join(',')}>`;
   }
 
-  get(model) {
-    var idx = this[guidFor(model)];
+  get(entity) {
+    var idx = this[this._guidFor(entity)];
     if(idx === undefined) return;
     return this[idx];
   }
@@ -145,12 +145,12 @@ export default class EntitySet {
   *[Symbol.iterator]() {
     yield* this.values();
   }
-}
 
-function guidFor(model) {
-  return model.clientId;
-}
+  _guidFor(entity) {
+    return entity.clientId;
+  }
 
-function isEqual(a, b) {
-  return guidFor(a) === guidFor(b);
+  _isEqual(a, b) {
+    return this._guidFor(a) === this._guidFor(b);
+  }
 }

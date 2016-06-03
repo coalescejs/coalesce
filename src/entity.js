@@ -8,13 +8,29 @@ export default class Entity {
   constructor(graph) {
     console.assert(graph, `Entity must be associated with a graph`);
     this._graph = graph;
+    if(graph.isSession) {
+      this._session = graph;
+    }
   }
 
   /**
    * The graph this entity is a part of.
+   *
+   * @return {Graph}
    */
   get graph() {
     return this._graph;
+  }
+
+
+  /**
+   * The session the entity is associated with (if at all). This is the same
+   * object as the graph, but all graphs are not necessarily sessions.
+   *
+   * @return {Session}
+   */
+  get session() {
+    return this._session;
   }
 
   get isEntity() {
@@ -41,9 +57,8 @@ export default class Entity {
     return this;
   }
 
-
   /**
-   * Similar to `clone`, but has no data aside from identifiers.
+   * Similar to `fork`, but has no data aside from identifiers.
    *
    * @param  {type}   graph the graph to add to
    * @return {Entity}       the new instance
@@ -53,17 +68,16 @@ export default class Entity {
   }
 
   /**
-   * Clone this entity to the destination graph.
+   * Fork this entity to the destination graph.
    *
    * @param  {type}   graph the graph to add to
    * @return {Entity}       the new instance
    */
-  clone(graph) {
-    let clone = this.ref(graph);
-    clone.assign(this);
-    return clone;
+  fork(graph) {
+    let fork = this.ref(graph);
+    fork.assign(this);
+    return fork;
   }
-
 
   /**
    * @private
@@ -73,7 +87,9 @@ export default class Entity {
   withChangeTracking(fn) {
     try {
       if(this._tracking++ === 0) {
-        if(this.session) {
+        // TODO: think through the .has check here. The reason for it is to deal
+        // with initializing attributes inside the model's constructor
+        if(this.session && this.session.has(this)) {
           this.session.touch(this);
         }
       }
@@ -87,4 +103,20 @@ export default class Entity {
     return `${this.constructor.name}<${this.clientId}>`;
   }
 
+
+  /**
+   * Load the entity. This is equivalent to calling `session.load(entity)`.
+   *
+   * @return {Promise}
+   */
+  load(...args) {
+    console.assert(this.session, "Must be associated with a session");
+    return this.session.load(this, ...args);
+  }
+
+  isEqual(other) {
+    console.assert(this.clientId && other.clientId, "Must have clientId's set");
+    return other.clientId === this.clientId;
+  }
+  
 }

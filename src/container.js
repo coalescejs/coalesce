@@ -94,8 +94,15 @@ export default class Container {
    * @param  {*}     type
    * @return {Merge}     adapter
    */
-  adapterFor(type) {
-    return this.providerFor(type, 'adapter');
+  adapterFor(typeOrEntity) {
+    if(typeOrEntity.isEntity) {
+      if(typeOrEntity.isQuery) {
+        typeOrEntity = typeOrEntity.type;
+      } else {
+        typeOrEntity = typeOrEntity.constructor;
+      }
+    }
+    return this.providerFor(typeOrEntity, 'adapter');
   }
 
   /**

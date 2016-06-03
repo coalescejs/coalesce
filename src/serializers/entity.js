@@ -24,7 +24,7 @@ export default class EntitySerializer {
   }
 
   create(graph, type, ...args) {
-    return graph.create(type, ...args);
+    return graph.fetchBy(type, ...args);
   }
 
   typeFor(type) {

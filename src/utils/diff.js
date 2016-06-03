@@ -12,12 +12,7 @@ export default function* diff(lhs, rhs) {
 
   let schema = lhs.schema;
 
-  for(let field of schema) {
-    // for now we don't care about hasMany
-    if(field.kind === 'hasMany') {
-      continue;
-    }
-
+  for(let field of schema.dataFields()) {
     let left = lhs[field.name],
         right = rhs && rhs[field.name];
 

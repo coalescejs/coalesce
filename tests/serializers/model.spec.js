@@ -10,7 +10,7 @@ describe('serializers/model', function() {
 
   lazy('container', () => new DefaultContainer());
   lazy('graph', function() {
-    return new Graph(this.container.get(IdManager));
+    return this.container.get(Graph);
   });
 
   subject('serializer', function() {

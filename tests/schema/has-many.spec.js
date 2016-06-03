@@ -55,14 +55,14 @@ describe('schema/has-many', function() {
   describe('.get()', function() {
 
     lazy('model', function() {
-      return this.graph.create(this.Model, {
+      return this.graph.build(this.Model, {
         id: 1,
         [this.name]: this.value
       });
     });
 
     lazy('value', function() {
-      return [this.graph.create(this.Comment, {id: 2})];
+      return [this.graph.build(this.Comment, {id: 2})];
     });
 
     subject(function() {
@@ -76,7 +76,7 @@ describe('schema/has-many', function() {
     context('without a value set', function() {
 
       lazy('model', function() {
-        return this.graph.create(this.Model, {
+        return this.graph.build(this.Model, {
           id: 1
         });
       });

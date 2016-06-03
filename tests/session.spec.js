@@ -49,7 +49,7 @@ describe('session', function() {
 
     it('instantiates', function() {
       expect(this.subject).to.be.an.instanceOf(this.Post);
-      expect(this.session.get(this.subject)).to.not.eq(this.subject);
+      expect(this.session.get(this.subject)).to.eq(this.subject);
     });
 
   });
@@ -99,7 +99,7 @@ describe('session', function() {
     context('when entity is part of the session', function() {
 
       lazy('entity', function() {
-        return this.session.push(this.Post, {id: "1"});
+        return this.session.build(this.Post, {id: "1"});
       });
 
       beforeEach(function() {
@@ -130,7 +130,7 @@ describe('session', function() {
         });
 
         lazy('entity', function() {
-          return this.parentSession.push(this.Post, {id: "1"});
+          return this.parentSession.build(this.Post, {id: "1"});
         });
 
         beforeEach(function() {
@@ -163,7 +163,7 @@ describe('session', function() {
     context('when entity is part of the session', function() {
 
       lazy('entity', function() {
-        return this.session.push(this.Post, {id: "1"});
+        return this.session.build(this.Post, {id: "1"});
       });
 
       beforeEach(function() {
@@ -197,7 +197,7 @@ describe('session', function() {
   describe('.getQuery()', function() {
 
     lazy('entity', function() {
-      return this.session.push(Query, this.Post, this.params);
+      return this.session.build(Query, this.Post, this.params);
     });
 
     beforeEach(function() {
@@ -229,7 +229,7 @@ describe('session', function() {
     context('when entity is part of the session', function() {
 
       lazy('entity', function() {
-        return this.session.push(this.Post, {id: "1"});
+        return this.session.build(this.Post, {id: "1"});
       });
 
       beforeEach(function() {
@@ -267,7 +267,7 @@ describe('session', function() {
     context('when entity is part of the session', function() {
 
       lazy('entity', function() {
-        return this.session.push(this.Post, {id: "1"});
+        return this.session.build(this.Post, {id: "1"});
       });
 
       beforeEach(function() {
@@ -294,7 +294,7 @@ describe('session', function() {
   describe('.fetchQuery()', function() {
 
     lazy('entity', function() {
-      return this.graph.create(Query, this.Post, this.params);
+      return this.graph.build(Query, this.Post, this.params);
     });
 
     subject(function() {
@@ -304,7 +304,7 @@ describe('session', function() {
     context('when entity is part of the session', function() {
 
       lazy('entity', function() {
-        return this.session.push(Query, this.Post, this.params);
+        return this.session.build(Query, this.Post, this.params);
       });
 
       beforeEach(function() {
@@ -353,7 +353,7 @@ describe('session', function() {
       let container = this.container;
       return class TestAdapter {
         async load(entity) {
-          let res = entity.clone(container.get(Graph));
+          let res = entity.fork(container.get(Graph));
           res.title = 'loaded title';
           res.rev = 1;
           return res;

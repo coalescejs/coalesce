@@ -55,19 +55,17 @@ describe('schema/belongs-to', function() {
   describe('.get()', function() {
 
     lazy('model', function() {
-      return new this.Model(this.graph, {
+      return this.graph.build(this.Model, {
         id: 1,
         [this.name]: this.value
       });
     });
 
     lazy('value', function() {
-      return new this.User(this.graph, {id: 2});
+      return this.graph.build(this.User, {id: 2});
     });
 
     subject(function() {
-      this.graph.add(this.model);
-      this.graph.add(this.value);
       return this.model[this.name];
     });
 

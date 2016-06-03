@@ -94,21 +94,21 @@ describe('model', function() {
 
     it('copies attributes', function() {
       expect(this.subject.title).to.eq('A');
-      expect(this.subject._data).to.eq(this.source._data);
+      expect(this.subject._data.toJS()).to.eql(this.source._data.toJS());
     });
 
   });
 
-  describe('.clone()', function() {
+  describe('.fork()', function() {
 
     lazy('source', function() { return new this.Post(this.graph, {title: 'A'}); });
     lazy('destGraph', function() { return this.container.get(Graph); });
 
-    subject(function() { return this.source.clone(this.destGraph); });
+    subject(function() { return this.source.fork(this.destGraph); });
 
     it('returns new instance with same attributes', function() {
       expect(this.subject).to.not.eq(this.source);
-      expect(this.subject._data).to.eq(this.source._data);
+      expect(this.subject._data.toJS()).to.eql(this.source._data.toJS());
     });
 
   });

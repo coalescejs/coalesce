@@ -1,5 +1,5 @@
 import Relationship from './relationship';
-import HasManyCollection from '../has-many';
+import Query from '../query';
 
 import Immutable from 'immutable';
 
@@ -8,19 +8,20 @@ export default class HasMany extends Relationship {
   defineProperty(prototype) {
     var field = this,
         name = field.name,
-        type = field.type,
-        attributeName = field.attributeName;
+        typeKey = field.typeKey,
+        type = field.type;
 
     Object.defineProperty(prototype, name, {
       enumerable: true,
       configurable: true,
       get: function() {
-        let clientId = HasManyCollection.clientId(this, name),
-            res = this.graph.get({clientId});
-        if(!res) {
-          res = this.graph.create(HasManyCollection, this, name);
+        if(!this.id) {
+          return null;
         }
-        return res;
+        if(!type) {
+          type = this.graph.container.typeFor(typeKey);
+        }
+        return this.graph.fetchBy(Query, type, field.getQueryParams(this));
       },
       set: function(value) {
         let entity = this[name];
@@ -35,8 +36,10 @@ export default class HasMany extends Relationship {
     });
   }
 
-  get attributeName() {
-    return `$${this.name}`;
+  getQueryParams(owner) {
+    return {
+      [`${this.schema.typeKey}_id`]: owner.id
+    };
   }
 
 }

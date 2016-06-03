@@ -16,13 +16,13 @@ describe('diff', function() {
   });
 
   lazy('lhs', function() {
-    return this.lhsGraph.create(Post, {
+    return this.lhsGraph.build(Post, {
       title: 'test'
     });
   });
 
   lazy('rhs', function() {
-    return this.rhsGraph.create(Post, {
+    return this.rhsGraph.build(Post, {
       title: 'test'
     });
   });
@@ -42,7 +42,7 @@ describe('diff', function() {
   context('with difference', function() {
 
     lazy('lhs', function() {
-      return this.lhsGraph.create(Post, {
+      return this.lhsGraph.build(Post, {
         title: 'A'
       });
     });

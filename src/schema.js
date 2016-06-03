@@ -122,6 +122,20 @@ export default class Schema {
     }
   }
 
+
+  /**
+   * Fields which are part of the model's data.
+   *
+   * @return {iterator}
+   */
+  *dataFields() {
+    for(var field of this.fields()) {
+      if(field.owner) {
+        yield field;
+      }
+    }
+  }
+
   *ownFields() {
     for(var field of this.fields()) {
       if(this.hasOwnProperty(field.name)) {

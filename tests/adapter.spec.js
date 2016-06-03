@@ -95,11 +95,11 @@ describe('adapter', function() {
 
     });
 
-    context('with deleted entity', function() {
+    context('with destroyed entity', function() {
 
       lazy('entity', function() {
-        let entity = this.session.push(Post, {id: 1, title: 'Beyond the grave'});
-        this.session.delete(entity);
+        let entity = this.session.build(Post, {id: 1, title: 'Beyond the grave'});
+        this.session.destroy(entity);
         return entity;
       });
 
@@ -118,7 +118,7 @@ describe('adapter', function() {
     context('with updated entity', function() {
 
       lazy('entity', function() {
-        let entity = this.session.push(Post, {id: 1, title: 'Be Persistent'});
+        let entity = this.session.build(Post, {id: 1, title: 'Be Persistent'});
         entity.title = 'More Persistent';
         return entity;
       });
@@ -144,7 +144,7 @@ describe('adapter', function() {
       return this.container.get(Graph);
     });
     lazy('context', function() {
-      return this.graph.create(Post, {id: 1});
+      return this.graph.build(Post, {id: 1});
     });
     lazy('action', () => undefined);
 
@@ -163,7 +163,7 @@ describe('adapter', function() {
     context('with query as context', function() {
 
       lazy('context', function() {
-        return this.graph.create(Query, Post, {});
+        return this.graph.build(Query, Post, {});
       });
 
       it('resolves to collective resource root', function() {
@@ -172,7 +172,7 @@ describe('adapter', function() {
 
       context('with params', function() {
         lazy('context', function() {
-          return this.graph.create(Query, Post, {q: 'asd'});
+          return this.graph.build(Query, Post, {q: 'asd'});
         });
 
         it('adds params', function() {

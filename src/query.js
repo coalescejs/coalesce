@@ -7,12 +7,9 @@ export default class Query extends Collection {
 
   constructor(graph, type, params, iterable) {
     super(graph, iterable);
+    this.clientId = this.constructor.clientId(type, params);
     this.type = type;
     this.params = params;
-  }
-
-  get clientId() {
-    return this.constructor.clientId(this.type, this.params);
   }
 
   get isQuery() {

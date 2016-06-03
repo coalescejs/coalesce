@@ -57,8 +57,24 @@ export default class IdManager {
     return clientId;
   }
 
-  getClientId(typeKey, id) {
-    var idMap = this.idMaps[typeKey];
+  getClientId(type, ...args) {
+    // check for string (e.g. raw typeKey)
+    if(typeof type === 'string' || type.isModel) {
+      return this.getModelClientId(type, ...args);
+    }
+    // other types have deterministic ids that can be generated
+    return type.clientId(...args);
+  }
+
+  getModelClientId(type, {id, clientId}) {
+    if(clientId) {
+      return clientId;
+    }
+    id = id + '';
+    if(type.typeKey) {
+      type = type.typeKey;
+    }
+    let idMap = this.idMaps[type];
     return idMap && idMap[id + ''];
   }
 

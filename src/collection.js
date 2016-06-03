@@ -2,20 +2,26 @@ import Entity from './entity';
 
 import Immutable from 'immutable';
 
+import Cache from './cache';
+
 export default class Collection extends Entity {
 
-  _data = null;
+  static cache = Cache;
+
+  static defaults = Immutable.List();
+
+  _data = this.constructor.defaults;
 
   constructor(graph, iterable) {
     super(graph);
-    function* clientIds(iterable) {
-      if(iterable) {
+    if(iterable) {
+      function* clientIds(iterable) {
         for(var entity of iterable) {
           yield entity.clientId;
         }
       }
+      this._data = Immutable.List(clientIds(iterable));
     }
-    this._data = Immutable.List(clientIds(iterable));
   }
 
   // currently all collections are transient

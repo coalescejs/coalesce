@@ -18,11 +18,13 @@ export default class Model extends Entity {
   static merge = ModelMerge;
   static serializer = ModelSerializer;
 
+  // XXX: this is ugly
+  static isModel = true;
+
   static defaults = Immutable.Map({isNew: false, isDeleted: false});
 
   _data = this.constructor.defaults;
 
-  session = null;
   clientRev = 1;
 
   constructor(graph, {id, clientId, ...rest}) {
@@ -30,10 +32,11 @@ export default class Model extends Entity {
     this.id = id;
     this.clientId = clientId;
     // TODO think through the location of this
-    graph._idManager.reifyClientId(this);
+    graph.idManager.reifyClientId(this);
     for(var key in rest) {
       this[key] = rest[key];
     }
+    this._initialized = true;
   }
 
   get isModel() {
@@ -67,6 +70,17 @@ export default class Model extends Entity {
 
   get schema() {
     return this.constructor.schema;
+  }
+
+  /**
+   * @override
+   *
+   * TODO: optimize for no fields loaded (e.g. overwriting an entity created
+   * via a fetch that doesn't yet have any data)
+   */
+  assign(source) {
+    this._data = this._data.merge(source._data);
+    return this;
   }
 
   /**
