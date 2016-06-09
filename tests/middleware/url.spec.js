@@ -2,7 +2,6 @@ import {expect} from 'chai';
 
 import Container, {Post} from '../support/simple-hierarchy';
 import UrlMiddleware from 'coalesce/middleware/url';
-import Session from 'coalesce/session';
 import Graph from 'coalesce/graph';
 import Query from 'coalesce/query';
 
@@ -18,16 +17,16 @@ describe('middleware/url', function() {
     lazy('graph', function() {
       return this.container.get(Graph);
     });
-    lazy('context', function() {
+    lazy('entity', function() {
       return this.graph.build(Post, {id: 1});
     });
     lazy('action', () => undefined);
 
     subject(function() {
-      return this.middleware.resolveUrl({context: this.context, action: this.action});
+      return this.middleware.resolveUrl({entity: this.entity, action: this.action});
     });
 
-    context('with model as context', function() {
+    context('with model', function() {
 
       it('resolves to singular resource root', function() {
         expect(this.subject).to.eq(`/posts/1`);
@@ -35,9 +34,9 @@ describe('middleware/url', function() {
 
     });
 
-    context('with query as context', function() {
+    context('with query', function() {
 
-      lazy('context', function() {
+      lazy('entity', function() {
         return this.graph.build(Query, Post, {});
       });
 
@@ -46,7 +45,7 @@ describe('middleware/url', function() {
       });
 
       context('with params', function() {
-        lazy('context', function() {
+        lazy('entity', function() {
           return this.graph.build(Query, Post, {q: 'asd'});
         });
 

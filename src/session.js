@@ -126,37 +126,14 @@ export default class Session extends Graph {
     @returns {Promise}
   */
   async load(entity, opts={}) {
-    // For a load operation, by default we don't serialize params
-    opts = {
-      serialize: false,
-      ...opts
-    };
+    let adapter = this.container.adapterFor(entity);
 
-    console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
-
-    // TODO: this should be done on a per-attribute bases
-    let cache = this.container.cacheFor(entity.constructor),
-        adapter = this.container.adapterFor(entity),
-        promise;
-
-    if(!opts.skipCache) {
-      promise = cache.getPromise(entity)
-    }
-
-    if(promise) {
-      return promise;
-    }
-
-    promise = adapter.load(entity, opts, this).then((serverEntity) => {
+    return adapter.load(entity, opts, this).then((serverEntity) => {
       return this.merge(serverEntity);
     }, (error) => {
       // TODO: think through 404 errors, delete the entity?
       throw this.rollback(entity);
     });
-
-    cache.add(entity, promise);
-
-    return promise;
   }
 
   /**
@@ -182,22 +159,6 @@ export default class Session extends Graph {
     let query = this.fetchQuery(type, params);
     return this.load(query);
   }
-
-  /**
-    Invalidate this entity. This removes the entity from the session cache
-    and will load additional data next time a `.load()` is called.
-  */
-  invalidate(entity) {
-
-  }
-
-  /**
-    Invalidate all queries related to this type.
-  */
-  invalidateQueries(type) {
-
-  }
-
 
   /**
    * Mark an entity as dirty. This will cause the model to be diffed against
@@ -256,7 +217,6 @@ export default class Session extends Graph {
     return entity;
   }
 
-
   /**
    * @override
    */
@@ -273,6 +233,12 @@ export default class Session extends Graph {
    * @return {Entity}              the merged entity within the session
    */
   merge(serverEntity) {
+    // OPTIMIZATION: in the event of a session-cache hit, the adapter might
+    // return the entity that is already in this session.
+    if(serverEntity.session === this) {
+      return serverEntity;
+    }
+
     if(this.parent) {
       if(serverEntity.session !== this.parent) {
         serverEntity = this.parent.merge(serverEntity);
@@ -346,9 +312,6 @@ export default class Session extends Graph {
         shadow.assign(entity);
       }
     }
-
-    // TODO
-    // this._cacheFor(serverEntity).add(serverEntity);
 
     // recurse on detached and embedded children
     for(var child of childrenToRecurse) {

@@ -9,6 +9,8 @@ export * from './default-container.spec';
 export * from './merge/array.spec';
 export * from './merge/model.spec';
 
+export * from './middleware/promise-cache.spec';
+export * from './middleware/session-cache.spec';
 export * from './middleware/url.spec';
 
 export * from './model.spec';

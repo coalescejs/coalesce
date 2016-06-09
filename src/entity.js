@@ -22,7 +22,6 @@ export default class Entity {
     return this._graph;
   }
 
-
   /**
    * The session the entity is associated with (if at all). This is the same
    * object as the graph, but all graphs are not necessarily sessions.
@@ -35,6 +34,11 @@ export default class Entity {
 
   get isEntity() {
     return true;
+  }
+
+  // TODO
+  get isLoaded() {
+    return false;
   }
 
   /**

@@ -2,12 +2,8 @@ import Entity from './entity';
 
 import Immutable from 'immutable';
 
-import Cache from './cache';
-
 export default class Collection extends Entity {
-
-  static cache = Cache;
-
+  
   static defaults = Immutable.List();
 
   _data = this.constructor.defaults;

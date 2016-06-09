@@ -15,17 +15,16 @@ export default class SerializeMiddleware {
     this.container = container;
   }
 
-  async call(ctx, next) {
-    const serializer = this._serializerFor(ctx.context);
-    if(ctx.serialize !== false) {
-      if(ctx.body) {
-        ctx.body = serializer.serialize(ctx.body);
+  async call({serialize, body, entity}, next) {
+    const serializer = this._serializerFor(entity);
+    if(serialize !== false) {
+      if(body) {
+        body = serializer.serialize(body);
       }
     }
 
     let res = await next(),
-        graph = this.container.get(Graph),
-        entity = ctx.context;
+        graph = this.container.get(Graph);
 
     if(!isEmpty(res)) {
       let args;
@@ -37,19 +36,16 @@ export default class SerializeMiddleware {
         args = [{clientId: entity.clientId}];
       }
       res = serializer.deserialize(graph, res, ...args);
-    } else if(entity.isEntity) {
+    } else {
       // if no data is returned from the server, we send back the original
       // entity
-      res = ctx.context.fork(graph);
-    } else {
-      // TODO think through non-entity contexts
-      res = ctx.context;
+      res = entity.fork(graph);
     }
     return res;
   }
 
-  _serializerFor(ctx) {
-    let type = ctx.constructor;
+  _serializerFor(entity) {
+    let type = entity.constructor;
     return this.container.serializerFor(type);
   }
 

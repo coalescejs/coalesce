@@ -1,4 +1,4 @@
-import {defaults, isEmpty} from 'lodash';
+import {isEmpty} from 'lodash';
 import {camelize, pluralize} from 'inflection';
 import qs from 'qs';
 
@@ -10,37 +10,36 @@ export default class UrlMiddleware {
   static singleton = true;
 
   async call(ctx, next) {
-    defaults(ctx, {
-      url: this.resolveUrl(ctx)
-    });
+    if(!ctx.url) {
+      ctx.url = this.resolveUrl(ctx);
+    }
     return next();
   }
 
   /**
-   * Determine the url for the given request context
+   * Determine the url for the given request entity
    *
    * @param  {object} options
    * @return {String}         the url
    */
-  resolveUrl({context, action}) {
+  resolveUrl({entity, action}) {
+    console.assert(entity.isEntity, "Entity is required");
     let typeKey,
         id;
         url = [];
 
-    if(typeof context === 'string') {
-      typeKey = context;
-    } else if(context.isCollection) {
-      typeKey = context.type.typeKey;
+    if(entity.isCollection) {
+      typeKey = entity.type.typeKey;
     } else {
-      typeKey = context.typeKey;
-      id = context.id;
+      typeKey = entity.typeKey;
+      id = entity.id;
     }
     var url = this._buildUrl(typeKey, id);
     if(action) {
       url = `${url}/${action}`;
     }
 
-    let queryParams = context.isCollection && context.params;
+    let queryParams = entity.isCollection && entity.params;
     if(queryParams && !isEmpty(queryParams)) {
       url = `${url}?${this._buildQuery(queryParams)}`;
     }

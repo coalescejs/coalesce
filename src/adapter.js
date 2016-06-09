@@ -9,6 +9,8 @@ import UrlMiddleware from './middleware/url';
 import SerializeMiddleware from './middleware/serialize';
 import JsonMiddleware from './middleware/json';
 import FetchMiddleware from './middleware/fetch';
+import SessionCacheMiddleware from './middleware/session-cache';
+import PromiseCacheMiddleware from './middleware/promise-cache';
 
 /**
  * The Adapter is the main object responsible for interfacing with a remote server.
@@ -19,6 +21,8 @@ export default class Adapter {
   static dependencies = [Container];
 
   static middleware = [
+    PromiseCacheMiddleware,
+    SessionCacheMiddleware,
     UrlMiddleware,
     SerializeMiddleware,
     JsonMiddleware,
@@ -41,11 +45,13 @@ export default class Adapter {
    * @return {Promise}
    */
   load(entity, opts={}, session) {
+    console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
     return this._invoke({
-      context: entity,
+      entity,
       session,
       method: 'GET',
-      serialize: entity.isModel,
+      serialize: false,
+      refresh: false,
       ...opts
     });
   }
@@ -94,7 +100,7 @@ export default class Adapter {
    */
   update(entity, shadow, opts, session) {
     return this._invoke({
-      context: entity,
+      entity,
       shadow,
       method: 'PUT',
       ...opts,
@@ -109,7 +115,7 @@ export default class Adapter {
    */
   async create(entity, opts, session) {
     let created = await this._invoke({
-      context: entity,
+      entity,
       method: 'POST',
       ...opts,
       session
@@ -126,7 +132,7 @@ export default class Adapter {
    */
   async delete(entity, shadow, opts, session) {
     let deleted = await this._invoke({
-      context: entity,
+      entity,
       shadow,
       method: 'DELETE',
       ...opts,
@@ -151,7 +157,7 @@ export default class Adapter {
    */
   remoteCall(context, action, params, opts, session) {
     let ctx = {
-      context: entity,
+      entity,
       shadow,
       ...opts,
       session,
@@ -166,6 +172,7 @@ export default class Adapter {
    * Invokes the middleware chain.
    */
   _invoke(ctx) {
+    console.assert(ctx.entity.isEntity, "Entity is required");
     let middleware = this.middleware,
         middlewareIndex = 0,
         next;

@@ -106,16 +106,6 @@ export default class Container {
   }
 
   /**
-   * Return the cache for a type.
-   *
-   * @param  {*}     type
-   * @return {Cache}      cache
-   */
-  cacheFor(type) {
-    return this.providerFor(type, 'cache');
-  }
-
-  /**
    * Return the merge strategy for a type.
    *
    * @param  {*}     type
