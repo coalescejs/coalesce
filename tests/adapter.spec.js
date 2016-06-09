@@ -104,7 +104,7 @@ describe('adapter', function() {
       });
 
       beforeEach(function() {
-        fetchMock.mock('/posts/1', 'DELETE', JSON.stringify({type: 'post', id: 1, title: 'Beyond the grave'}));
+        fetchMock.mock('/posts/1', 'DELETE', JSON.stringify({}));
       });
 
       it('DELETEs and resolves model', async function() {
@@ -132,53 +132,6 @@ describe('adapter', function() {
         expect(model.id).to.eq('1');
         expect(model.title).to.eq('More Persistent');
         expect(model.isNew).to.be.false;
-      });
-
-    });
-
-  });
-
-  describe('.resolveUrl()', function() {
-
-    lazy('graph', function() {
-      return this.container.get(Graph);
-    });
-    lazy('context', function() {
-      return this.graph.build(Post, {id: 1});
-    });
-    lazy('action', () => undefined);
-
-    subject(function() {
-      return this.adapter.resolveUrl({context: this.context, action: this.action});
-    });
-
-    context('with model as context', function() {
-
-      it('resolves to singular resource root', function() {
-        expect(this.subject).to.eq(`/posts/1`);
-      });
-
-    });
-
-    context('with query as context', function() {
-
-      lazy('context', function() {
-        return this.graph.build(Query, Post, {});
-      });
-
-      it('resolves to collective resource root', function() {
-        expect(this.subject).to.eq(`/posts`);
-      });
-
-      context('with params', function() {
-        lazy('context', function() {
-          return this.graph.build(Query, Post, {q: 'asd'});
-        });
-
-        it('adds params', function() {
-          expect(this.subject).to.eq(`/posts?q=asd`);
-        });
-
       });
 
     });

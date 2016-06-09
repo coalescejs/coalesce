@@ -29,7 +29,7 @@ export default class Model extends Entity {
 
   constructor(graph, {id, clientId, ...rest}) {
     super(graph);
-    this.id = id;
+    this.id = id && id + ''; // TODO: move to setter
     this.clientId = clientId;
     // TODO think through the location of this
     graph.idManager.reifyClientId(this);

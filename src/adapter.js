@@ -3,11 +3,12 @@ import Graph from './graph';
 
 import diff from './utils/diff';
 
-import 'whatwg-fetch';
-import qs from 'qs';
+import {defaults} from 'lodash';
 
-import {defaults, isEmpty} from 'lodash';
-import {camelize, pluralize} from 'inflection';
+import UrlMiddleware from './middleware/url';
+import SerializeMiddleware from './middleware/serialize';
+import JsonMiddleware from './middleware/json';
+import FetchMiddleware from './middleware/fetch';
 
 /**
  * The Adapter is the main object responsible for interfacing with a remote server.
@@ -17,14 +18,18 @@ export default class Adapter {
   static singleton = true;
   static dependencies = [Container];
 
+  static middleware = [
+    UrlMiddleware,
+    SerializeMiddleware,
+    JsonMiddleware,
+    FetchMiddleware
+  ];
+
   constructor(container) {
-    this._container = container;
-    this.middleware = [
-      ::this._build,
-      ::this._serialize,
-      ::this._json,
-      ::this._fetch
-    ];
+    this.container = container;
+    this.middleware = this.constructor.middleware.map((klass) => {
+      return this.container.get(klass);
+    });
   }
 
   /**
@@ -128,6 +133,10 @@ export default class Adapter {
       session
     });
     deleted.isDeleted = true;
+    // make sure to bump the rev if we need to
+    if(deleted.rev === entity.rev) {
+      deleted.rev = entity.rev + 1;
+    }
     return deleted;
   }
 
@@ -152,103 +161,6 @@ export default class Adapter {
   }
 
   /**
-   * Determine the url for the given request context
-   *
-   * @param  {object} options
-   * @return {String}         the url
-   */
-  resolveUrl({context, action}) {
-    let typeKey,
-        id;
-        url = [];
-
-    if(typeof context === 'string') {
-      typeKey = context;
-    } else if(context.isCollection) {
-      typeKey = context.type.typeKey;
-    } else {
-      typeKey = context.typeKey;
-      id = context.id;
-    }
-    var url = this._buildUrl(typeKey, id);
-    if(action) {
-      url = `${url}/${action}`;
-    }
-
-    let queryParams = context.isCollection && context.params;
-    if(queryParams && !isEmpty(queryParams)) {
-      url = `${url}?${this._buildQuery(queryParams)}`;
-    }
-
-    return url;
-  }
-
-  /**
-   * @private
-   */
-  _buildQuery(params) {
-    return qs.stringify(params);
-  }
-
-  /**
-   * @private
-   */
-  _buildUrl(typeKey, id) {
-    var url = [],
-        host = this.host,
-        prefix = this._urlPrefix();
-
-    if (typeKey) { url.push(this._pathForType(typeKey)); }
-    if (id) { url.push(encodeURIComponent(id)); }
-
-    if (prefix) { url.unshift(prefix); }
-
-    url = url.join('/');
-    if (!host && url) { url = '/' + url; }
-
-    return url;
-  }
-
-  /**
-   * @private
-   */
-  _pathForType(type) {
-    var camelized = camelize(type, true);
-    return pluralize(camelized);
-  }
-
-  /**
-    @private
-  */
-  _urlPrefix(path, parentURL) {
-    var host = this.host,
-        namespace = this.namespace,
-        url = [];
-
-    if (path) {
-      // Absolute path
-      if (path.charAt(0) === '/') {
-        if (host) {
-          path = path.slice(1);
-          url.push(host);
-        }
-      // Relative path
-      } else if (!/^http(s)?:\/\//.test(path)) {
-        url.push(parentURL);
-      }
-    } else {
-      if (host) { url.push(host); }
-      if (namespace) { url.push(namespace); }
-    }
-
-    if (path) {
-      url.push(path);
-    }
-
-    return url.join('/');
-  }
-
-  /**
    * @private
    *
    * Invokes the middleware chain.
@@ -261,83 +173,10 @@ export default class Adapter {
     next = function() {
       console.assert(middlewareIndex < middleware.length, "End of middleware chain reached");
       let nextMiddleware = middleware[middlewareIndex++];
-      return nextMiddleware.call(nextMiddleware, ctx, next);
+      return nextMiddleware.call(ctx, next);
     }
 
     return next();
-  }
-
-  /**
-   * @private
-   *
-   * Middleware to build the request.
-   */
-  async _build(ctx, next) {
-    defaults(ctx, {
-      url: this.resolveUrl(ctx)
-    });
-    return next();
-  }
-
-  /**
-   * @private
-   *
-   * Middleware to serialize/deserialize using the serialization layer.
-   */
-  async _serialize(ctx, next) {
-    const serializer = this._serializerFor(ctx.context);
-    if(ctx.serialize !== false) {
-      if(ctx.body) {
-        ctx.body = serializer.serialize(ctx.body);
-      }
-    }
-    let res = await next();
-    if(res) {
-      let graph = this._container.get(Graph),
-          args,
-          entity = ctx.context;
-      if(entity.isQuery) {
-        args = [entity.type, entity.params];
-      } else {
-        // Some backends might not pass-through the client-id. In which case,
-        // it is important to ensure it gets set during create operations.
-        args = [{clientId: entity.clientId}];
-      }
-      res = serializer.deserialize(graph, res, ...args);
-    }
-    return res;
-  }
-
-  _serializerFor(ctx) {
-    let type = ctx.constructor;
-    return this._container.serializerFor(type);
-  }
-
-  /**
-   * @private
-   *
-   * Middleware for JSON translation.
-   */
-  async _json(ctx, next) {
-    let headers = ctx.headers = ctx.headers || {};
-    defaults(headers, {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    });
-
-    let response = await next();
-
-    return response.json();
-  }
-
-
-  /**
-   * @private
-   *
-   * Middleware to perform the request
-   */
-  async _fetch({url, method, body, headers}, next) {
-    return fetch(url, {method, body, headers});
   }
 
 }
