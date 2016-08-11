@@ -5,6 +5,7 @@ import diff from './utils/diff';
 
 import {defaults} from 'lodash';
 
+import QueryParamsMiddleware from './middleware/query-params';
 import UrlMiddleware from './middleware/url';
 import SerializeMiddleware from './middleware/serialize';
 import JsonMiddleware from './middleware/json';
@@ -23,6 +24,7 @@ export default class Adapter {
   static middleware = [
     PromiseCacheMiddleware,
     SessionCacheMiddleware,
+    QueryParamsMiddleware,
     UrlMiddleware,
     SerializeMiddleware,
     JsonMiddleware,

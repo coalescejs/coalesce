@@ -103,7 +103,7 @@ export default class Session extends Graph {
    * @return {type}        the query in this session
    */
   getQuery(type, params) {
-    let clientId = Query.clientId(type, params);
+    let clientId = Query.clientId(this.idManager, type, params);
     return this.get({clientId});
   }
 

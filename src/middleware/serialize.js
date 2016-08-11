@@ -15,12 +15,11 @@ export default class SerializeMiddleware {
     this.container = container;
   }
 
-  async call({serialize, body, entity}, next) {
+  async call(ctx, next) {
+    let {serialize, entity} = ctx;
     const serializer = this._serializerFor(entity);
     if(serialize !== false) {
-      if(body) {
-        body = serializer.serialize(body);
-      }
+      ctx.body = serializer.serialize(entity);
     }
 
     let res = await next(),

@@ -22,7 +22,7 @@ export default class UrlMiddleware {
    * @param  {object} options
    * @return {String}         the url
    */
-  resolveUrl({entity, action}) {
+  resolveUrl({entity, query, action}) {
     console.assert(entity.isEntity, "Entity is required");
     let typeKey,
         id;
@@ -39,9 +39,8 @@ export default class UrlMiddleware {
       url = `${url}/${action}`;
     }
 
-    let queryParams = entity.isCollection && entity.params;
-    if(queryParams && !isEmpty(queryParams)) {
-      url = `${url}?${this._buildQuery(queryParams)}`;
+    if(query && !isEmpty(query)) {
+      url = `${url}?${this._buildQuery(query)}`;
     }
 
     return url;

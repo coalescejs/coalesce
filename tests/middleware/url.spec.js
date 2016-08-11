@@ -21,9 +21,10 @@ describe('middleware/url', function() {
       return this.graph.build(Post, {id: 1});
     });
     lazy('action', () => undefined);
+    lazy('query', () => undefined);
 
     subject(function() {
-      return this.middleware.resolveUrl({entity: this.entity, action: this.action});
+      return this.middleware.resolveUrl({entity: this.entity, action: this.action, query: this.query});
     });
 
     context('with model', function() {
@@ -47,6 +48,9 @@ describe('middleware/url', function() {
       context('with params', function() {
         lazy('entity', function() {
           return this.graph.build(Query, Post, {q: 'asd'});
+        });
+        lazy('query', function() {
+          return {q: 'asd'};
         });
 
         it('adds params', function() {

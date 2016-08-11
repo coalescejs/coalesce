@@ -7,9 +7,9 @@ export default class Query extends Collection {
 
   constructor(graph, type, params, iterable) {
     super(graph, iterable);
-    this.clientId = this.constructor.clientId(type, params);
+    this.clientId = this.constructor.clientId(this.graph.idManager, type, params);
     this.type = type;
-    this.params = params;
+    this.params = this.constructor.normalizeParams(params);
   }
 
   get isQuery() {
@@ -23,8 +23,24 @@ export default class Query extends Collection {
     return new this.constructor(graph, this.type, this.params);
   }
 
-  static clientId(type, params) {
+  static clientId(idManager, type, params) {
+    params = this.normalizeParams(params);
     return `$${type.typeKey}$${JSON.stringify(params)}`;
+  }
+
+  static normalizeParams(params) {
+    params = {...params};
+    for(var key in params) {
+      if(!params.hasOwnProperty(key)) {
+        continue;
+      }
+      let value = params[key];
+      // TODO: handle enumerables
+      if(value.isModel) {
+        params[key] = value.clientId;
+      }
+    }
+    return params;
   }
 
 }

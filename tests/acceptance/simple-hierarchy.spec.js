@@ -37,7 +37,7 @@ describe('acceptance/simple hierarchy of models', function() {
     let currentUser = await session.find(User, 1);
     expect(currentUser.name).to.eq('Brogrammer');
 
-    fetchMock.get('/posts?user_id=1', JSON.stringify([{
+    fetchMock.get('/posts?user=1', JSON.stringify([{
       type: 'post',
       id: 1,
       rev: 1,
@@ -100,13 +100,16 @@ describe('acceptance/simple hierarchy of models', function() {
 
     expect(parentSession.get(newPost).title).to.eq('New Post');
 
-    fetchMock.put('/posts/3', JSON.stringify({
-      type: 'post',
-      id: 3,
-      rev: 2,
-      title: 'Updated Title',
-      user_id: 1
-    }));
+    fetchMock.put('/posts/3', (url, {body}) => {
+      expect(body).to.not.be.undefined
+      return JSON.stringify({
+        type: 'post',
+        id: 3,
+        rev: 2,
+        title: 'Updated Title',
+        user_id: 1
+      });
+    });
     await promise;
 
     expect(newPost.title).to.eq('Updated Title');

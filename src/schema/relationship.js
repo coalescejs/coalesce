@@ -4,6 +4,8 @@ import {dasherize} from 'inflection';
 
 export default class Relationship extends Field {
 
+  static isRelationship = true;
+
   constructor(schema, name, options) {
     // make sure typeKey is set
     console.assert(options.kind, "Relationships must have a 'kind' property specified");

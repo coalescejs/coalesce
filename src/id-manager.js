@@ -66,7 +66,7 @@ export default class IdManager {
       return this.getModelClientId(type, ...args);
     }
     // other types have deterministic ids that can be generated
-    return type.clientId(...args);
+    return type.clientId(this, ...args);
   }
 
   getModelClientId(type, {id, clientId}) {

@@ -15,9 +15,6 @@ export default class HasMany extends Relationship {
       enumerable: true,
       configurable: true,
       get: function() {
-        if(!this.id) {
-          return null;
-        }
         if(!type) {
           type = this.graph.container.typeFor(typeKey);
         }
@@ -36,9 +33,13 @@ export default class HasMany extends Relationship {
     });
   }
 
+  get param() {
+    return this.schema.typeKey;
+  }
+
   getQueryParams(owner) {
     return {
-      [`${this.schema.typeKey}_id`]: owner.id
+      [this.param]: owner.clientId
     };
   }
 

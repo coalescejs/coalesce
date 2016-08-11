@@ -4,12 +4,16 @@ import Container, {Post, Comment} from './support/simple-hierarchy';
 
 import Graph from 'coalesce/graph';
 import Query from 'coalesce/query';
+import IdManager from 'coalesce/id-manager';
 
 describe('query', function() {
 
   lazy('container', () => new Container());
   lazy('graph', function() {
     return this.container.get(Graph);
+  });
+  lazy('idManager', function() {
+    return this.container.get(IdManager);
   });
   lazy('type', function() {
     return Post;
@@ -19,7 +23,7 @@ describe('query', function() {
   describe('constructor.clientId()', function() {
 
     subject(function() {
-      return Query.clientId(this.type, this.params);
+      return Query.clientId(this.idManager, this.type, this.params);
     });
 
     it('returns clientId', function() {
