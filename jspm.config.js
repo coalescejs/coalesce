@@ -46,6 +46,11 @@ SystemJS.config({
         "fetch-mock": "npm:fetch-mock@4.6.1",
         "coalesce2": "github:coalescejs/coalesce2@dev"
       }
+    },
+    "npm:fetch-mock@4.6.1": {
+      "map": {
+        "node-fetch": "npm:node-fetch@1.6.0"
+      }
     }
   },
   map: {
@@ -70,7 +75,7 @@ SystemJS.config({
     "core-js": "npm:core-js@1.2.7",
     "crypto": "github:jspm/nodelibs-crypto@0.2.0-alpha",
     "events": "github:jspm/nodelibs-events@0.2.0-alpha",
-    "fetch-mock": "npm:fetch-mock@4.6.1",
+    "fetch-mock": "npm:fetch-mock@5.0.5",
     "fs": "github:jspm/nodelibs-fs@0.2.0-alpha",
     "http": "github:jspm/nodelibs-http@0.2.0-alpha",
     "https": "github:jspm/nodelibs-https@0.2.0-alpha",
@@ -484,11 +489,6 @@ SystemJS.config({
         "regenerator-runtime": "npm:regenerator-runtime@0.9.5"
       }
     },
-    "npm:fetch-mock@4.6.1": {
-      "map": {
-        "node-fetch": "npm:node-fetch@1.6.0"
-      }
-    },
     "npm:babel-preset-stage-2@6.13.0": {
       "map": {
         "babel-preset-stage-3": "npm:babel-preset-stage-3@6.11.0",
@@ -611,6 +611,11 @@ SystemJS.config({
     "npm:mocha@2.5.3": {
       "map": {
         "css": "github:systemjs/plugin-css@0.1.26"
+      }
+    },
+    "npm:fetch-mock@5.0.5": {
+      "map": {
+        "node-fetch": "npm:node-fetch@1.6.0"
       }
     }
   }

@@ -33,7 +33,7 @@ describe('adapter', function() {
     context('with a model', function() {
 
       beforeEach(function() {
-        fetchMock.mock('/posts/1', 'GET', JSON.stringify({type: 'post', id: 1, title: 'revived'}));
+        fetchMock.get('/posts/1', JSON.stringify({type: 'post', id: 1, title: 'revived'}));
       });
 
       it('GETs data and resolves model', async function() {
@@ -52,7 +52,7 @@ describe('adapter', function() {
       });
 
       beforeEach(function() {
-        fetchMock.mock('/posts', 'GET', JSON.stringify([{type: 'post', id: 1, title: 'a'}, {type: 'post', id: 2, title: 'b'}]));
+        fetchMock.get('/posts', JSON.stringify([{type: 'post', id: 1, title: 'a'}, {type: 'post', id: 2, title: 'b'}]));
       });
 
       it('GETs data and resolves query', async function() {
@@ -84,7 +84,7 @@ describe('adapter', function() {
     context('with new entity', function() {
 
       beforeEach(function() {
-        fetchMock.mock('/posts', 'POST', JSON.stringify({type: 'post', id: 1, title: 'Be Persistent'}));
+        fetchMock.post('/posts', JSON.stringify({type: 'post', id: 1, title: 'Be Persistent'}));
       });
 
       it('POSTs and resolves model', async function() {
@@ -104,7 +104,7 @@ describe('adapter', function() {
       });
 
       beforeEach(function() {
-        fetchMock.mock('/posts/1', 'DELETE', JSON.stringify({}));
+        fetchMock.delete('/posts/1', JSON.stringify({}));
       });
 
       it('DELETEs and resolves model', async function() {
@@ -124,7 +124,7 @@ describe('adapter', function() {
       });
 
       beforeEach(function() {
-        fetchMock.mock('/posts/1', 'PUT', JSON.stringify({type: 'post', id: 1, title: 'More Persistent'}));
+        fetchMock.put('/posts/1', JSON.stringify({type: 'post', id: 1, title: 'More Persistent'}));
       });
 
       it('PUTs and resolves model', async function() {

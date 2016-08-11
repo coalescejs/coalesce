@@ -21,7 +21,7 @@
       "babel-preset-stage-0": "npm:babel-preset-stage-0@^6.5.0",
       "babel-types": "npm:babel-types@6.8.1",
       "chai": "npm:chai@^3.5.0",
-      "fetch-mock": "npm:fetch-mock@^4.5.0",
+      "fetch-mock": "npm:fetch-mock@^5.0.5",
       "immutable": "npm:immutable@^3.7.6",
       "inflection": "npm:inflection@^1.8.0",
       "lodash": "npm:lodash@^4.11.1",

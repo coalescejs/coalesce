@@ -27,7 +27,7 @@ describe('acceptance/simple hierarchy of models', function() {
     //
     // Loading
     //
-    fetchMock.mock('/users/1', 'GET', JSON.stringify({
+    fetchMock.get('/users/1', JSON.stringify({
       type: 'user',
       id: 1,
       rev: 1,
@@ -37,7 +37,7 @@ describe('acceptance/simple hierarchy of models', function() {
     let currentUser = await session.find(User, 1);
     expect(currentUser.name).to.eq('Brogrammer');
 
-    fetchMock.mock('/posts?user_id=1', 'GET', JSON.stringify([{
+    fetchMock.get('/posts?user_id=1', JSON.stringify([{
       type: 'post',
       id: 1,
       rev: 1,
@@ -64,14 +64,14 @@ describe('acceptance/simple hierarchy of models', function() {
     let newPost = session.create(Post, {title: 'New Post', user: currentUser});
     let newComment = session.create(Comment, {body: 'Looks new.', user: currentUser, post: newPost});
 
-    fetchMock.mock('/posts', 'POST', JSON.stringify({
+    fetchMock.post('/posts', JSON.stringify({
       type: 'post',
       id: 3,
       rev: 1,
       title: 'New Post',
       user_id: 1
     }));
-    fetchMock.mock('/comments', 'POST', JSON.stringify({
+    fetchMock.post('/comments', JSON.stringify({
       type: 'comment',
       id: 4,
       rev: 1,
@@ -100,7 +100,7 @@ describe('acceptance/simple hierarchy of models', function() {
 
     expect(parentSession.get(newPost).title).to.eq('New Post');
 
-    fetchMock.mock('/posts/3', 'PUT', JSON.stringify({
+    fetchMock.put('/posts/3', JSON.stringify({
       type: 'post',
       id: 3,
       rev: 2,
@@ -122,7 +122,7 @@ describe('acceptance/simple hierarchy of models', function() {
 
     expect(comment.isDeleted).to.be.true
     expect(parentSession.get(comment).isDeleted).to.be.false
-    fetchMock.mock('/comments/4', 'DELETE', JSON.stringify({}));
+    fetchMock.delete('/comments/4', JSON.stringify({}));
 
     await session.flush();
 
