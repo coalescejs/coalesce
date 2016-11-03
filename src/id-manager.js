@@ -55,7 +55,9 @@ export default class IdManager {
         clientId = this._generateClientId(typeKey);
       }
       model.clientId = clientId;
-      idMap[id] = clientId;
+      if(id) {
+        idMap[id] = clientId;
+      }
     } // else NO-OP, nothing to do if they already have a clientId and no id
     return clientId;
   }

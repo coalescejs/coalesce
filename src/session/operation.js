@@ -3,11 +3,12 @@
  */
 export default class Operation {
 
-  constructor(adapter, entity, shadow, opts, session) {
+  constructor(adapter, entity, shadow, opts, plan) {
     this.adapter = adapter;
     this.entity = entity;
     this.shadow = shadow;
-    this.session = session;
+    this.plan = plan;
+    this.session = plan.session;
     this.opts = opts;
     this._deps = new Set();
     this._promise = new Promise((resolve, reject) => {
@@ -39,8 +40,8 @@ export default class Operation {
    * @private
    */
   _execute() {
-    const {adapter, entity, shadow, opts, session} = this;
-    return adapter.persist(entity, shadow, opts, session);
+    const {adapter, entity, shadow, opts, session, plan} = this;
+    return adapter.persist(entity, shadow, {plan}, session);
   }
 
   /**
@@ -53,7 +54,6 @@ export default class Operation {
       return dep._promise;
     }));
   }
-
 
   /**
    * @override

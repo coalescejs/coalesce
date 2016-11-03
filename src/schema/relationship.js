@@ -37,15 +37,11 @@ export default class Relationship extends Field {
     }
 
     // by default, belongsTo own the relationship
-    return this._owner = this.embedded || this.kind === 'belongsTo';
+    return this._owner = this.kind === 'belongsTo';
   }
 
   set owner(value) {
     return this._owner = value;
-  }
-
-  get ownerType() {
-    return this.context.typeFor(this.schema.typeKey);
   }
 
 }

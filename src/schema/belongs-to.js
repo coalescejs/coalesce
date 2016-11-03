@@ -14,7 +14,11 @@ export default class BelongsTo extends Relationship {
       get: function() {
         let clientId = this._data.get(attributeName);
         if(clientId) {
-          return this.graph.get({clientId});
+          let res = this.graph.get({clientId});
+          if(res && this.embedded) {
+            res._parent = this.clientId;
+          }
+          return res;
         } else {
           return clientId;
         }
@@ -22,6 +26,12 @@ export default class BelongsTo extends Relationship {
       set: function(value) {
         const clientId = value && value.clientId;
         console.assert(!value || value.clientId, "Value must have a client id");
+        if(value) {
+          value = this.graph.get({clientId});
+          if(this.embedded) {
+            value._parent = this.clientId;
+          }
+        }
         this.withChangeTracking(() => {
           this._data = this._data.set(attributeName, clientId);
         });

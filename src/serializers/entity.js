@@ -3,7 +3,7 @@ import Graph from '../graph';
 import Container from '../container';
 
 /**
- * Serializes collections.
+ * Abstract base class for entity serializers.
  */
 export default class EntitySerializer {
 
@@ -33,6 +33,10 @@ export default class EntitySerializer {
 
   serializerFor(type) {
     return this._container.serializerFor(type);
+  }
+
+  typeFor(type) {
+    return this._container.typeFor(type);
   }
 
 }

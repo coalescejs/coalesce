@@ -58,6 +58,7 @@ export default class Entity {
    */
   assign(source) {
     this._data = source._data;
+    this._parent = source._parent;
     return this;
   }
 

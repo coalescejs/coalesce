@@ -27,10 +27,6 @@ export default class Field {
     return this.type;
   }
 
-  get context() {
-    return this.schema.context;
-  }
-
 }
 
 Field.prototype.writable = true;

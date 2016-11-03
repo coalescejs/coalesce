@@ -144,6 +144,14 @@ export default class Schema {
     }
   }
 
+  *metaFields() {
+    for(var field of this.fields()) {
+      if(field instanceof Meta) {
+        yield field;
+      }
+    }
+  }
+
   *attributes() {
     for(var field of this.fields()) {
       if(field instanceof Attribute) {

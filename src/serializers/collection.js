@@ -11,16 +11,16 @@ export default class CollectionSerializer extends EntitySerializer {
   }
 
   serialize(collection) {
-    return Array.from(collection).map(function(entity) {
-      return entity.clientId;
+    return Array.from(collection).map((entity) => {
+      let serializer = this.serializerFor(entity.typeKey);
+      return serializer.serialize(entity);
     });
   }
 
   deserialize(graph, data, ...args) {
-    let self = this;
-    return this.create(graph, this.type, ...args, data.map(function(hash) {
+    return this.create(graph, this.type, ...args, data.map((hash) => {
       const {type} = hash;
-      let serializer = self.serializerFor(type);
+      let serializer = this.serializerFor(type);
       return serializer.deserialize(graph, hash);
     }));
   }

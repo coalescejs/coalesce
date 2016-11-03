@@ -17,6 +17,29 @@ describe('serializers/model', function() {
     return this.container.get(ModelSerializer);
   });
 
+  lazy('Tag', function() {
+    let klass = class Tag extends Model {}
+    klass.defineSchema({
+      typeKey: 'tag',
+      attributes: {
+        name: {
+          type: 'string'
+        }
+      },
+      relationships: {
+        post: {
+          kind: 'belongsTo',
+          type: 'post'
+        }
+      }
+    });
+    return klass;
+  });
+
+  beforeEach(function() {
+    this.container.registerType(this.Tag);
+  });
+
   lazy('Post', function() {
     let klass = class Post extends Model {}
     klass.defineSchema({
@@ -45,7 +68,7 @@ describe('serializers/model', function() {
   describe('.serialize()', function() {
 
     lazy('value', function() {
-      return new this.Post(this.graph, {
+      return this.graph.build(this.Post, {
         id: "1",
         clientId: "$post1",
         rev: 1,
@@ -55,7 +78,7 @@ describe('serializers/model', function() {
         custom: 3,
         raw: {test: true}
       });
-    });;
+    });
 
     subject(function() {
       return this.serializer.serialize(this.value);
@@ -72,6 +95,45 @@ describe('serializers/model', function() {
         CUSTOM: 3,
         raw: {test: true}
       });
+    });
+
+    context('with belongsTo', function() {
+
+      lazy('Post', function() {
+        let klass = class Post extends Model {}
+        klass.defineSchema({
+          typeKey: 'post',
+          attributes: {
+            title: {
+              type: 'string'
+            }
+          },
+          relationships: {
+            tag: {
+              kind: 'belongsTo',
+              type: 'tag'
+            }
+          }
+        });
+        return klass;
+      });
+
+      lazy('value', function() {
+        let post = this.graph.build(this.Post, {
+          id: "1",
+          clientId: "$post1",
+          rev: 1,
+          clientRev: 2,
+          title: 'Serializing',
+        });
+        post.tag = this.graph.build(this.Tag, {id: "2", post, name: 'asd'});
+        return post;
+      });
+
+      it('serializes as id', function() {
+        expect(this.subject.tag).to.eq(2);
+      });
+
     });
 
   });

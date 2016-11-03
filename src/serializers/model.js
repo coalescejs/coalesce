@@ -1,4 +1,5 @@
 import EntitySerializer from './entity';
+import Query from '../query';
 
 import { singularize, camelize, underscore, dasherize } from 'inflection';
 
@@ -27,11 +28,11 @@ export default class ModelSerializer extends EntitySerializer {
   }
 
   serialize(model) {
-    var serialized = {};
+    let serialized = {};
 
     let schema = model.schema;
 
-    for(var field of schema.fields()) {
+    for(let field of schema.fields()) {
       this.addField(serialized, model, field);
     }
 
@@ -43,19 +44,71 @@ export default class ModelSerializer extends EntitySerializer {
       return;
     }
 
-    var key = this.keyFor(field),
+    let value = model[field.name];
+    if(typeof value === 'undefined') {
+      return;
+    }
+
+    if(field.kind === 'attribute' || field.kind === 'meta') {
+      this.addAttribute(serialized, model, field);
+    } else if(field.kind === 'belongsTo') {
+      this.addBelongsTo(serialized, model, field);
+    } else if(field.kind === 'hasMany') {
+      this.addHasMany(serialized, model, field);
+    }
+  }
+
+  addAttribute(serialized, model, field) {
+    let key = this.keyFor(field),
         value = model[field.name],
         serializer;
 
     if(field.type) {
       serializer = this.serializerFor(field.type);
     }
+
     if(serializer) {
       value = serializer.serialize(value);
     }
     if(value !== undefined) {
       serialized[key] = value;
     }
+  }
+
+  addBelongsTo(serialized, model, field) {
+    let key = this.keyFor(field),
+        value = model[field.name],
+        serializer;
+
+    if(field.embedded) {
+      serializer = this.serializerFor(field.type);
+    } else {
+      serializer = this.serializerFor('id');
+      value = value.id;
+    }
+
+    if(serializer && value !== null) {
+      value = serializer.serialize(value);
+    }
+    if(value !== undefined) {
+      serialized[key] = value;
+    }
+  }
+
+  addHasMany(serialized, model, field) {
+    let key = this.keyFor(field),
+        value = model[field.name],
+        serializer;
+
+    if(field.embedded) {
+      serializer = this.serializerFor(Query);
+    } else {
+      // Cannot serialize a non-embedded has-many
+      return;
+    }
+
+    value = serializer.serialize(value);
+    serialized[key] = value;
   }
 
   // TODO pass type in?
@@ -67,25 +120,90 @@ export default class ModelSerializer extends EntitySerializer {
 
     type = this.typeFor(type);
 
-    for(var field of type.schema.fields()) {
+    for(let field of type.schema.attributes()) {
       this.extractField(hash, data, field, graph);
     }
 
-    return this.create(graph, type, data);
+    // Create the model before we populate relationship fields. This is
+    // because we want its id to be reified first.
+    data = this.create(graph, type, data);
+
+    for(let field of type.schema.relationships()) {
+      this.extractField(hash, data, field, graph);
+    }
+
+    return data;
   }
 
   extractField(hash, data, field, graph) {
-    var key = this.keyFor(field),
-        value = hash[key],
-        serializer;
+    let key = this.keyFor(field),
+        value = hash[key];
     if(typeof value === 'undefined') {
       return;
     }
+    if(field.kind === 'attribute' || field.kind === 'meta') {
+      this.extractAttribute(hash, data, field, graph);
+    } else if(field.kind === 'belongsTo') {
+      this.extractBelongsTo(hash, data, field, graph);
+    } else if(field.kind === 'hasMany') {
+      this.extractHasMany(hash, data, field, graph);
+    }
+  }
+
+  extractAttribute(hash, data, field, graph) {
+    let key = this.keyFor(field),
+        value = hash[key],
+        serializer;
+
     if(field.type) {
       serializer = this.serializerFor(field.type);
     }
     if(serializer) {
       value = serializer.deserialize(value, graph);
+    }
+    if(typeof value !== 'undefined') {
+      // TODO: optimize these setters, e.g. build attributes then set
+      // all at once via ImmutableJS
+      data[field.name] = value;
+    }
+  }
+
+  extractBelongsTo(hash, data, field, graph) {
+    let key = this.keyFor(field),
+        value = hash[key],
+        serializer;
+
+    if(field.embedded) {
+      serializer = this.serializerFor(field.typeKey);
+      value = serializer.deserialize(graph, value);
+    } else {
+      serializer = this.serializerFor('id');
+      value = serializer.deserialize(value);
+      if(value) {
+        value = graph.fetchBy(field.typeKey, {id: value});
+      }
+    }
+    if(typeof value !== 'undefined') {
+      // TODO: optimize these setters, e.g. build attributes then set
+      // all at once via ImmutableJS
+      data[field.name] = value;
+    }
+  }
+
+  extractHasMany(hash, data, field, graph) {
+    let key = this.keyFor(field),
+        value = hash[key],
+        serializer;
+
+    serializer = this.serializerFor(Query);
+    if(serializer) {
+      // XXX: should pass in the actual model to `getQueryParams`
+      value = serializer.deserialize(
+        graph,
+        value,
+        this.typeFor(field.typeKey),
+        field.getQueryParams(data)
+      );
     }
     if(typeof value !== 'undefined') {
       // TODO: optimize these setters, e.g. build attributes then set

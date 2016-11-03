@@ -78,6 +78,7 @@ export default class Model extends Entity {
    */
   assign(source) {
     this._data = this._data.merge(source._data);
+    this._parent = source._parent;
     return this;
   }
 

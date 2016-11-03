@@ -16,6 +16,10 @@ export default class Query extends Collection {
     return true;
   }
 
+  get isTransient() {
+    return !this._parent;
+  }
+
   /**
    * @override
    */

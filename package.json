@@ -18,68 +18,47 @@
       }
     },
     "dependencies": {
-      "babel-preset-stage-0": "npm:babel-preset-stage-0@^6.5.0",
-      "babel-types": "npm:babel-types@6.8.1",
-      "chai": "npm:chai@^3.5.0",
-      "fetch-mock": "npm:fetch-mock@^5.0.5",
       "immutable": "npm:immutable@^3.7.6",
       "inflection": "npm:inflection@^1.8.0",
       "lodash": "npm:lodash@^4.11.1",
-      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@^0.1.0",
       "qs": "npm:qs@^6.2.0",
       "whatwg-fetch": "npm:whatwg-fetch@^0.11.0"
     },
     "devDependencies": {
-      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.8"
+      "chai": "npm:chai@^3.5.0",
+      "fetch-mock": "npm:fetch-mock@^5.0.5",
+      "babel-plugin-transform-runtime": "npm:babel-plugin-transform-runtime@^6.15.0",
+      "babel-preset-stage-0": "npm:babel-preset-stage-0@^6.16.0",
+      "babel-runtime": "npm:babel-runtime@^6.18.0",
+      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@^0.1.0"
     },
     "peerDependencies": {
-      "assert": "jspm/nodelibs-assert@^0.2.0-alpha",
-      "buffer": "jspm/nodelibs-buffer@^0.2.0-alpha",
-      "child_process": "jspm/nodelibs-child_process@^0.2.0-alpha",
-      "constants": "jspm/nodelibs-constants@^0.2.0-alpha",
+      "assert": "npm:jspm-nodelibs-assert@^0.2.0",
+      "buffer": "npm:jspm-nodelibs-buffer@^0.2.0",
+      "child_process": "npm:jspm-nodelibs-child_process@^0.2.0",
+      "constants": "npm:jspm-nodelibs-constants@^0.2.0",
       "core-js": "npm:core-js@^1.2.0",
-      "crypto": "jspm/nodelibs-crypto@^0.2.0-alpha",
-      "events": "jspm/nodelibs-events@^0.2.0-alpha",
-      "fs": "jspm/nodelibs-fs@^0.2.0-alpha",
-      "http": "jspm/nodelibs-http@^0.2.0-alpha",
-      "https": "jspm/nodelibs-https@^0.2.0-alpha",
-      "mocha": "npm:mocha@^2.4.0",
-      "module": "jspm/nodelibs-module@^0.2.0-alpha",
-      "net": "jspm/nodelibs-net@^0.2.0-alpha",
-      "path": "jspm/nodelibs-path@^0.2.0-alpha",
-      "process": "jspm/nodelibs-process@^0.2.0-alpha",
-      "stream": "jspm/nodelibs-stream@^0.2.0-alpha",
-      "string_decoder": "jspm/nodelibs-string_decoder@^0.2.0-alpha",
-      "tty": "jspm/nodelibs-tty@^0.2.0-alpha",
-      "url": "jspm/nodelibs-url@^0.2.0-alpha",
-      "util": "jspm/nodelibs-util@^0.2.0-alpha",
-      "vm": "jspm/nodelibs-vm@^0.2.0-alpha",
-      "zlib": "jspm/nodelibs-zlib@^0.2.0-alpha"
+      "crypto": "npm:jspm-nodelibs-crypto@^0.2.0",
+      "events": "npm:jspm-nodelibs-events@^0.2.0",
+      "fs": "npm:jspm-nodelibs-fs@^0.2.0",
+      "http": "npm:jspm-nodelibs-http@^0.2.0",
+      "https": "npm:jspm-nodelibs-https@^0.2.0",
+      "mocha": "npm:mocha@^2.5.3",
+      "module": "npm:jspm-nodelibs-module@^0.2.0",
+      "net": "npm:jspm-nodelibs-net@^0.2.0",
+      "os": "npm:jspm-nodelibs-os@^0.2.0",
+      "path": "npm:jspm-nodelibs-path@^0.2.0",
+      "process": "npm:jspm-nodelibs-process@^0.2.0",
+      "stream": "npm:jspm-nodelibs-stream@^0.2.0",
+      "string_decoder": "npm:jspm-nodelibs-string_decoder@^0.2.0",
+      "tty": "npm:jspm-nodelibs-tty@^0.2.0",
+      "url": "npm:jspm-nodelibs-url@^0.2.0",
+      "util": "npm:jspm-nodelibs-util@^0.2.0",
+      "vm": "npm:jspm-nodelibs-vm@^0.2.0",
+      "zlib": "npm:jspm-nodelibs-zlib@^0.2.0"
     },
     "overrides": {
-      "npm:babel-types@6.13.0": {
-        "meta": {
-          "lib/index.js": {
-            "deps": [
-              "./definitions/init.js"
-            ],
-            "cjsDeferDepsExecute": true
-          },
-          "lib/definitions/init.js": {
-            "deps": [
-              "./index",
-              "./core",
-              "./es2015",
-              "./flow",
-              "./jsx",
-              "./misc",
-              "./experimental"
-            ],
-            "cjsDeferDepsExecute": true
-          }
-        }
-      },
-      "npm:babel-types@6.8.1": {
+      "npm:babel-types@6.18.0": {
         "meta": {
           "lib/index.js": {
             "deps": [
@@ -124,32 +103,54 @@
           "util": "@node/util"
         }
       },
-      "npm:inherits@2.0.1": {
+      "npm:inherits@2.0.3": {
         "ignore": [
           "test.js"
         ]
       },
-      "npm:lodash@4.14.2": {
+      "npm:lodash@4.16.6": {
         "map": {
           "buffer": "@empty",
           "process": "@empty"
         }
       },
       "npm:mocha@2.5.3": {
-        "browser": "mocha",
-        "main": "mocha",
+        "main": "./mocha.js",
+        "jspmNodeConversion": false,
         "meta": {
           "mocha.js": {
             "deps": [
               "./mocha.css!"
             ],
-            "exports": "Mocha"
+            "exports": "Mocha",
+            "format": "global"
           }
         },
         "dependencies": {
-          "css": "*"
+          "css": "*",
+          "debug": "^2.2.0"
         },
-        "registry": "jspm"
+        "registry": "jspm",
+        "map": {
+          "./mocha.js": {
+            "node": "./lib/mocha.js"
+          },
+          "escape-string-regexp": "@empty",
+          "growl": "@empty",
+          "./lib/reporters.js": "./lib/reporters/index.js",
+          "./lib/interfaces.js": "./lib/interfaces/index.js",
+          "glob": "@empty",
+          "to-iso-string": "@empty",
+          "mkdirp": "@empty",
+          "jade": "@empty",
+          "diff": "@empty",
+          "supports-color": "@empty",
+          "path": "@node/path",
+          "fs": "@node/fs",
+          "util": "@node/util",
+          "events": "@node/events",
+          "tty": "@node/tty"
+        }
       },
       "npm:ms@0.7.1": {
         "jspmNodeConversion": false,
@@ -161,7 +162,7 @@
     }
   },
   "devDependencies": {
-    "jspm": "^0.17.0-beta.25",
-    "testem": "^1.7.1"
+    "jspm": "^0.17.0-beta.31",
+    "testem": "^1.13.0"
   }
 }

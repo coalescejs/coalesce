@@ -3,7 +3,7 @@ import Entity from './entity';
 import Immutable from 'immutable';
 
 export default class Collection extends Entity {
-  
+
   static defaults = Immutable.List();
 
   _data = this.constructor.defaults;
@@ -41,6 +41,48 @@ export default class Collection extends Entity {
       return;
     }
     return this.graph.get({clientId});
+  }
+
+  splice(index, removeNum, ...values) {
+    values = values.map((v) => v.clientId);
+    this.withChangeTracking(() => {
+      this._willChange(index, removeNum, values.length);
+      this._data = this._data.splice(index, removeNum, ...values);
+      this._didChange(index, removeNum, values.length);
+    });
+  }
+
+  push(value) {
+    this.splice(this._data.size - 1, 0, value);
+  }
+
+  pop() {
+    this.splice(this._data.size - 1, 1);
+  }
+
+  shift(value) {
+    this.splice(0, 0, value);
+  }
+
+  unshift() {
+    this.splice(0, 1);
+  }
+
+  get size() {
+    return this._data.size;
+  }
+
+  _willChange(index, removed, added) {
+  }
+
+  _didChange(index, removed, added) {
+    // This is ugly, but is necessary to bookkeep embedded entities
+    if(this._parent) {
+      for(let i = index; i < index + added; i++) {
+        let entity = this.get(i);
+        entity._parent = this.clientId;
+      }
+    }
   }
 
   /**

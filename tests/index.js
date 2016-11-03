@@ -42,3 +42,4 @@ export * from './utils/diff.spec';
 export * from './utils/entity-set.spec';
 
 export * from './acceptance/simple-hierarchy.spec';
+export * from './acceptance/groups-members.spec';

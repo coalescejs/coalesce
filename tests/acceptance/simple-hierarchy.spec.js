@@ -42,13 +42,13 @@ describe('acceptance/simple hierarchy of models', function() {
       id: 1,
       rev: 1,
       title: 'Post A',
-      user_id: 1
+      user: 1
     }, {
       type: 'post',
       id: 2,
       rev: 1,
       title: 'Post B',
-      user_id: 1
+      user: 1
     }]));
 
     let posts = await currentUser.posts.load();
@@ -69,15 +69,15 @@ describe('acceptance/simple hierarchy of models', function() {
       id: 3,
       rev: 1,
       title: 'New Post',
-      user_id: 1
+      user: 1
     }));
     fetchMock.post('/comments', JSON.stringify({
       type: 'comment',
       id: 4,
       rev: 1,
       body: 'Looks new.',
-      user_id: 1,
-      post_id: 3
+      user: 1,
+      post: 3
     }));
 
     await session.flush();
@@ -107,7 +107,7 @@ describe('acceptance/simple hierarchy of models', function() {
         id: 3,
         rev: 2,
         title: 'Updated Title',
-        user_id: 1
+        user: 1
       });
     });
     await promise;
@@ -120,7 +120,7 @@ describe('acceptance/simple hierarchy of models', function() {
     //
     session = parentSession.child();
 
-    let comment = session.getBy(Comment, 4);
+    let comment = session.getBy(Comment, {id: 4});
     session.destroy(comment);
 
     expect(comment.isDeleted).to.be.true

@@ -18,19 +18,25 @@ export default class HasMany extends Relationship {
         if(!type) {
           type = this.graph.container.typeFor(typeKey);
         }
-        return this.graph.fetchBy(Query, type, field.getQueryParams(this));
+        let res = this.graph.fetchBy(Query, type, field.getQueryParams(this));
+        if(res && field.embedded) {
+          res._parent = this.clientId;
+        }
+        return res;
       },
       set: function(value) {
         let entity = this[name];
         console.assert(value, "Value must be an iterable");
         // There is no re-assignment of a hasMany. Instead, "setting" a hasMany
         // is equivalent to mutating the associated entity.
-        entity.withChangeTracking(() => {
-          entity._data = Immutable.List(Array.from(value).map((e) => e.clientId));
-        });
+        entity.splice(0, entity.size, ...value);
         return entity;
       }
     });
+  }
+
+  get transient() {
+    return !!this.embedded;
   }
 
   get param() {

@@ -29,8 +29,13 @@ export default class Plan {
    * @return {Operation} the operation for this entity
    */
   add(entity, opts={}) {
+    if(entity.isTransient) {
+      return;
+    }
+
     console.assert(entity.session === this.session, "Entity is not part of the same session as the plan");
-    let op = this.operations.get(entity);
+    console.assert(!entity.isTransient, "Cannot add a transient entity to a plan");
+    let op = this.get(entity);
     if(op) {
       return op;
     }
@@ -52,7 +57,7 @@ export default class Plan {
     let copiedEntity = this.entities.update(entity),
         copiedShadow = shadow && this.shadows.update(shadow);
 
-    op = new Operation(adapter, copiedEntity, copiedShadow, opts, session);
+    op = new Operation(adapter, copiedEntity, copiedShadow, opts, this);
     // NOTE: important to add the operation here to break recursion
     this.operations.set(copiedEntity, op);
 
@@ -62,6 +67,11 @@ export default class Plan {
     return op;
   }
 
+  get(entity) {
+    let copiedEntity = this.entities.get(entity);
+    return this.operations.get(copiedEntity);
+  }
+
   /**
    * Indicate that the entity is dependent on another entity.
    *
@@ -69,6 +79,9 @@ export default class Plan {
    * @param  {Entity} dependency description
    */
   addDependency(entity, dependency) {
+    if(entity.isEqual(dependency)) {
+      return;
+    }
     this.add(entity).addDependency(this.add(dependency));
   }
 

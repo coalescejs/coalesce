@@ -1,5 +1,4 @@
 import Container from './container';
-import Graph from './graph';
 
 import diff from './utils/diff';
 
@@ -12,6 +11,9 @@ import JsonMiddleware from './middleware/json';
 import FetchMiddleware from './middleware/fetch';
 import SessionCacheMiddleware from './middleware/session-cache';
 import PromiseCacheMiddleware from './middleware/promise-cache';
+import EmbeddedMiddleware from './middleware/embedded';
+
+import {findEmbeddedRoot} from './utils/embedded';
 
 /**
  * The Adapter is the main object responsible for interfacing with a remote server.
@@ -22,6 +24,7 @@ export default class Adapter {
   static dependencies = [Container];
 
   static middleware = [
+    EmbeddedMiddleware,
     PromiseCacheMiddleware,
     SessionCacheMiddleware,
     QueryParamsMiddleware,
@@ -66,11 +69,25 @@ export default class Adapter {
    * @param  {Entity} shadow the shadow
    */
   plan(entity, shadow, plan) {
+    let root = findEmbeddedRoot(plan.session, entity);
+
+    if(root && root !== entity) {
+      plan.addDependency(entity, root);
+
+      let parent = plan.session.get({clientId: entity._parent});
+      // need to make sure te embedded parent has an associated operation
+      plan.add(parent);
+    }
+
+    if(entity.isCollection) {
+      return;
+    }
+
     for(let d of diff(entity, shadow)) {
       // for a belongsTo, we depend on the relationship being persisted
       // before we can save this entity
       if(d.field.kind === 'belongsTo' && d.lhs && d.lhs.isNew) {
-        plan.addDependency(entity, d.lhs);
+        plan.addDependency(root, d.lhs);
       }
     }
   }
