@@ -13,6 +13,9 @@ export default class JsonMiddleware {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     });
+    if(ctx.body) {
+      ctx.body = JSON.stringify(ctx.body);
+    }
 
     let response = await next();
 

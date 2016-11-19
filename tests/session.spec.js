@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import sinon from 'sinon';
 
 import Model from 'coalesce/model';
 
@@ -514,6 +515,42 @@ describe('session', function() {
       expect(this.session.isEntityDirty(this.entity)).to.be.false;
       this.subject;
       expect(this.session.isEntityDirty(this.entity)).to.be.true;
+    });
+
+  });
+
+  describe('.remoteCall()', function() {
+
+    lazy('context', function() {
+      return this.session.build(this.Post, {id: 1});
+    });
+    lazy('name', () => 'approve');
+    lazy('params', () => { return {}; });
+    lazy('opts', () => null);
+    lazy('adapter', function() {
+      return this.container.adapterFor(this.Post);
+    });
+
+    subject(function() {
+      return this.session.remoteCall(this.context, this.name, this.params, this.opts);
+    });
+
+    it(`invokes the adapter .remoteCall`, async function() {
+      sinon.stub(this.adapter, 'remoteCall');
+      await this.subject;
+      expect(this.adapter.remoteCall.calledOnce).to.be.true;
+    });
+
+    context('with string context', function() {
+
+      lazy('context', () => 'post');
+
+      it(`invokes the adapter .remoteCall with collection`, async function() {
+        sinon.stub(this.adapter, 'remoteCall');
+        await this.subject;
+        expect(this.adapter.remoteCall.getCall(0).args[0].isQuery).to.be.true;
+      });
+
     });
 
   });

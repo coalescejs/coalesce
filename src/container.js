@@ -24,14 +24,14 @@ export default class Container {
    * @param  {*} type the constructor for the instance
    * @return {*}      the instance
    */
-  get(type) {
+  get(type, ...args) {
     if(!type.singleton) {
-      return this.create(type);
+      return this.create(type, ...args);
     }
     let instance = this._instances.get(type);
     if(!instance) {
       // TODO dependency injection?
-      instance = this.create(type);
+      instance = this.create(type, ...args);
       this._instances.set(type, instance);
     }
     return instance;

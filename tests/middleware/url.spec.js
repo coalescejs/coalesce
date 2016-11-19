@@ -61,6 +61,20 @@ describe('middleware/url', function() {
 
     });
 
+    context('with baseUrl', function() {
+
+      lazy('baseUrl', () => 'https://cdn.com');
+
+      lazy('middleware', function() {
+        return this.container.get(UrlMiddleware, this.baseUrl);
+      });
+
+      it('prefixes baseUrl', function() {
+        expect(this.subject).to.eq(`https://cdn.com/posts/1`);
+      });
+
+    });
+
   });
 
 });

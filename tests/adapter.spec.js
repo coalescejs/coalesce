@@ -18,6 +18,31 @@ describe('adapter', function() {
     return this.container.get(Adapter);
   });
 
+  describe('static methods', function() {
+
+    subject('klass', function() {
+      return class TestAdapter extends Adapter {}
+    });
+
+    describe('.baseUrl=', function() {
+
+      lazy('value', function() {
+        return 'https://cdn.acme.com/';
+      })
+
+      subject(function() {
+        return this.klass.baseUrl = this.value;
+      })
+
+      it('configures UrlMiddleware', function() {
+        this.subject;
+        expect(this.klass.middleware.configs[4][1]).to.eq(this.value);
+      });
+
+    });
+
+  });
+
   describe('.load()', function() {
 
     lazy('entity', function() {
@@ -132,6 +157,53 @@ describe('adapter', function() {
         expect(model.id).to.eq('1');
         expect(model.title).to.eq('More Persistent');
         expect(model.isNew).to.be.false;
+      });
+
+    });
+
+  });
+
+  describe('.remoteCall()', function() {
+
+    lazy('session', () => new Session());
+    lazy('context', function() {
+      return this.session.build(Post, {id: 1, title: 'More Persistent'});
+    });
+    lazy('name', () => 'approve');
+    lazy('params', () => { return {}; });
+    lazy('opts', () => null);
+
+    subject(function() {
+      return this.adapter.remoteCall(this.context, this.name, this.params, this.opts);
+    });
+
+    context('with default method', function () {
+
+      beforeEach(function() {
+        fetchMock.post('/posts/1/approve', JSON.stringify({type: 'post', id: 1, title: 'More Persistent'}));
+      });
+
+      it('POSTs and resolves model', async function() {
+        let result = await this.subject;
+        expect(result.clientId).to.eq(this.context.clientId);
+      });
+
+    });
+
+    context('with params', function() {
+
+      beforeEach(function() {
+        fetchMock.post('/posts/1/approve', JSON.stringify({type: 'post', id: 1, title: 'More Persistent'}));
+      });
+
+      lazy('params', function() {
+        return {a: 1, b: {c: 2}};
+      });
+
+      it('passes params in POST body', function() {
+        this.subject;
+        let {body} = fetchMock.lastCall()[1];
+        expect(body).to.eql(this.params);
       });
 
     });

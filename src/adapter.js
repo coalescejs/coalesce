@@ -13,6 +13,8 @@ import SessionCacheMiddleware from './middleware/session-cache';
 import PromiseCacheMiddleware from './middleware/promise-cache';
 import EmbeddedMiddleware from './middleware/embedded';
 
+import MiddlewareChain from './middleware-chain';
+
 import {findEmbeddedRoot} from './utils/embedded';
 
 /**
@@ -23,7 +25,7 @@ export default class Adapter {
   static singleton = true;
   static dependencies = [Container];
 
-  static middleware = [
+  static middleware = new MiddlewareChain([
     EmbeddedMiddleware,
     PromiseCacheMiddleware,
     SessionCacheMiddleware,
@@ -32,13 +34,21 @@ export default class Adapter {
     SerializeMiddleware,
     JsonMiddleware,
     FetchMiddleware
-  ];
+  ]);
+
+  /**
+   * Convenient macro to configure UrlMiddlware to use a baseUrl
+   *
+   * @param  {type}            url the base url for all requests
+   * @return {MiddlewareChain}
+   */
+  static set baseUrl(url) {
+    this.middleware = this.middleware.use(UrlMiddleware, url);
+  }
 
   constructor(container) {
     this.container = container;
-    this.middleware = this.constructor.middleware.map((klass) => {
-      return this.container.get(klass);
-    });
+    this.middleware = this.constructor.middleware.instantiate(container);
   }
 
   /**
@@ -168,20 +178,28 @@ export default class Adapter {
   /**
    * Invoke an arbitrary action on a remote server.
    *
-   * @param  {Entity}  entity  the entity to persist
-   * @param  {Entity}  shadow  the last known remote version of the entity
+   * @param  {Entity}  entity  the entity to perform the action on
+   * @param  {string}  action  the name of the action
+   * @param  {object}  body    the body/params of the request
    * @param  {object}  opts    options
    * @param  {Session} session the session
    * @return {Promise}
    */
-  remoteCall(context, action, params, opts, session) {
+  remoteCall(entity, action, body, opts, session) {
+    if(opts && opts.type) {
+      console.warn(`'type:' has been deprecated, please use 'method:' instead`);
+      opts.method = opts.type;
+    }
+
     let ctx = {
       entity,
-      shadow,
+      action,
+      body,
+      method: 'POST',
       ...opts,
       session,
       action
-    }
+    };
     return this._invoke(ctx);
   }
 

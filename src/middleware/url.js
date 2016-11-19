@@ -9,6 +9,10 @@ export default class UrlMiddleware {
 
   static singleton = true;
 
+  constructor(baseUrl='/') {
+    this.baseUrl = baseUrl;
+  }
+
   async call(ctx, next) {
     if(!ctx.url) {
       ctx.url = this.resolveUrl(ctx);
@@ -59,15 +63,18 @@ export default class UrlMiddleware {
   _buildUrl(typeKey, id) {
     var url = [],
         host = this.host,
-        prefix = this._urlPrefix();
+        prefix = this.baseUrl;
 
     if (typeKey) { url.push(this._pathForType(typeKey)); }
     if (id) { url.push(encodeURIComponent(id)); }
 
-    if (prefix) { url.unshift(prefix); }
+    if (prefix && prefix !== '/') { url.unshift(prefix); }
 
     url = url.join('/');
-    if (!host && url) { url = '/' + url; }
+
+    if(prefix === '/') {
+      url = prefix + url;
+    }
 
     return url;
   }
@@ -78,37 +85,6 @@ export default class UrlMiddleware {
   _pathForType(type) {
     var camelized = camelize(type, true);
     return pluralize(camelized);
-  }
-
-  /**
-    @private
-  */
-  _urlPrefix(path, parentURL) {
-    var host = this.host,
-        namespace = this.namespace,
-        url = [];
-
-    if (path) {
-      // Absolute path
-      if (path.charAt(0) === '/') {
-        if (host) {
-          path = path.slice(1);
-          url.push(host);
-        }
-      // Relative path
-      } else if (!/^http(s)?:\/\//.test(path)) {
-        url.push(parentURL);
-      }
-    } else {
-      if (host) { url.push(host); }
-      if (namespace) { url.push(namespace); }
-    }
-
-    if (path) {
-      url.push(path);
-    }
-
-    return url.join('/');
   }
 
 }

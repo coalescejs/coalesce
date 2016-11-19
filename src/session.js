@@ -116,7 +116,7 @@ export default class Session extends Graph {
    * @param  {type} params the params for the query
    * @return {type}        the query in this session
    */
-  fetchQuery(type, params) {
+  fetchQuery(type, params={}) {
     return this.fetchBy(Query, type, params);
   }
 
@@ -164,7 +164,7 @@ export default class Session extends Graph {
    * Mark an entity as dirty. This will cause the model to be diffed against
    * its shadow during the next flush.
    *
-   * @param  {type} entity the entity to mark dirty
+   * @param  {Entity} entity the entity to mark dirty
    */
   touch(entity) {
     if(this._dirtyCheckingSuspended) {
@@ -184,6 +184,29 @@ export default class Session extends Graph {
     entity.clientRev++;
   }
 
+  /**
+   * Invoke an arbitrary remote "call" on the associated adapter for the
+   * context. This is useful for executing actions that do not fit the normal
+   * CRUD paradigm.
+   *
+   * @param {*}       context the context of this remote call
+   * @param {string}  name    the name of the remote actions
+   * @param {object}  params  params to be passed to the underlying action
+   * @param {object}  opts    options for the underlying request
+   *
+   * @return {Promise}        the result of the aciton
+   */
+  async remoteCall(context, name, params, opts) {
+    if(typeof context === 'string') {
+      context = this.fetchQuery(this.container.typeFor(context));
+    }
+    let adapter = this.container.adapterFor(context);
+    return adapter.remoteCall(context, name, params, opts, this);
+  }
+
+  /**
+   * @return {EntitySet} All entities which are dirty inside this session.
+   */
   get dirtyEntities() {
     var entities = new EntitySet();
     for(var entity of this.shadows) {

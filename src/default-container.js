@@ -21,8 +21,8 @@ const DEFAULT_SERIALIZERS = {
  */
 export default class DefaultContainer extends Container {
 
-  constructor() {
-    super();
+  constructor(...args) {
+    super(...args);
     for(var key in DEFAULT_SERIALIZERS) {
       let provider = DEFAULT_SERIALIZERS[key];
       this.registerType(key);
