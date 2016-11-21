@@ -12,6 +12,7 @@ import FetchMiddleware from './middleware/fetch';
 import SessionCacheMiddleware from './middleware/session-cache';
 import PromiseCacheMiddleware from './middleware/promise-cache';
 import EmbeddedMiddleware from './middleware/embedded';
+import ErrorTranslationMiddleware from './middleware/error-translation';
 
 import MiddlewareChain from './middleware-chain';
 
@@ -33,6 +34,7 @@ export default class Adapter {
     UrlMiddleware,
     SerializeMiddleware,
     JsonMiddleware,
+    ErrorTranslationMiddleware,
     FetchMiddleware
   ]);
 

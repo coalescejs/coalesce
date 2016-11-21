@@ -11,6 +11,7 @@ export * from './merge/model.spec';
 
 export * from './middleware-chain.spec';
 
+export * from './middleware/error-translation.spec';
 export * from './middleware/query-params.spec';
 export * from './middleware/promise-cache.spec';
 export * from './middleware/serialize.spec';
