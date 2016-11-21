@@ -198,7 +198,14 @@ export default class Session extends Graph {
    */
   async remoteCall(context, name, params, opts) {
     if(typeof context === 'string') {
-      context = this.fetchQuery(this.container.typeFor(context));
+      let type = this.container.typeFor(context);
+      // If the context is a string we infer an entity. The "singular" option
+      // can be passed as false to infer a collection.
+      if(!opts || opts.singular !== false) {
+        context = this.build(type, {});
+      } else {
+        context = this.fetchQuery(type);
+      }
     }
     let adapter = this.container.adapterFor(context);
     return adapter.remoteCall(context, name, params, opts, this);

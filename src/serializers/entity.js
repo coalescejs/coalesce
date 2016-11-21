@@ -11,16 +11,8 @@ export default class EntitySerializer {
   static dependencies = [Container, IdManager];
 
   constructor(container, idManager) {
-    this._container = container;
-    this._idManager = idManager;
-  }
-
-  serialize(entity) {
-
-  }
-
-  deserialize(graph, data,...args) {
-
+    this.container = container;
+    this.idManager = idManager;
   }
 
   create(graph, type, ...args) {
@@ -28,15 +20,15 @@ export default class EntitySerializer {
   }
 
   typeFor(type) {
-    return this._container.typeFor(type);
+    return this.container.typeFor(type);
   }
 
   serializerFor(type) {
-    return this._container.serializerFor(type);
+    return this.container.serializerFor(type);
   }
 
   typeFor(type) {
-    return this._container.typeFor(type);
+    return this.container.typeFor(type);
   }
 
 }

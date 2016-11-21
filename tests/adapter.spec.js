@@ -203,7 +203,7 @@ describe('adapter', function() {
       it('passes params in POST body', function() {
         this.subject;
         let {body} = fetchMock.lastCall()[1];
-        expect(body).to.eql(this.params);
+        expect(JSON.parse(body)).to.eql(this.params);
       });
 
     });

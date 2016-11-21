@@ -155,7 +155,7 @@ describe('serializers/model', function() {
     });
 
     subject(function() {
-      return this.serializer.deserialize(this.graph, this.value);
+      return this.serializer.deserialize(this.value, this.graph);
     });
 
     it('deserializes all fields', function() {
@@ -171,6 +171,42 @@ describe('serializers/model', function() {
         isDeleted: false,
         isNew: false
       });
+    });
+
+    context('with default type', function() {
+
+      lazy('value', () => {
+        return {
+          id: 1,
+          client_id: "$post1",
+          rev: 1,
+          client_rev: 2,
+          title: 'Serializing',
+          long_title: 'Serializing in Seattle',
+          CUSTOM: 3,
+          raw: {test: true}
+        };
+      });
+
+      subject(function() {
+        return this.serializer.deserialize(this.value, this.graph, {type: 'post'});
+      });
+
+      it('deserializes all fields', function() {
+        expect(this.subject._data.toJS()).to.eql({
+          id: "1",
+          clientId: "$post1",
+          rev: 1,
+          clientRev: 2,
+          title: 'Serializing',
+          longTitle: 'Serializing in Seattle',
+          custom: 3,
+          raw: {test: true},
+          isDeleted: false,
+          isNew: false
+        });
+      });
+
     });
 
   });

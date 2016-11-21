@@ -545,10 +545,24 @@ describe('session', function() {
 
       lazy('context', () => 'post');
 
-      it(`invokes the adapter .remoteCall with collection`, async function() {
+      it(`invokes the adapter .remoteCall with an entity`, async function() {
         sinon.stub(this.adapter, 'remoteCall');
         await this.subject;
-        expect(this.adapter.remoteCall.getCall(0).args[0].isQuery).to.be.true;
+        expect(this.adapter.remoteCall.getCall(0).args[0].isModel).to.be.true;
+      });
+
+      context('and singular: false', function() {
+
+        lazy('opts', function() {
+          return {singular: false};
+        });
+
+        it(`invokes the adapter .remoteCall with collection`, async function() {
+          sinon.stub(this.adapter, 'remoteCall');
+          await this.subject;
+          expect(this.adapter.remoteCall.getCall(0).args[0].isQuery).to.be.true;
+        });
+
       });
 
     });

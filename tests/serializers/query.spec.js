@@ -55,7 +55,7 @@ describe('serializers/query', function() {
     });
 
     subject(function() {
-      return this.serializer.deserialize(this.graph, this.value, Post, {});
+      return this.serializer.deserialize(this.value, this.graph, Post, {});
     });
 
     it('deserializes', function() {
@@ -64,6 +64,25 @@ describe('serializers/query', function() {
       let {id, title} = arr[0];
       expect(id).to.eq("1");
       expect(title).to.eq('A');
+    });
+
+    context('when array contents are raw ids', function() {
+
+      it('deserializes', function() {
+
+        lazy('value', () => {
+          return [1, 2];
+        });
+
+        it('deserializes', function() {
+          let arr = Array.from(this.subject);
+          expect(arr.length).to.eq(2);
+          let {id, title} = arr[0];
+          expect(id).to.eq("1");
+        });
+
+      });
+
     });
 
   });

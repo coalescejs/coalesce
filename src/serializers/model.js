@@ -1,5 +1,6 @@
 import EntitySerializer from './entity';
 import Query from '../query';
+import Graph from '../graph';
 
 import { singularize, camelize, underscore, dasherize } from 'inflection';
 
@@ -112,11 +113,11 @@ export default class ModelSerializer extends EntitySerializer {
   }
 
   // TODO pass type in?
-  deserialize(graph, hash, defaults) {
+  deserialize(hash, graph=this.container.get(Graph), defaults) {
     let data = {...defaults},
-        type = hash.type;
+        type = hash.type || data.type;
 
-    console.assert(type, `Model payload must include 'type'`);
+    console.assert(type, `Cannot infer model type`);
 
     type = this.typeFor(type);
 
@@ -175,7 +176,7 @@ export default class ModelSerializer extends EntitySerializer {
 
     if(field.embedded) {
       serializer = this.serializerFor(field.typeKey);
-      value = serializer.deserialize(graph, value);
+      value = serializer.deserialize(value, graph, {type: field.typeKey});
     } else {
       serializer = this.serializerFor('id');
       value = serializer.deserialize(value);
@@ -199,8 +200,8 @@ export default class ModelSerializer extends EntitySerializer {
     if(serializer) {
       // XXX: should pass in the actual model to `getQueryParams`
       value = serializer.deserialize(
-        graph,
         value,
+        graph,
         this.typeFor(field.typeKey),
         field.getQueryParams(data)
       );

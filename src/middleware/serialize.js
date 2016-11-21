@@ -32,9 +32,9 @@ export default class SerializeMiddleware {
       } else {
         // Some backends might not pass-through the client-id. In which case,
         // it is important to ensure it gets set during create operations.
-        args = [{clientId: entity.clientId}];
+        args = [{clientId: entity.clientId, type: entity.typeKey}];
       }
-      res = serializer.deserialize(graph, res, ...args);
+      res = serializer.deserialize(res, graph, ...args);
     } else {
       // if no data is returned from the server, we send back the original
       // entity

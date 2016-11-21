@@ -1,5 +1,6 @@
 import EntitySerializer from './entity';
 import Collection from '../collection';
+import Graph from '../graph';
 
 /**
  * Serializes collections.
@@ -17,11 +18,14 @@ export default class CollectionSerializer extends EntitySerializer {
     });
   }
 
-  deserialize(graph, data, ...args) {
-    return this.create(graph, this.type, ...args, data.map((hash) => {
-      const {type} = hash;
-      let serializer = this.serializerFor(type);
-      return serializer.deserialize(graph, hash);
+  deserialize(data, graph=this.container.get(Graph), itemType, ...args) {
+    return this.create(graph, this.type, itemType, ...args, data.map((hash) => {
+      // allow raw ids
+      if(typeof hash !== 'object') {
+        hash = {id: hash};
+      }
+      let serializer = this.serializerFor(itemType);
+      return serializer.deserialize(hash, graph, {type: itemType});
     }));
   }
 
