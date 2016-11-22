@@ -43,6 +43,14 @@ export default class Session extends Graph {
   }
 
   /**
+   * @deprecated
+   * Alias for `child`
+   */
+  newSession() {
+    return this.child();
+  }
+
+  /**
    * Create an instance of the type. This instance will be marked for creation
    * and will be persisted on the next call to `.flush()`.
    *
@@ -80,6 +88,14 @@ export default class Session extends Graph {
   }
 
   /**
+   * @deprecated
+   * Alias for `get`
+   */
+  getModel(...args) {
+    return this.get(...args);
+  }
+
+  /**
    * @override
    *
    * Test if the given entity exists in the session.
@@ -94,7 +110,6 @@ export default class Session extends Graph {
     return super.has(entity);
   }
 
-
   /**
    * Get the corresponding query based on the type and params.
    *
@@ -103,6 +118,9 @@ export default class Session extends Graph {
    * @return {type}        the query in this session
    */
   getQuery(type, params) {
+    if(typeof type === 'string') {
+      type = this.container.typeFor(type);
+    }
     let clientId = Query.clientId(this.idManager, type, params);
     return this.get({clientId});
   }
@@ -112,21 +130,31 @@ export default class Session extends Graph {
    * for this type/params combination does not already exist, it will be
    * built.
    *
-   * @param  {*} type      the type
+   * @param  {*}    type   the entity type for the query
    * @param  {type} params the params for the query
    * @return {type}        the query in this session
    */
   fetchQuery(type, params={}) {
+    if(typeof type === 'string') {
+      type = this.container.typeFor(type);
+    }
     return this.fetchBy(Query, type, params);
   }
 
   /**
-    Loads data for an entity.
-
-    @returns {Promise}
-  */
+   * Load an entity.
+   *
+   * @param  {Entity} entity  the entity to load
+   * @param  {object} [opts]  options to be passed to the adapter
+   * @return {Promise}
+   */
   async load(entity, opts={}) {
     let adapter = this.container.adapterFor(entity);
+
+    if(typeof opts !== 'object') {
+      // backwards compatibility with old API
+      return this.find(...arguments);
+    }
 
     return adapter.load(entity, opts, this).then((serverEntity) => {
       return this.merge(serverEntity);
@@ -134,6 +162,26 @@ export default class Session extends Graph {
       // TODO: think through 404 errors, delete the entity?
       throw this.rollback(entity);
     });
+  }
+
+  /**
+   * @deprecated
+   * Alias for `load`
+   */
+  async loadModel(...args) {
+    return this.load(...args);
+  }
+
+
+  /**
+   * Same as `load` with the `refresh` option set to true.
+   *
+   * @param  {Entity} entity  the entity to load
+   * @param  {object} [opts]  options to be passed to the adapter
+   * @return {Promise}
+   */
+  async refresh(entity, opts={}) {
+    return this.load(entity, {refresh: true, ...opts});
   }
 
   /**
@@ -208,7 +256,11 @@ export default class Session extends Graph {
       }
     }
     let adapter = this.container.adapterFor(context);
-    return adapter.remoteCall(context, name, params, opts, this);
+    let entity = await adapter.remoteCall(context, name, params, opts, this);
+    if(entity && entity.isEntity) {
+      return this.merge(entity);
+    }
+    return entity;
   }
 
   /**

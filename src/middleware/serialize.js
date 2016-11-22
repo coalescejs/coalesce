@@ -16,9 +16,9 @@ export default class SerializeMiddleware {
   }
 
   async call(ctx, next) {
-    let {serialize, entity} = ctx;
+    let {serialize, entity, method} = ctx;
     const serializer = this._serializerFor(entity);
-    if(serialize !== false && !ctx.body) {
+    if(method !== 'GET' && serialize !== false && !ctx.body) {
       ctx.body = serializer.serialize(entity);
     }
 

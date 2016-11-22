@@ -6,6 +6,8 @@ export * from './container.spec';
 
 export * from './default-container.spec';
 
+export * from './graph.spec';
+
 export * from './merge/array.spec';
 export * from './merge/model.spec';
 

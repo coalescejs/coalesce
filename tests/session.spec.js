@@ -298,8 +298,25 @@ describe('session', function() {
       return this.graph.build(Query, this.Post, this.params);
     });
 
+    lazy('type', function() {
+      return this.Post;
+    });
+
     subject(function() {
-      return this.session.fetchQuery(this.Post, this.params);
+      return this.session.fetchQuery(this.type, this.params);
+    });
+
+    context('when entity type is a typeKey', function() {
+
+      lazy('type', function() {
+        this.container.registerType(this.Post);
+        return 'post';
+      });
+
+      it('returns an entity', function() {
+        expect(this.subject.type).to.eq(this.Post);
+      });
+
     });
 
     context('when entity is part of the session', function() {
@@ -374,6 +391,67 @@ describe('session', function() {
       let res = await this.subject;
       expect(res.title).to.eq('loaded title');
       expect(res.session).to.eq(this.session);
+    });
+
+    context('with type and id as arguments', function() {
+
+      subject(function() {
+        return this.session.load(this.Post, this.entity.id);
+      });
+
+      it('loads data', async function() {
+        let res = await this.subject;
+        expect(res.title).to.eq('loaded title');
+        expect(res.session).to.eq(this.session);
+      });
+
+    });
+
+  });
+
+  describe('.refresh()', function() {
+
+    lazy('Post', function() {
+      let klass = class Post extends Model {}
+      klass.adapter = this.Adapter;
+      klass.defineSchema({
+        typeKey: 'post',
+        attributes: {
+          title: {
+            type: 'string'
+          }
+        }
+      });
+      return klass;
+    });
+
+    lazy('Adapter', function() {
+      let container = this.container;
+      return class TestAdapter {
+        async load(entity) {
+          let res = entity.fork(container.get(Graph));
+          res.title = 'loaded title';
+          res.rev = 1;
+          return res;
+        }
+      };
+    });
+
+    lazy('entity', function() {
+      return this.session.fetchBy(this.Post, {id: 1});
+    });
+
+    subject(function() {
+      return this.session.refresh(this.entity);
+    });
+
+    it('loads with refresh=true', async function() {
+      let args;
+      this.session.load = (..._args) => {
+        args = _args;
+      }
+      this.subject
+      expect(args).to.eql([this.entity, {refresh: true}]);
     });
 
   });

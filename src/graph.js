@@ -63,6 +63,10 @@ export default class Graph extends EntitySet {
    * @return {Entity}        the equivalent entity within the graph
    */
   fetch(entity) {
+    if(arguments.length > 1) {
+      // backwards compatibility with old API
+      return this.fetchBy(...arguments);
+    }
     let res = this.get(entity);
     if(!res) {
       res = entity.ref(this);

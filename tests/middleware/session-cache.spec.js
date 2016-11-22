@@ -49,6 +49,15 @@ describe('middleware/session-cache', function() {
         expect(this.hit).to.be.false
       });
 
+      context('with refresh=true', function() {
+        lazy('refresh', () => true);
+        
+        it('misses', async function() {
+          await this.subject;
+          expect(this.hit).to.be.true
+        });
+      });
+
     });
 
     context('when not loaded in session', function() {

@@ -34,9 +34,11 @@ describe('middleware/serialize', function() {
       }
     });
 
+    lazy('method', () => 'POST');
+
     lazy('ctx', function() {
-      let {entity, next} = this;
-      return {entity, next};
+      let {entity, next, method} = this;
+      return {entity, next, method};
     });
 
     subject(function() {
@@ -47,6 +49,17 @@ describe('middleware/serialize', function() {
       let res = await this.subject;
       expect(this.ctx.body.id).to.eq(1);
       expect(res).to.be.an.instanceOf(Post);
+    });
+
+    context('when method=GET', function() {
+
+      lazy('method', () => 'GET');
+
+      it('does not serialize', async function() {
+        let res = await this.subject;
+        expect(this.ctx.body).to.be.undefined;
+      });
+
     });
 
     context("when body already present", function() {
