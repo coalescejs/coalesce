@@ -488,6 +488,57 @@ describe('session', function() {
           expect(this.subject.title).to.eq(this.entity.title);
           expect(this.subject.session).to.eq(this.session);
         });
+
+        context('with embedded relationships', function() {
+
+          lazy('Post', function() {
+            let klass = class Post extends Model {}
+            klass.defineSchema({
+              typeKey: 'post',
+              attributes: {
+                title: {
+                  type: 'string'
+                }
+              },
+              relationships: {
+                tags: {
+                  embedded: 'always',
+                  kind: 'hasMany',
+                  type: 'tag'
+                }
+              }
+            });
+            return klass;
+          });
+
+          lazy('Tag', function() {
+            let klass = class Tag extends Model {}
+            klass.defineSchema({
+              typeKey: 'tag',
+              attributes: {
+                name: {
+                  type: 'string'
+                }
+              }
+            });
+            return klass;
+          });
+
+          beforeEach(function() {
+            this.container.registerType(this.Tag);
+          });
+
+          lazy('entity', function() {
+            let post = this.graph.build(this.Post, {id: 1});
+            post.tags = [this.graph.build(this.Tag, {id: 2, name: 'asd'})];
+            return post;
+          });
+
+          it('traverses embedded relationships', function() {
+            expect(this.subject.tags.get(0).name).to.eq('asd');
+          });
+
+        });
       });
 
       context('when already in session', function() {

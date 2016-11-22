@@ -8,6 +8,7 @@ export default class Entity {
   constructor(graph) {
     console.assert(graph, `Entity must be associated with a graph`);
     this._graph = graph;
+    this._loaded = false;
     if(graph.isSession) {
       this._session = graph;
     }
@@ -36,9 +37,8 @@ export default class Entity {
     return true;
   }
 
-  // TODO
   get isLoaded() {
-    return false;
+    return this._loaded;
   }
 
   /**
@@ -59,6 +59,7 @@ export default class Entity {
   assign(source) {
     this._data = source._data;
     this._parent = source._parent;
+    this._loaded = source._loaded;
     return this;
   }
 
@@ -125,6 +126,10 @@ export default class Entity {
     }
     console.assert(this.clientId && other.clientId, "Must have clientId's set");
     return other.clientId === this.clientId;
+  }
+
+  get isEmbedded() {
+    return !!this._parent;
   }
 
 }

@@ -32,6 +32,9 @@ export default class BelongsTo extends Relationship {
             value._parent = this.clientId;
           }
         }
+        if(field.owner) {
+          this._loaded = true;
+        }
         this.withChangeTracking(() => {
           this._data = this._data.set(attributeName, clientId);
         });

@@ -36,7 +36,7 @@ export default class HasMany extends Relationship {
   }
 
   get transient() {
-    return !!this.embedded;
+    return !this.embedded;
   }
 
   get param() {

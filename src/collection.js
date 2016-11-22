@@ -11,6 +11,7 @@ export default class Collection extends Entity {
   constructor(graph, iterable) {
     super(graph);
     if(iterable) {
+      this._loaded = true;
       function* clientIds(iterable) {
         for(var entity of iterable) {
           yield entity.clientId;
@@ -45,6 +46,7 @@ export default class Collection extends Entity {
 
   splice(index, removeNum, ...values) {
     values = values.map((v) => v.clientId);
+    this._loaded = true;
     this.withChangeTracking(() => {
       this._willChange(index, removeNum, values.length);
       this._data = this._data.splice(index, removeNum, ...values);

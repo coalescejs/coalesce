@@ -99,39 +99,175 @@ describe('serializers/model', function() {
 
     context('with belongsTo', function() {
 
-      lazy('Post', function() {
-        let klass = class Post extends Model {}
-        klass.defineSchema({
-          typeKey: 'post',
-          attributes: {
-            title: {
-              type: 'string'
+      context('when not embedded', function() {
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tag: {
+                kind: 'belongsTo',
+                type: 'tag'
+              }
             }
-          },
-          relationships: {
-            tag: {
-              kind: 'belongsTo',
-              type: 'tag'
-            }
-          }
+          });
+          return klass;
         });
-        return klass;
+
+        lazy('value', function() {
+          let post = this.graph.build(this.Post, {
+            id: "1",
+            clientId: "$post1",
+            rev: 1,
+            clientRev: 2,
+            title: 'Serializing',
+          });
+          post.tag = this.graph.build(this.Tag, {id: "2", post, name: 'asd'});
+          return post;
+        });
+
+        it('serializes as id', function() {
+          expect(this.subject.tag).to.eq(2);
+        });
       });
 
-      lazy('value', function() {
-        let post = this.graph.build(this.Post, {
-          id: "1",
-          clientId: "$post1",
-          rev: 1,
-          clientRev: 2,
-          title: 'Serializing',
+      context('when embedded', function() {
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tag: {
+                embedded: 'always',
+                kind: 'belongsTo',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
         });
-        post.tag = this.graph.build(this.Tag, {id: "2", post, name: 'asd'});
-        return post;
+
+        lazy('value', function() {
+          let post = this.graph.build(this.Post, {
+            id: "1",
+            clientId: "$post1",
+            rev: 1,
+            clientRev: 2,
+            title: 'Serializing',
+          });
+          post.tag = this.graph.build(this.Tag, {id: "2", post, name: 'asd'});
+          return post;
+        });
+
+        it('serializes nested model', function() {
+          expect(this.subject.tag).to.eql({
+            client_id: "$tag1",
+            client_rev: 1,
+            id: 2,
+            name: 'asd',
+            post: 1
+          });
+        });
       });
 
-      it('serializes as id', function() {
-        expect(this.subject.tag).to.eq(2);
+
+    });
+
+    context('with hasMany', function() {
+
+      context('when not embedded', function() {
+
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tags: {
+                kind: 'hasMany',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
+        });
+
+        lazy('value', function() {
+          let post = this.graph.build(this.Post, {
+            id: "1",
+            clientId: "$post1",
+            rev: 1,
+            clientRev: 2,
+            title: 'Serializing',
+          });
+          post.tags = [this.graph.build(this.Tag, {id: "2", post, name: 'asd'})];
+          return post;
+        });
+
+        it('does not include field', function() {
+          expect(this.subject.tags).to.be.undefined;
+        });
+
+      });
+
+      context('when embedded', function() {
+
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tags: {
+                embedded: 'always',
+                kind: 'hasMany',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
+        });
+
+        lazy('value', function() {
+          let post = this.graph.build(this.Post, {
+            id: "1",
+            clientId: "$post1",
+            rev: 1,
+            clientRev: 2,
+            title: 'Serializing',
+          });
+          post.tags = [this.graph.build(this.Tag, {id: "2", post, name: 'asd'})];
+          return post;
+        });
+
+        it('includes nested models', function() {
+          expect(this.subject.tags).to.eql([{
+            client_id: "$tag1",
+            client_rev: 1,
+            id: 2,
+            name: 'asd',
+            post: 1
+          }]);
+        });
+
       });
 
     });
@@ -205,6 +341,173 @@ describe('serializers/model', function() {
           isDeleted: false,
           isNew: false
         });
+      });
+
+    });
+
+    context('with belongsTo', function() {
+
+      context('when not embedded', function() {
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tag: {
+                kind: 'belongsTo',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
+        });
+
+        lazy('value', () => {
+          return {
+            type: 'post',
+            id: 1,
+            client_id: "$post1",
+            rev: 1,
+            client_rev: 2,
+            tag: 2
+          };
+        });
+
+        it('deserializes a reference', function() {
+          expect(this.subject.tag.id).to.eq('2');
+        });
+      });
+
+      context('when embedded', function() {
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tag: {
+                embedded: 'always',
+                kind: 'belongsTo',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
+        });
+
+        lazy('value', () => {
+          return {
+            type: 'post',
+            id: 1,
+            client_id: "$post1",
+            rev: 1,
+            client_rev: 2,
+            tag: {
+              id: 2,
+              name: "asd"
+            }
+          };
+        });
+
+        it('deserializes nested model', function() {
+          expect(this.subject.tag.id).to.eq('2')
+          expect(this.subject.tag.name).to.eq('asd')
+        });
+      });
+
+
+    });
+
+    context('with hasMany', function() {
+
+      context('when not embedded', function() {
+
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tags: {
+                kind: 'hasMany',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
+        });
+
+        lazy('value', () => {
+          return {
+            type: 'post',
+            id: 1,
+            client_id: "$post1",
+            rev: 1,
+            client_rev: 2,
+            tags: [2, 3]
+          };
+        });
+
+        it('deserializes collection', function() {
+          expect(Array.from(this.subject.tags).map((t) => t.id)).to.eql(['2', '3']);
+        });
+
+      });
+
+      context('when embedded', function() {
+
+        lazy('Post', function() {
+          let klass = class Post extends Model {}
+          klass.defineSchema({
+            typeKey: 'post',
+            attributes: {
+              title: {
+                type: 'string'
+              }
+            },
+            relationships: {
+              tags: {
+                embedded: 'always',
+                kind: 'hasMany',
+                type: 'tag'
+              }
+            }
+          });
+          return klass;
+        });
+
+        lazy('value', () => {
+          return {
+            type: 'post',
+            id: 1,
+            client_id: "$post1",
+            rev: 1,
+            client_rev: 2,
+            tags: [
+              {id: 2, name: 'asd'},
+              {id: 3, name: 'xyz'}
+            ]
+          };
+        });
+
+        it('deserializes collection', function() {
+          expect(Array.from(this.subject.tags).map((t) => t.id)).to.eql(['2', '3']);
+          expect(Array.from(this.subject.tags).map((t) => t.name)).to.eql(['asd', 'xyz']);
+        });
+
       });
 
     });

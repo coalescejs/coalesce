@@ -132,4 +132,24 @@ describe('acceptance/simple hierarchy of models', function() {
     expect(parentSession.get(comment).isDeleted).to.be.true;
   });
 
+  it('loads and refreshes existing hierarchy', async function() {
+    let {session} = this;
+
+    fetchMock.get('/users/1', JSON.stringify({
+      type: 'user',
+      id: 1,
+      rev: 1,
+      name: 'Brogrammer',
+      posts: [2, 3]
+    }));
+
+    let user = session.fetchBy(User, {id: 1});
+    let posts = user.posts;
+    expect(posts.size).to.eq(0);
+
+    await session.load(user);
+    let postIds = Array.from(posts).map((p) => p.id);
+    expect(postIds).to.eql(['2', '3']);
+  });
+
 });

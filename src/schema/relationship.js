@@ -32,12 +32,12 @@ export default class Relationship extends Field {
   }
 
   get owner() {
-    if(this._owner) {
+    if(this._owner !== undefined) {
       return this._owner;
     }
 
     // by default, belongsTo own the relationship
-    return this._owner = this.kind === 'belongsTo';
+    return this._owner = !!this.embedded || this.kind === 'belongsTo';
   }
 
   set owner(value) {

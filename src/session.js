@@ -296,7 +296,16 @@ export default class Session extends Graph {
       this.newEntities.remove(entity);
     }
     entity.isDeleted = true;
+    this.touch(entity);
     return entity;
+  }
+
+  /**
+   * @deprecated
+   * Alias for `destroy`.
+   */
+  deleteModel(...args) {
+    return this.destroy(...args);
   }
 
   /**
@@ -331,12 +340,17 @@ export default class Session extends Graph {
     var entity = this.fetch(serverEntity),
         shadow = this.shadows.get(serverEntity);
 
+    // No need to merge any data for unloaded entities
+    if(!serverEntity.isLoaded) {
+      return entity;
+    }
+
     // Some backends will not return versioning information. In this
     // case we just fabricate our own server versioning, assuming that
     // all new entities are a newer version.
     // NOTE: rev is also used to break merge recursion
     if(!serverEntity.rev) {
-      serverEntity.rev = (entity.rev === null || entity.rev === undefined) ? 1 : entity.rev + 1;
+      serverEntity.rev = (entity.rev === null || entity.rev === undefined) ? 0 : entity.rev + 1;
     }
 
     // Optimistically assume has seen client's version if no clientRev set

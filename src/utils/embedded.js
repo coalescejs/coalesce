@@ -4,3 +4,11 @@ export function findEmbeddedRoot(graph, entity) {
   }
   return entity;
 }
+
+export function *eachEmbeddedChild(graph, entity) {
+  for(let child of entity.relatedEntities()) {
+    if(child._parent === entity.clientId) {
+      yield child;
+    }
+  }
+}

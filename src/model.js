@@ -16,7 +16,6 @@ export default class Model extends Entity {
   static merge = ModelMerge;
   static serializer = ModelSerializer;
 
-  // XXX: this is ugly
   static isModel = true;
 
   static defaults = Immutable.Map({isNew: false, isDeleted: false});
@@ -34,7 +33,6 @@ export default class Model extends Entity {
     for(var key in rest) {
       this[key] = rest[key];
     }
-    this._initialized = true;
   }
 
   get isModel() {
@@ -42,20 +40,24 @@ export default class Model extends Entity {
   }
 
   get isLoaded() {
-    // if we have a rev, assume loaded
-    if(this.rev) {
-      return true;
+    if(this._loaded) {
+      return this._loaded;
     }
 
-    // otherwise lets check for any attributes
-    // TODO
+    for(var field of this.schema.relationships()) {
+      if(field.embedded && this[field.name] && this[field.name].isLoaded) {
+        return this._loaded = true;
+      }
+    }
+
+    return false;
   }
 
   get isDirty() {
     if(this.session) {
       return this.session.isEntityDirty(this);
     } else {
-      return false;
+      return;
     }
   }
 
@@ -79,6 +81,9 @@ export default class Model extends Entity {
   assign(source) {
     this._data = this._data.merge(source._data);
     this._parent = source._parent;
+    if(!this._loaded) {
+      this._loaded = source._loaded;
+    }
     return this;
   }
 

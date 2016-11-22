@@ -16,6 +16,7 @@ export default class Attribute extends Field {
         return value;
       },
       set: function(value) {
+        this._loaded = true;
         this.withChangeTracking(() => {
           this._data = this._data.set(name, value);
         });

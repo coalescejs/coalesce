@@ -16,7 +16,7 @@ import ErrorTranslationMiddleware from './middleware/error-translation';
 
 import MiddlewareChain from './middleware-chain';
 
-import {findEmbeddedRoot} from './utils/embedded';
+import {findEmbeddedRoot, eachEmbeddedChild} from './utils/embedded';
 
 /**
  * The Adapter is the main object responsible for interfacing with a remote server.
@@ -89,6 +89,10 @@ export default class Adapter {
       let parent = plan.session.get({clientId: entity._parent});
       // need to make sure te embedded parent has an associated operation
       plan.add(parent);
+    }
+
+    for(let child of eachEmbeddedChild(plan.session, entity)) {
+      plan.add(child);
     }
 
     if(entity.isCollection) {

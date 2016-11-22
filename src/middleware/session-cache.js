@@ -15,7 +15,6 @@ export default class SessionCacheMiddleware {
         this.shouldCache(entity)) {
 
       return session.get(entity);
-
     }
     return next();
   }

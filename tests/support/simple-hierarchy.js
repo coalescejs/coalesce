@@ -15,7 +15,7 @@ User.defineSchema({
       kind: 'hasMany'
     },
     comments: {
-      type: 'post',
+      type: 'comment',
       kind: 'hasMany'
     }
   }
@@ -38,7 +38,7 @@ Post.defineSchema({
       kind: 'belongsTo'
     },
     comments: {
-      type: 'post',
+      type: 'comment',
       kind: 'hasMany'
     }
   }
@@ -58,7 +58,7 @@ Comment.defineSchema({
       kind: 'belongsTo'
     },
     comments: {
-      type: 'user',
+      type: 'comment',
       kind: 'belongsTo'
     }
   }

@@ -82,7 +82,7 @@ export default class ModelSerializer extends EntitySerializer {
         serializer;
 
     if(field.embedded) {
-      serializer = this.serializerFor(field.type);
+      serializer = this.serializerFor(field.typeKey);
     } else {
       serializer = this.serializerFor('id');
       value = value.id;

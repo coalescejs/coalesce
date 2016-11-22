@@ -50,4 +50,34 @@ describe('collection', function() {
 
   });
 
+  describe('.isLoaded', function() {
+
+    lazy('arg', () => undefined);
+    lazy('entity', function() {
+      return new Collection(this.graph, this.arg);
+    });
+    subject(function() {
+      return this.entity.isLoaded;
+    });
+
+    context('when not constructed with an iterable', function() {
+
+      it('returns false', function() {
+        expect(this.subject).to.be.false;
+      });
+
+    });
+
+    context('when constructed with an iterable', function() {
+
+      lazy('arg', () => []);
+
+      it('returns true', function() {
+        expect(this.subject).to.be.true;
+      });
+
+    });
+
+  });
+
 });

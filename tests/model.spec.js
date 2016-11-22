@@ -113,4 +113,36 @@ describe('model', function() {
 
   });
 
+  describe('.isLoaded', function() {
+
+    lazy('entity', function() {
+      return this.graph.build(this.Post, {id: 1, clientId: 2, rev: 123, clientRev: 12});
+    });
+
+    subject(function() {
+      return this.entity.isLoaded;
+    });
+
+    context('when only metadata set', function() {
+
+      it('returns false', function() {
+        expect(this.subject).to.be.false;
+      });
+
+    });
+
+    context('when attribute set', function() {
+
+      lazy('entity', function() {
+        return this.graph.build(this.Post, {id: 1, title: 'asd'});
+      });
+
+      it('returns true', function() {
+        expect(this.subject).to.be.true;
+      });
+
+    });
+
+  });
+
 });
