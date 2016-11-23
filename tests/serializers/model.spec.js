@@ -295,7 +295,7 @@ describe('serializers/model', function() {
     });
 
     it('deserializes all fields', function() {
-      expect(this.subject._data.toJS()).to.eql({
+      expect(this.subject._data).to.eql({
         id: "1",
         clientId: "$post1",
         rev: 1,
@@ -329,7 +329,7 @@ describe('serializers/model', function() {
       });
 
       it('deserializes all fields', function() {
-        expect(this.subject._data.toJS()).to.eql({
+        expect(this.subject._data).to.eql({
           id: "1",
           clientId: "$post1",
           rev: 1,

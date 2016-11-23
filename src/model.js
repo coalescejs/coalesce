@@ -1,11 +1,11 @@
-import Immutable from 'immutable';
-
 import Schema from './schema';
 import Entity from './entity';
 
 import Adapter from './adapter';
 import ModelMerge from './merge/model';
 import ModelSerializer from './serializers/model';
+
+import {assign} from 'lodash';
 
 /**
  * A model is an Entity that has a defined schema and associated data.
@@ -18,10 +18,7 @@ export default class Model extends Entity {
 
   static isModel = true;
 
-  static defaults = Immutable.Map({isNew: false, isDeleted: false});
-
-  _data = this.constructor.defaults;
-
+  _data = {isNew: false, isDeleted: false};
   clientRev = 1;
 
   constructor(graph, {id, clientId, ...rest}) {
@@ -79,7 +76,7 @@ export default class Model extends Entity {
    * via a fetch that doesn't yet have any data)
    */
   assign(source) {
-    this._data = this._data.merge(source._data);
+    Object.assign(this._data, source._data);
     this._parent = source._parent;
     if(!this._loaded) {
       this._loaded = source._loaded;

@@ -121,6 +121,10 @@ export default class ModelSerializer extends EntitySerializer {
 
     type = this.typeFor(type);
 
+    for(let field of type.schema.metaFields()) {
+      this.extractField(hash, data, field, graph);
+    }
+
     for(let field of type.schema.attributes()) {
       this.extractField(hash, data, field, graph);
     }
@@ -163,8 +167,6 @@ export default class ModelSerializer extends EntitySerializer {
       value = serializer.deserialize(value, graph);
     }
     if(typeof value !== 'undefined') {
-      // TODO: optimize these setters, e.g. build attributes then set
-      // all at once via ImmutableJS
       data[field.name] = value;
     }
   }
@@ -185,8 +187,6 @@ export default class ModelSerializer extends EntitySerializer {
       }
     }
     if(typeof value !== 'undefined') {
-      // TODO: optimize these setters, e.g. build attributes then set
-      // all at once via ImmutableJS
       data[field.name] = value;
     }
   }
@@ -207,8 +207,6 @@ export default class ModelSerializer extends EntitySerializer {
       );
     }
     if(typeof value !== 'undefined') {
-      // TODO: optimize these setters, e.g. build attributes then set
-      // all at once via ImmutableJS
       data[field.name] = value;
     }
   }

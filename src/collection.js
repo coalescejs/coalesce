@@ -1,12 +1,8 @@
 import Entity from './entity';
 
-import Immutable from 'immutable';
-
 export default class Collection extends Entity {
 
-  static defaults = Immutable.List();
-
-  _data = this.constructor.defaults;
+  _data = [];
 
   constructor(graph, iterable) {
     super(graph);
@@ -17,7 +13,7 @@ export default class Collection extends Entity {
           yield entity.clientId;
         }
       }
-      this._data = Immutable.List(clientIds(iterable));
+      this._data = Array.from(clientIds(iterable));
     }
   }
 
@@ -66,7 +62,7 @@ export default class Collection extends Entity {
   }
 
   get(index) {
-    let clientId = this._data.get(index);
+    let clientId = this._data[index];
     if(!clientId) {
       return;
     }
@@ -76,31 +72,40 @@ export default class Collection extends Entity {
   splice(index, removeNum, ...values) {
     values = values.map((v) => v.clientId);
     this._loaded = true;
-    this.withChangeTracking(() => {
+    return this.withChangeTracking(() => {
       this._willChange(index, removeNum, values.length);
-      this._data = this._data.splice(index, removeNum, ...values);
+      let clientIds = this._data.splice(index, removeNum, ...values);
       this._didChange(index, removeNum, values.length);
+      return clientIds.map((clientId) => this.graph.get({clientId}));
     });
   }
 
   push(value) {
-    this.splice(this._data.size - 1, 0, value);
+    this.splice(this._data.length, 0, value);
+    return this._data.length;
   }
 
   pop() {
-    this.splice(this._data.size - 1, 1);
+    if(this._data.length === 0) {
+      return;
+    }
+    return this.splice(this._data.length - 1, 1)[0];
   }
 
-  shift(value) {
+  unshift(value) {
     this.splice(0, 0, value);
+    return this._data.length;
   }
 
-  unshift() {
+  shift() {
+    if(this._data.length === 0) {
+      return;
+    }
     this.splice(0, 1);
   }
 
   get size() {
-    return this._data.size;
+    return this._data.length;
   }
 
   _willChange(index, removed, added) {

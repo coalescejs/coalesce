@@ -6,8 +6,7 @@ SystemJS.config({
       "babel-preset-stage-0": "npm:babel-preset-stage-0@6.16.0",
       "chai": "npm:chai@3.5.0",
       "fetch-mock": "npm:fetch-mock@5.5.0",
-      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.1",
-      "sinon": "npm:sinon@1.17.6"
+      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.1"
     },
     "packages": {
       "npm:babel-messages@6.8.0": {
@@ -285,24 +284,6 @@ SystemJS.config({
         "map": {
           "babel-runtime": "npm:babel-runtime@6.18.0"
         }
-      },
-      "npm:sinon@1.17.6": {
-        "map": {
-          "formatio": "npm:formatio@1.1.1",
-          "util": "npm:util@0.10.3",
-          "samsam": "npm:samsam@1.1.2",
-          "lolex": "npm:lolex@1.3.2"
-        }
-      },
-      "npm:formatio@1.1.1": {
-        "map": {
-          "samsam": "npm:samsam@1.1.3"
-        }
-      },
-      "npm:util@0.10.3": {
-        "map": {
-          "inherits": "npm:inherits@2.0.1"
-        }
       }
     }
   },
@@ -367,11 +348,30 @@ SystemJS.config({
         "is-stream": "npm:is-stream@1.1.0",
         "encoding": "npm:encoding@0.1.12"
       }
+    },
+    "npm:sinon@1.17.6": {
+      "map": {
+        "formatio": "npm:formatio@1.1.1",
+        "util": "npm:util@0.10.3",
+        "samsam": "npm:samsam@1.1.2",
+        "lolex": "npm:lolex@1.3.2"
+      }
+    },
+    "npm:formatio@1.1.1": {
+      "map": {
+        "samsam": "npm:samsam@1.1.3"
+      }
+    },
+    "npm:util@0.10.3": {
+      "map": {
+        "inherits": "npm:inherits@2.0.1"
+      }
     }
   },
   map: {
     "coalesce2": "github:coalescejs/coalesce2@dev",
-    "plugin-babel": "npm:systemjs-plugin-babel@0.0.17"
+    "plugin-babel": "npm:systemjs-plugin-babel@0.0.17",
+    "sinon": "npm:sinon@1.17.6"
   }
 });
 
@@ -392,7 +392,6 @@ SystemJS.config({
     "fs": "npm:jspm-nodelibs-fs@0.2.0",
     "http": "npm:jspm-nodelibs-http@0.2.0",
     "https": "npm:jspm-nodelibs-https@0.2.1",
-    "immutable": "npm:immutable@3.8.1",
     "inflection": "npm:inflection@1.10.0",
     "lodash": "npm:lodash@4.16.6",
     "mocha": "npm:mocha@2.5.3",

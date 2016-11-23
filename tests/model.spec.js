@@ -94,7 +94,7 @@ describe('model', function() {
 
     it('copies attributes', function() {
       expect(this.subject.title).to.eq('A');
-      expect(this.subject._data.toJS()).to.eql(this.source._data.toJS());
+      expect(this.subject._data).to.eql(this.source._data);
     });
 
   });
@@ -108,7 +108,7 @@ describe('model', function() {
 
     it('returns new instance with same attributes', function() {
       expect(this.subject).to.not.eq(this.source);
-      expect(this.subject._data.toJS()).to.eql(this.source._data.toJS());
+      expect(this.subject._data).to.eql(this.source._data);
     });
 
   });

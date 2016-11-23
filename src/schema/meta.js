@@ -12,12 +12,10 @@ export default class Meta extends Attribute {
       enumerable: true,
       configurable: true,
       get: function() {
-        var value = this._data.get(name);
-        return value;
+        return this._data[name];
       },
       set: function(value) {
-        this._data = this._data.set(name, value);
-        return value;
+        return this._data[name] = value;
       }
     });
   }

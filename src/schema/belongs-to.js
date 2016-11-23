@@ -12,7 +12,7 @@ export default class BelongsTo extends Relationship {
       enumerable: true,
       configurable: true,
       get: function() {
-        let clientId = this._data.get(attributeName);
+        let clientId = this._data[attributeName];
         if(clientId) {
           let res = this.graph.get({clientId});
           if(res && this.embedded) {
@@ -36,7 +36,7 @@ export default class BelongsTo extends Relationship {
           this._loaded = true;
         }
         this.withChangeTracking(() => {
-          this._data = this._data.set(attributeName, clientId);
+          this._data[attributeName] = clientId;
         });
         return value;
       }

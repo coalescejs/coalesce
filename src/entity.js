@@ -1,3 +1,5 @@
+import {clone} from 'lodash';
+
 /**
  * An entity is always associated with a Graph.
  */
@@ -57,7 +59,7 @@ export default class Entity {
    * @return {type}        this
    */
   assign(source) {
-    this._data = source._data;
+    this._data = clone(source._data);
     this._parent = source._parent;
     this._loaded = source._loaded;
     return this;

@@ -12,13 +12,12 @@ export default class Attribute extends Field {
       enumerable: true,
       configurable: true,
       get: function() {
-        var value = this._data.get(name);
-        return value;
+        return this._data[name];
       },
       set: function(value) {
         this._loaded = true;
         this.withChangeTracking(() => {
-          this._data = this._data.set(name, value);
+          this._data[name] = value;
         });
         return value;
       }

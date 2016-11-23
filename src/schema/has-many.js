@@ -1,8 +1,6 @@
 import Relationship from './relationship';
 import Query from '../query';
 
-import Immutable from 'immutable';
-
 export default class HasMany extends Relationship {
 
   defineProperty(prototype) {
