@@ -49,3 +49,4 @@ export * from './utils/entity-set.spec';
 
 export * from './acceptance/simple-hierarchy.spec';
 export * from './acceptance/groups-members.spec';
+export * from './acceptance/performance.spec';
