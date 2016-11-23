@@ -36,6 +36,35 @@ export default class Collection extends Entity {
     }
   }
 
+  /**
+   * @deprecated
+   */
+  forEach(...args) {
+    return Array.from(this).forEach(...args);
+  }
+
+  /**
+   * @deprecated
+   * Use `Array.from` directly
+   */
+  toArray() {
+    return Array.from(this);
+  }
+
+  /**
+   * @deprecated
+   */
+  map(...args) {
+    return Array.from(this).map(...args);
+  }
+
+  /**
+   * @deprecated
+   */
+  filter(...args) {
+    return Array.from(this).filter(...args);
+  }
+
   get(index) {
     let clientId = this._data.get(index);
     if(!clientId) {

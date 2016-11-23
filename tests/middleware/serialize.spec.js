@@ -34,11 +34,12 @@ describe('middleware/serialize', function() {
       }
     });
 
+    lazy('deserialize', () => undefined);
     lazy('method', () => 'POST');
 
     lazy('ctx', function() {
-      let {entity, next, method} = this;
-      return {entity, next, method};
+      let {entity, next, method, deserialize} = this;
+      return {entity, next, method, deserialize};
     });
 
     subject(function() {
@@ -49,6 +50,24 @@ describe('middleware/serialize', function() {
       let res = await this.subject;
       expect(this.ctx.body.id).to.eq(1);
       expect(res).to.be.an.instanceOf(Post);
+    });
+
+    context('when deserialize=false', function() {
+
+      lazy('deserialize', () => false);
+
+      it('does not deserialize result', async function() {
+        let res = await this.subject;
+        expect(res).to.eql({
+          "type": "post",
+          "title": "loaded",
+          "id": 1,
+          "client_id": "$post1",
+          "rev": 1,
+          "client_rev": 1
+        });
+      });
+
     });
 
     context('when method=GET', function() {

@@ -54,7 +54,7 @@ export default class UrlMiddleware {
    * @private
    */
   _buildQuery(params) {
-    return qs.stringify(params);
+    return qs.stringify(params, { arrayFormat: 'brackets' });
   }
 
   /**

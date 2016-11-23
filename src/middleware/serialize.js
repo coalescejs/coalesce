@@ -16,14 +16,19 @@ export default class SerializeMiddleware {
   }
 
   async call(ctx, next) {
-    let {serialize, entity, method} = ctx;
+    let {serialize, deserialize, entity, method} = ctx;
     const serializer = this._serializerFor(entity);
     if(method !== 'GET' && serialize !== false && !ctx.body) {
       ctx.body = serializer.serialize(entity);
     }
 
-    let res = await next(),
-        graph = this.container.get(Graph);
+    let res = await next();
+
+    if(deserialize === false) {
+      return res;
+    }
+
+    let graph = this.container.get(Graph);
 
     if(!isEmpty(res)) {
       let args;
