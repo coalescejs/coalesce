@@ -21,7 +21,7 @@
       "inflection": "npm:inflection@^1.8.0",
       "lodash": "npm:lodash@^4.11.1",
       "qs": "npm:qs@^6.2.0",
-      "whatwg-fetch": "npm:whatwg-fetch@^0.11.0"
+      "whatwg-fetch": "npm:whatwg-fetch@^2.0.1"
     },
     "devDependencies": {
       "chai": "npm:chai@^3.5.0",
@@ -154,9 +154,6 @@
       "npm:ms@0.7.1": {
         "jspmNodeConversion": false,
         "format": "cjs"
-      },
-      "npm:whatwg-fetch@0.11.1": {
-        "jspmNodeConversion": false
       }
     }
   },

@@ -2,7 +2,7 @@ import { expect } from 'chai';
 
 import fetchMock from 'fetch-mock';
 
-import Container, {User, Tag, Prospect} from '../support/prospect-tags';
+import Container, {User, Tag, Prospect, Profile, Permission, Stage, Account} from '../support/prospect-tags';
 import Model from 'coalesce/model';
 import Adapter from 'coalesce/adapter';
 import Session from 'coalesce/session';
@@ -21,7 +21,6 @@ describe('acceptance/performance', function() {
   });
 
   it('loads lots of data', async function() {
-
     this.timeout(1000 * 60);
 
     for(let i = 1; i <= 1000; i++) {
@@ -41,6 +40,8 @@ describe('acceptance/performance', function() {
 
       fetchMock.once(`/prospects/${i}`, JSON.stringify({
         id: i,
+        account: i,
+        stage: 1,
         rev: 2,
         name: `Prospect${i}`,
         user: i,
@@ -54,6 +55,7 @@ describe('acceptance/performance', function() {
         id: i,
         rev: 2,
         name: `User${i}`,
+        profile: 2
       }));
 
       await prospect.user.load();

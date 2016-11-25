@@ -6,11 +6,10 @@ import IdManager from '../id-manager';
  */
 export default class QueryParamsMiddleware {
 
-  static singleton = true;
-
   async call(ctx, next) {
     if(ctx.entity && ctx.entity.isQuery) {
-      ctx.query = this.serializeParams(ctx.entity);
+      ctx.query = ctx.query || {};
+      Object.assign(ctx.query, this.serializeParams(ctx.entity));
     }
 
     return next();

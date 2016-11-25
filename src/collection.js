@@ -61,6 +61,25 @@ export default class Collection extends Entity {
     return Array.from(this).filter(...args);
   }
 
+  /**
+   * @deprecated
+   */
+  every(...args) {
+    return Array.from(this).every(...args);
+  }
+
+  addObject() {
+    // TODO
+  }
+
+  removeObject() {
+    // TODO
+  }
+
+  setObjects() {
+    // TODO
+  }
+
   get(index) {
     let clientId = this._data[index];
     if(!clientId) {
@@ -105,6 +124,13 @@ export default class Collection extends Entity {
   }
 
   get size() {
+    return this._data.length;
+  }
+
+  /**
+   * @deprecated
+   */
+  get length() {
     return this._data.length;
   }
 

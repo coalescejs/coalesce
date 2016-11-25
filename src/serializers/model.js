@@ -112,7 +112,6 @@ export default class ModelSerializer extends EntitySerializer {
     serialized[key] = value;
   }
 
-  // TODO pass type in?
   deserialize(hash, graph=this.container.get(Graph), defaults) {
     let data = {...defaults},
         type = hash.type || data.type;

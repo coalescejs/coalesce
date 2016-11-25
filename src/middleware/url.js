@@ -1,13 +1,11 @@
 import {isEmpty} from 'lodash';
-import {camelize, pluralize} from 'inflection';
+import {pluralize} from 'inflection';
 import qs from 'qs';
 
 /**
  * Builds the url for the request.
  */
 export default class UrlMiddleware {
-
-  static singleton = true;
 
   constructor(baseUrl='/') {
     this.baseUrl = baseUrl;
@@ -17,6 +15,11 @@ export default class UrlMiddleware {
     if(!ctx.url) {
       ctx.url = this.resolveUrl(ctx);
     }
+
+    if(ctx.query && !isEmpty(ctx.query)) {
+      ctx.url = this.appendQuery(ctx.url, ctx.query);
+    }
+
     return next();
   }
 
@@ -26,7 +29,7 @@ export default class UrlMiddleware {
    * @param  {object} options
    * @return {String}         the url
    */
-  resolveUrl({entity, query, action}) {
+  resolveUrl({entity, action}) {
     console.assert(entity.isEntity, "Entity is required");
     let typeKey,
         id;
@@ -43,18 +46,7 @@ export default class UrlMiddleware {
       url = `${url}/${action}`;
     }
 
-    if(query && !isEmpty(query)) {
-      url = `${url}?${this._buildQuery(query)}`;
-    }
-
     return url;
-  }
-
-  /**
-   * @private
-   */
-  _buildQuery(params) {
-    return qs.stringify(params, { arrayFormat: 'brackets' });
   }
 
   /**
@@ -83,8 +75,21 @@ export default class UrlMiddleware {
    * @private
    */
   _pathForType(type) {
-    var camelized = camelize(type, true);
-    return pluralize(camelized);
+    return pluralize(type);
+  }
+
+  appendQuery(url, query) {
+    let joinChar;
+    if(url.indexOf('?') === -1) {
+      joinChar = '?';
+    } else {
+      joinChar = '&';
+    }
+    return url + joinChar + this.stringify(query);
+  }
+
+  stringify(query) {
+    return qs.stringify(query, { arrayFormat: 'brackets' });
   }
 
 }

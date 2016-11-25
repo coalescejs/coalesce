@@ -5,8 +5,6 @@ import {defaults} from 'lodash';
  */
 export default class JsonMiddleware {
 
-  static singleton = true;
-
   async call(ctx, next) {
     let headers = ctx.headers = ctx.headers || {};
     defaults(headers, {

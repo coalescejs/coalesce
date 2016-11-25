@@ -170,8 +170,12 @@ describe('adapter', function() {
       return this.session.build(Post, {id: 1, title: 'More Persistent'});
     });
     lazy('name', () => 'approve');
+    lazy('method', () => 'POST');
     lazy('params', () => { return {}; });
-    lazy('opts', () => null);
+    lazy('opts', function() {
+      let {method} = this;
+      return {method};
+    });
 
     subject(function() {
       return this.adapter.remoteCall(this.context, this.name, this.params, this.opts);
@@ -204,6 +208,30 @@ describe('adapter', function() {
         this.subject;
         let {body} = fetchMock.lastCall()[1];
         expect(JSON.parse(body)).to.eql(this.params);
+      });
+
+    });
+
+    context('with method=GET', function() {
+
+      lazy('method', () => 'GET');
+
+      context('and params set', function() {
+
+        lazy('params', function() {
+          return {sort: 'desc'};
+        });
+
+        beforeEach(function() {
+          fetchMock.get('/posts/1/approve?sort=desc', JSON.stringify({type: 'post', id: 1, title: 'More Persistent'}));
+        });
+
+        it('uses params in query', function() {
+          this.subject;
+          let {body} = fetchMock.lastCall()[1];
+          expect(body).to.be.undefined;
+        });
+
       });
 
     });

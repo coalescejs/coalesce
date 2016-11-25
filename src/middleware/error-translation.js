@@ -12,8 +12,6 @@ import {
  */
 export default class ErrorTranslationMiddleware {
 
-  static singleton = true;
-
   async call({entity}, next) {
     let response;
     try {

@@ -8,7 +8,6 @@ import {isEmpty} from 'lodash';
  */
 export default class SerializeMiddleware {
 
-  static singleton = true;
   static dependencies = [Container];
 
   constructor(container) {

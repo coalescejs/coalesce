@@ -3,8 +3,6 @@
  */
 export default class EmbeddedMiddleware {
 
-  static singleton = true;
-
   async call({plan, entity}, next) {
     if(entity._parent) {
       console.assert(plan, "Plan required for embedded operations");

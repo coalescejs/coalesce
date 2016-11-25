@@ -10,13 +10,15 @@ export default class ModelMerge {
   static singleton = true;
 
   merge(ours, ancestor, theirs) {
-    for(var field of ours.schema.attributes()) {
-      this.mergeAttribute(ours, ancestor, theirs, field);
+    for(var field of ours.schema.fields()) {
+      if(field.kind === 'attribute' || field.kind === 'belongsTo' && field.owner) {
+        this.mergeField(ours, ancestor, theirs, field);
+      }
     }
     return ours;
   }
 
-  mergeAttribute(ours, ancestor, theirs, field) {
+  mergeField(ours, ancestor, theirs, field) {
     var name = field.name,
         oursValue = ours[name],
         ancestorValue = ancestor[name],

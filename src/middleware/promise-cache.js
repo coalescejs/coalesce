@@ -4,8 +4,6 @@
  */
 export default class PromiseCacheMiddleware {
 
-  static singleton = true;
-
   promises = {};
 
   async call({method, entity}, next) {

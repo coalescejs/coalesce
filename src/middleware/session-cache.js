@@ -6,8 +6,6 @@
  */
 export default class SessionCacheMiddleware {
 
-  static singleton = true;
-
   async call({method, entity, session, refresh}, next) {
     if( method === 'GET' &&
         session &&

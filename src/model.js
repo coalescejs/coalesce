@@ -18,7 +18,10 @@ export default class Model extends Entity {
 
   static isModel = true;
 
-  _data = {isNew: false, isDeleted: false};
+  _data = {
+    isNew: false,
+    isDeleted: false
+  };
   clientRev = 1;
 
   constructor(graph, {id, clientId, ...rest}) {

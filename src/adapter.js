@@ -197,6 +197,14 @@ export default class Adapter {
       opts.method = opts.type;
     }
 
+    if(opts && opts.method === 'GET' && body !== undefined) {
+      opts.query = {
+        ...opts.query,
+        ...body
+      };
+      body = undefined;
+    }
+
     let ctx = {
       entity,
       action,

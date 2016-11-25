@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 
 import Container, {Post} from '../support/simple-hierarchy';
+import Model from 'coalesce/model';
 import UrlMiddleware from 'coalesce/middleware/url';
 import Graph from 'coalesce/graph';
 import Query from 'coalesce/query';
@@ -12,7 +13,12 @@ describe('middleware/url', function() {
     return this.container.get(UrlMiddleware);
   });
 
-  describe('.resolveUrl()', function() {
+  describe('.call()', function() {
+
+    lazy('ctx', function() {
+      let {graph, entity, action, query, url} = this;
+      return {graph, entity, action, query, url};
+    })
 
     lazy('graph', function() {
       return this.container.get(Graph);
@@ -23,14 +29,37 @@ describe('middleware/url', function() {
     lazy('action', () => undefined);
     lazy('query', () => undefined);
 
+    lazy('next', function() {
+      return () => {};
+    });
+
     subject(function() {
-      return this.middleware.resolveUrl({entity: this.entity, action: this.action, query: this.query});
+      return this.middleware.call(this.ctx, this.next);
     });
 
     context('with model', function() {
 
-      it('resolves to singular resource root', function() {
-        expect(this.subject).to.eq(`/posts/1`);
+      it('resolves to singular resource root', async function() {
+        await this.subject;
+        expect(this.ctx.url).to.eq(`/posts/1`);
+      });
+
+      context('with compound typeKey', function() {
+
+        class CompoundPost extends Model {};
+        CompoundPost.defineSchema({
+          typeKey: 'compound_post'
+        });
+
+        lazy('entity', function() {
+          return this.graph.build(CompoundPost, {id: 1});
+        });
+
+        it('resolves to singular resource root', async function() {
+          await this.subject;
+          expect(this.ctx.url).to.eq(`/compound_posts/1`);
+        });
+
       });
 
     });
@@ -41,8 +70,9 @@ describe('middleware/url', function() {
         return this.graph.build(Query, Post, {});
       });
 
-      it('resolves to collective resource root', function() {
-        expect(this.subject).to.eq(`/posts`);
+      it('resolves to collective resource root', async function() {
+        await this.subject;
+        expect(this.ctx.url).to.eq(`/posts`);
       });
 
       context('with params', function() {
@@ -53,8 +83,9 @@ describe('middleware/url', function() {
           return {q: 'asd'};
         });
 
-        it('adds params', function() {
-          expect(this.subject).to.eq(`/posts?q=asd`);
+        it('adds params', async function() {
+          await this.subject;
+          expect(this.ctx.url).to.eq(`/posts?q=asd`);
         });
 
       });
@@ -69,8 +100,9 @@ describe('middleware/url', function() {
         return this.container.get(UrlMiddleware, this.baseUrl);
       });
 
-      it('prefixes baseUrl', function() {
-        expect(this.subject).to.eq(`https://cdn.com/posts/1`);
+      it('prefixes baseUrl', async function() {
+        await this.subject;
+        expect(this.ctx.url).to.eq(`https://cdn.com/posts/1`);
       });
 
     });
