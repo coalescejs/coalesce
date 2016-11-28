@@ -9,6 +9,8 @@ import IdManager from 'coalesce/id-manager';
 import Graph from 'coalesce/graph';
 import Query from 'coalesce/query';
 
+import {EntityNotFound} from 'coalesce/errors';
+
 describe('session', function() {
 
   lazy('container', () => new DefaultContainer());
@@ -403,6 +405,28 @@ describe('session', function() {
         let res = await this.subject;
         expect(res.title).to.eq('loaded title');
         expect(res.session).to.eq(this.session);
+      });
+
+    });
+
+    context('when adapter throws EntityNotFound', function() {
+
+      lazy('Adapter', function() {
+        let container = this.container;
+        return class TestAdapter {
+          async load(entity) {
+            throw new EntityNotFound(entity, {});
+          }
+        };
+      });
+
+      it('marks the entity as deleted', async function() {
+        try {
+          await this.subject;
+          expect(false).to.be.true;
+        } catch(err) {
+          expect(err.entity.isDeleted).to.be.true;
+        }
       });
 
     });

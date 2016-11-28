@@ -6,6 +6,8 @@ import Container from './container';
 import Query from './query';
 import Plan from './session/plan';
 
+import {EntityNotFound} from './errors';
+
 import isSuperset from './utils/is-superset';
 
 /**
@@ -152,15 +154,17 @@ export default class Session extends Graph {
     let adapter = this.container.adapterFor(entity);
 
     if(typeof opts !== 'object') {
-      // backwards compatibility with old API
+      // @deprecated backwards compatibility with old API
       return this.find(...arguments);
     }
 
     return adapter.load(entity, opts, this).then((serverEntity) => {
       return this.merge(serverEntity);
     }, (error) => {
-      // TODO: think through 404 errors, delete the entity?
-      throw this.rollback(entity);
+      if(error instanceof EntityNotFound) {
+        entity.isDeleted = true;
+      }
+      throw error;
     });
   }
 
@@ -447,6 +451,9 @@ export default class Session extends Graph {
   /**
    * Invoked when a server operation fails and the shadow needs to be rolled
    * back to an earlier version.
+   *
+   * TODO: only rollback if the original is an earlier version that the shadow:
+   * could be the case where there are multiple pending rollbacks?
    *
    * @param  {type} original the value to rollback to
    * @return {type}          the rolled back entity
