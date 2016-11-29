@@ -9,7 +9,6 @@ import UrlMiddleware from './middleware/url';
 import SerializeMiddleware from './middleware/serialize';
 import JsonMiddleware from './middleware/json';
 import FetchMiddleware from './middleware/fetch';
-import SessionCacheMiddleware from './middleware/session-cache';
 import PromiseCacheMiddleware from './middleware/promise-cache';
 import EmbeddedMiddleware from './middleware/embedded';
 import ErrorTranslationMiddleware from './middleware/error-translation';
@@ -30,7 +29,6 @@ export default class Adapter {
   static middleware = new MiddlewareChain([
     EmbeddedMiddleware,
     PromiseCacheMiddleware,
-    SessionCacheMiddleware,
     QueryParamsMiddleware,
     UrlMiddleware,
     SerializeMiddleware,

@@ -151,12 +151,26 @@ export default class Session extends Graph {
    * @return {Promise}
    */
   async load(entity, opts={}) {
-    let adapter = this.container.adapterFor(entity);
-
     if(typeof opts !== 'object') {
       // @deprecated backwards compatibility with old API
       return this.find(...arguments);
     }
+
+    let existing = this.get(entity);
+    if(existing && !existing._invalid) {
+      // Currently caching strategies all reference the root session.
+      // TODO: add support for separate caching strategies in child sessions
+      let rootSession = this;
+      while(rootSession.parent) {
+        rootSession = rootSession.parent;
+      }
+      let cachingStrategy = this.container.cachingStrategyFor(entity, rootSession);
+      if(cachingStrategy.useCache(existing, opts)) {
+        return existing;
+      }
+    }
+
+    let adapter = this.container.adapterFor(entity);
 
     return adapter.load(entity, opts, this).then((serverEntity) => {
       return this.merge(serverEntity);
@@ -412,6 +426,9 @@ export default class Session extends Graph {
         shadow.assign(entity);
       }
     }
+
+    delete entity._invalid;
+
     // recurse on detached and embedded children
     for(var child of childrenToRecurse) {
       this.merge(child);
@@ -504,6 +521,13 @@ export default class Session extends Graph {
   }
 
   /**
+   * @deprecated alias for commit
+   */
+  markClean(...args) {
+    return this.commit(...args);
+  }
+
+  /**
    * Return a plan consisting of what operations would take place if the passed
    * in collection of entities is persisted.
    *
@@ -543,6 +567,42 @@ export default class Session extends Graph {
       return callback.call(binding || this);
     } finally {
       this._dirtyCheckingSuspended = false;
+    }
+  }
+
+  /**
+   * Invalidate an entity. This will ensure subsequent loads skip the session
+   * cache.
+   *
+   * @method invalidate
+   * @param {Model} model
+   */
+  invalidate(entity) {
+    // TODO move this to symbol?
+    entity._invalid = true;
+    return entity;
+  }
+
+  /**
+   * @deprecated alias for invalidate
+   */
+  invalidateQuery(...args) {
+    return this.invalidate(...args);
+  }
+
+  /**
+   * Invalidates all queries corresponding to a particular Type.
+   *
+   * @method invalidateQueries
+   * @param {Type} type Type to invalidate
+   */
+  invalidateQueries(type) {
+    type = this.container.typeFor(type);
+    // TODO: OPTIMIZE?
+    for(let entity of this) {
+      if(entity.isQuery && entity.type === type) {
+        this.invalidate(entity);
+      }
     }
   }
 

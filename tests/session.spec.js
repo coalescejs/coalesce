@@ -371,11 +371,14 @@ describe('session', function() {
 
     lazy('Adapter', function() {
       let container = this.container;
+      let self = this;
+      this.adapterHit = false;
       return class TestAdapter {
         async load(entity) {
           let res = entity.fork(container.get(Graph));
           res.title = 'loaded title';
           res.rev = 1;
+          self.adapterHit = true;
           return res;
         }
       };
@@ -393,6 +396,64 @@ describe('session', function() {
       let res = await this.subject;
       expect(res.title).to.eq('loaded title');
       expect(res.session).to.eq(this.session);
+      expect(this.adapterHit).to.be.true;
+    });
+
+    context('when model already loaded', function() {
+
+      beforeEach(function() {
+        this.session.merge(new this.Post(this.container.get(Graph), {id: 1, title: "a title"}));
+      });
+
+      lazy('cachingStrategy', function() {
+        return this.container.cachingStrategyFor(this.Post, this.session);
+      });
+
+      context('when cachingStrategy indicates to not use cache', function() {
+
+        beforeEach(function() {
+          this.cachingStrategy.useCache = () => false;
+        });
+
+        it('uses adapter', async function() {
+          let res = await this.subject;
+          expect(res.title).to.eq('loaded title');
+          expect(res.session).to.eq(this.session);
+          expect(this.adapterHit).to.be.true;
+        });
+
+      });
+
+      context('when cachingStrategy indicates to use cache', function() {
+
+        beforeEach(function() {
+          this.cachingStrategy.useCache = () => true;
+        });
+
+        it('hits cached data', async function() {
+          let res = await this.subject;
+          expect(res.title).to.eq('a title');
+          expect(res).to.eq(this.entity);
+          expect(this.adapterHit).to.not.be.true;
+        });
+
+        context('when .invalidate() called', function() {
+
+          beforeEach(function() {
+            this.session.invalidate(this.entity);
+          });
+
+          it('uses adapter', async function() {
+            let res = await this.subject;
+            expect(res.title).to.eq('loaded title');
+            expect(res.session).to.eq(this.session);
+            expect(this.adapterHit).to.be.true;
+          });
+
+        });
+
+      });
+
     });
 
     context('with type and id as arguments', function() {
@@ -718,6 +779,22 @@ describe('session', function() {
 
       });
 
+    });
+
+  });
+
+  describe('.invalidate()', function() {
+
+    lazy('entity', function() {
+      return this.session.fetch(this.Post, {id: 1});
+    });
+
+    subject(function() {
+      return this.session.invalidate(this.entity);
+    });
+
+    it('invalidates entity', function() {
+      expect(this.subject._invalid).to.be.true;
     });
 
   });

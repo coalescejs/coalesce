@@ -4,6 +4,8 @@ export * from './collection.spec';
 
 export * from './container.spec';
 
+export * from './caching-strategy.spec';
+
 export * from './default-container.spec';
 
 export * from './graph.spec';
@@ -17,7 +19,6 @@ export * from './middleware/error-translation.spec';
 export * from './middleware/query-params.spec';
 export * from './middleware/promise-cache.spec';
 export * from './middleware/serialize.spec';
-export * from './middleware/session-cache.spec';
 export * from './middleware/url.spec';
 
 export * from './model.spec';

@@ -4,6 +4,7 @@ import Entity from './entity';
 import Adapter from './adapter';
 import ModelMerge from './merge/model';
 import ModelSerializer from './serializers/model';
+import CachingStrategy from './caching-strategy';
 
 import {assign} from 'lodash';
 
@@ -15,6 +16,7 @@ export default class Model extends Entity {
   static adapter = Adapter;
   static merge = ModelMerge;
   static serializer = ModelSerializer;
+  static cachingStrategy = CachingStrategy;
 
   static isModel = true;
 

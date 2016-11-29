@@ -79,13 +79,13 @@ export default class Container {
    * @param  {type} name    name of provider
    * @return {*}            instance of provider
    */
-  providerFor(type, name) {
+  providerFor(type, name, ...args) {
     type = this.typeFor(type);
     let provider = this._providers.get(type, name);
     if(!provider) {
       provider = this.resolver.resolveProvider(type, name);
     }
-    return this.get(provider);
+    return this.get(provider, ...args);
   }
 
   /**
@@ -103,6 +103,23 @@ export default class Container {
       }
     }
     return this.providerFor(typeOrEntity, 'adapter');
+  }
+
+  /**
+   * Return the caching strategy for a type.
+   *
+   * @param  {*}     type
+   * @return {Merge}     adapter
+   */
+  cachingStrategyFor(typeOrEntity, ...args) {
+    if(typeOrEntity.isEntity) {
+      if(typeOrEntity.isQuery) {
+        typeOrEntity = typeOrEntity.type;
+      } else {
+        typeOrEntity = typeOrEntity.constructor;
+      }
+    }
+    return this.providerFor(typeOrEntity, 'cachingStrategy', ...args);
   }
 
   /**
