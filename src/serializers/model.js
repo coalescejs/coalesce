@@ -12,13 +12,20 @@ export default class ModelSerializer extends EntitySerializer {
   _keyCache = {};
 
   keyFor(field) {
-    if(this._keyCache[field.name]) {
-      return this._keyCache[field.name];
+    let {schema} = field;
+    // Separate cache for each schema since multiple models may share the
+    // same serializer instance and have different keys for fields of the
+    // same name.
+    let cache = this._keyCache[schema.typeKey];
+    if(cache && cache[field.name]) {
+      return cache[field.name];
     }
 
-    const key = this._keyFor(field);
-    this._keyCache[field.name] = key;
-    return key;
+    if(!cache) {
+      cache = this._keyCache[schema.typeKey] = {};
+    }
+
+    return cache[field.name] = this._keyFor(field);
   }
 
   /**

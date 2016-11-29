@@ -123,6 +123,11 @@ export default class Collection extends Entity {
     this.splice(0, 1);
   }
 
+  slice(...args) {
+    let clientIds = this._data.slice(...args);
+    return clientIds.map((clientId) => this.graph.get({clientId}));
+  }
+
   get size() {
     return this._data.length;
   }

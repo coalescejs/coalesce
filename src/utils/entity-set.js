@@ -106,6 +106,13 @@ export default class EntitySet {
     return this[this._guidFor(obj)]>=0;
   }
 
+  /**
+   * @deprecated alias for `has`
+   */
+  contains(...args) {
+    return this.has(...args);
+  }
+
   copy(deep=false) {
     var C = this.constructor, ret = new C(), loc = this._size;
     ret._size = loc;
