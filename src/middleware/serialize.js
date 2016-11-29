@@ -19,6 +19,8 @@ export default class SerializeMiddleware {
     const serializer = this._serializerFor(entity);
     if(method !== 'GET' && serialize !== false && !ctx.body) {
       ctx.body = serializer.serialize(entity);
+    } else {
+      ctx.serialize = false;
     }
 
     let res = await next();
@@ -44,6 +46,12 @@ export default class SerializeMiddleware {
       // entity
       res = entity.fork(graph);
     }
+
+    // Metadata will be set via MetaMiddleware
+    if(ctx.meta) {
+      res._meta = ctx.meta;
+    }
+
     return res;
   }
 

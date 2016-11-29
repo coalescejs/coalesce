@@ -84,6 +84,7 @@ export default class Model extends Entity {
     if(!this._loaded) {
       this._loaded = source._loaded;
     }
+    this._meta = source._meta;
     return this;
   }
 

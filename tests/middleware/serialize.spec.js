@@ -100,6 +100,23 @@ describe('middleware/serialize', function() {
 
     });
 
+    context("when metadata on the context", function() {
+
+      lazy('ctx', function() {
+        let {entity, next, body} = this;
+        let meta = {
+          canRead: true
+        };
+        return {entity, next, body, meta};
+      });
+
+      it('sets on entity', async function() {
+        let res = await this.subject;
+        expect(res.meta).to.eql({canRead: true});
+      });
+
+    });
+
   });
 
 });

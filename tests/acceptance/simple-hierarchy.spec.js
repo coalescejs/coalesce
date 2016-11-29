@@ -7,7 +7,6 @@ import Model from 'coalesce/model';
 import Adapter from 'coalesce/adapter';
 import Session from 'coalesce/session';
 import Graph from 'coalesce/graph';
-import Query from 'coalesce/query';
 
 describe('acceptance/simple hierarchy of models', function() {
 

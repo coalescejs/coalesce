@@ -412,7 +412,6 @@ export default class Session extends Graph {
         shadow.assign(entity);
       }
     }
-
     // recurse on detached and embedded children
     for(var child of childrenToRecurse) {
       this.merge(child);
@@ -443,6 +442,10 @@ export default class Session extends Graph {
 
     var strategy = this.container.mergeFor(serverEntity.constructor);
     strategy.merge(entity, shadow, serverEntity);
+
+    if(serverEntity.meta) {
+      entity._meta = serverEntity.meta;
+    }
 
     return entity;
   }
@@ -522,6 +525,7 @@ export default class Session extends Graph {
     for(var entity of entities) {
       this.commit(entity);
     }
+    // TODO: need to rollback when plan fails
     return plan.execute();
   }
 

@@ -6,6 +6,7 @@ import {clone} from 'lodash';
 export default class Entity {
 
   _tracking = 0;
+  _meta = undefined;
 
   constructor(graph) {
     console.assert(graph, `Entity must be associated with a graph`);
@@ -23,6 +24,16 @@ export default class Entity {
    */
   get graph() {
     return this._graph;
+  }
+
+
+  /**
+   * Optional metadata returned from the server related to this entity.
+   *
+   * @return {any}
+   */
+  get meta() {
+    return this._meta;
   }
 
   /**
@@ -62,6 +73,7 @@ export default class Entity {
     this._data = clone(source._data);
     this._parent = source._parent;
     this._loaded = source._loaded;
+    this._meta = source._meta;
     return this;
   }
 

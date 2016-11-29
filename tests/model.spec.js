@@ -87,14 +87,16 @@ describe('model', function() {
 
   describe('.assign()', function() {
 
-    lazy('source', function() { return new this.Post(this.graph, {title: 'A'}); });
+    lazy('source', function() { return new this.Post(this.graph, {title: 'A', _meta: {test: true}, _parent: 'asd'}); });
     lazy('target', function() { return new this.Post(this.graph, {title: 'B'}); });
 
     subject(function() { return this.target.assign(this.source); });
 
-    it('copies attributes', function() {
+    it('copies attributes and metadata', function() {
       expect(this.subject.title).to.eq('A');
       expect(this.subject._data).to.eql(this.source._data);
+      expect(this.subject._meta).to.eql({test: true});
+      expect(this.subject._parent).to.eql('asd');
     });
 
   });
