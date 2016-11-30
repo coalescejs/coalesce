@@ -10,7 +10,7 @@ export * from './default-container.spec';
 
 export * from './graph.spec';
 
-export * from './merge/array.spec';
+export * from './merge/collection.spec';
 export * from './merge/model.spec';
 
 export * from './middleware-chain.spec';

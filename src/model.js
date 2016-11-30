@@ -55,14 +55,6 @@ export default class Model extends Entity {
     return false;
   }
 
-  get isDirty() {
-    if(this.session) {
-      return this.session.isEntityDirty(this);
-    } else {
-      return;
-    }
-  }
-
   /**
    * @override
    */

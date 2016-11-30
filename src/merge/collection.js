@@ -1,22 +1,20 @@
 import isEqual from '../utils/is-equal';
 import ArrayDiff from '../utils/array-diff';
 
-import {find} from 'lodash';
-
 /**
  * Merge strategy for queries. Currently the logic is to just apply
  * all the new changes on top of any local changes.
  *
  * TODO: handle conflicts, currently theirs will always win
  */
-export default class ArrayMerge {
+export default class CollectionMerge {
 
   static singleton = true;
 
   merge(ours, ancestor, theirs) {
 
-    var oursDiff = Array.from(eachUncommon(new ArrayDiff(ours, ancestor, isEqual))),
-        theirsDiff = Array.from(eachUncommon(new ArrayDiff(theirs, ancestor, isEqual))),
+    var oursDiff = Array.from(eachUncommon(new ArrayDiff(Array.from(ours), Array.from(ancestor), isEqual))),
+        theirsDiff = Array.from(eachUncommon(new ArrayDiff(Array.from(theirs), Array.from(ancestor), isEqual))),
         indexTransform = 0,
         oursDiffIndex = 0,
         theirsDiffIndex = 0,

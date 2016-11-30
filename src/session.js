@@ -157,7 +157,7 @@ export default class Session extends Graph {
     }
 
     let existing = this.get(entity);
-    if(existing && !existing._invalid) {
+    if(existing && !existing._invalid && !opts.refresh) {
       // Currently caching strategies all reference the root session.
       // TODO: add support for separate caching strategies in child sessions
       let rootSession = this;
@@ -236,10 +236,6 @@ export default class Session extends Graph {
     if(this._dirtyCheckingSuspended) {
       return;
     }
-    // TODO Embedded models dirty their parents as well
-    // if(entity._embeddedParent) {
-    //   this.touch(entity._embeddedParent);
-    // }
     console.assert(this.has(entity), `${entity} is not part of a session`);
     if(!entity.isNew) {
       var shadow = this.shadows.get(entity);
@@ -356,7 +352,7 @@ export default class Session extends Graph {
     }
 
     var entity = this.fetch(serverEntity),
-        shadow = this.shadows.get(serverEntity);
+        shadow = this.getShadow(serverEntity);
 
     // No need to merge any data for unloaded entities
     if(!serverEntity.isLoaded) {
@@ -435,6 +431,20 @@ export default class Session extends Graph {
     }
 
     return entity;
+  }
+
+  /**
+   * Returns the shadow corresponding to the entity or null if none exist or the
+   * shadow instance is "unloaded".
+   *
+   * @return Entity
+   */
+  getShadow(entity) {
+    let shadow = this.shadows.get(entity);
+    if(shadow && !shadow.isLoaded) {
+      return null;
+    }
+    return shadow;
   }
 
   /**

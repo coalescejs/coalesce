@@ -92,7 +92,15 @@ export default class ModelSerializer extends EntitySerializer {
       serializer = this.serializerFor(field.typeKey);
     } else {
       serializer = this.serializerFor('id');
-      value = value.id;
+      let id = value.id;
+      if(!id) {
+        console.assert(value.clientId, "Neither clientId nor id available");
+        // It is possible the model pointed to by the belongsTo is not loaded
+        // in the graph we are serializing. In this case we just directly
+        // translate the clientId to an id via the id-manager
+        id = this.idManager.getId(field.typeKey, value.clientId);
+      }
+      value = id;
     }
 
     if(serializer && value !== null) {
@@ -127,23 +135,23 @@ export default class ModelSerializer extends EntitySerializer {
 
     type = this.typeFor(type);
 
-    for(let field of type.schema.metaFields()) {
-      this.extractField(hash, data, field, graph);
+    let {schema} = type;
+
+    // Need to extract identifiers first in order to reify clientId
+    this.extractField(hash, data, schema.id, graph);
+    this.extractField(hash, data, schema.clientId, graph);
+
+    let model = this.create(graph, type, data);
+
+    for(let field of type.schema.fields()) {
+      // these fields already extracted above
+      if(field.name === 'id' || field.name === 'clientId') {
+        continue;
+      }
+      this.extractField(hash, model, field, graph);
     }
 
-    for(let field of type.schema.attributes()) {
-      this.extractField(hash, data, field, graph);
-    }
-
-    // Create the model before we populate relationship fields. This is
-    // because we want its id to be reified first.
-    data = this.create(graph, type, data);
-
-    for(let field of type.schema.relationships()) {
-      this.extractField(hash, data, field, graph);
-    }
-
-    return data;
+    return model;
   }
 
   extractField(hash, data, field, graph) {

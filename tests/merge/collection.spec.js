@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 
-import ArrayMerge from 'coalesce/merge/array';
+import CollectionMerge from 'coalesce/merge/collection';
 
 function q(...args) {
   return args.map((clientId) => { return {clientId}; });
 }
 
-describe('merge/array', function() {
+describe('merge/collection', function() {
 
   lazy('session', function() {
     let s = {};
@@ -21,7 +21,7 @@ describe('merge/array', function() {
     lazy('theirs', () => q());
 
     subject(function() {
-      return new ArrayMerge().merge(this.ours, this.ancestor, this.theirs, this.session);
+      return new CollectionMerge().merge(this.ours, this.ancestor, this.theirs, this.session);
     });
 
     context('when new element added in theirs', function() {

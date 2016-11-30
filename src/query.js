@@ -1,9 +1,12 @@
 import Collection from './collection';
 import QuerySerializer from './serializers/query';
 
+import CachingStrategy from './caching-strategy';
+
 export default class Query extends Collection {
 
   static serializer = QuerySerializer;
+  static cachingStrategy = CachingStrategy;
 
   constructor(graph, type, params, iterable) {
     super(graph, iterable);

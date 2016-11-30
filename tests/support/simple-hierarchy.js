@@ -54,7 +54,7 @@ Comment.defineSchema({
   },
   relationships: {
     user: {
-      type: 'post',
+      type: 'user',
       kind: 'belongsTo'
     },
     comments: {

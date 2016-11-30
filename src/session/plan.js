@@ -48,7 +48,7 @@ export default class Plan {
     }
 
     const adapter = this.container.adapterFor(type),
-          shadow = this.session.shadows.get(entity),
+          shadow = this.session.getShadow(entity),
           session = this.session;
 
     // Snapshot the entity and the shadow since the execution of the operations

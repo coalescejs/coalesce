@@ -26,7 +26,7 @@ describe('acceptance/simple hierarchy of models', function() {
     //
     // Loading
     //
-    fetchMock.get('/users/1', JSON.stringify({
+    fetchMock.once('/users/1', JSON.stringify({
       type: 'user',
       id: 1,
       rev: 1,
@@ -36,7 +36,7 @@ describe('acceptance/simple hierarchy of models', function() {
     let currentUser = await session.find(User, 1);
     expect(currentUser.name).to.eq('Brogrammer');
 
-    fetchMock.get('/posts?user=1', JSON.stringify([{
+    fetchMock.once('/posts?user=1', JSON.stringify([{
       type: 'post',
       id: 1,
       rev: 1,
@@ -92,26 +92,31 @@ describe('acceptance/simple hierarchy of models', function() {
     // Updating
     //
     session = parentSession.child();
+    let user2 = session.fetchBy(User, {id: 7});
     newPost = session.get(newPost);
 
     newPost.title = "Updated Title";
+    newPost.user = user2;
     let promise = session.flush();
 
     expect(parentSession.get(newPost).title).to.eq('New Post');
 
     fetchMock.put('/posts/3', (url, {body}) => {
-      expect(body).to.not.be.undefined
+      body = JSON.parse(body);
+      expect(body.title).to.eq("Updated Title");
+      expect(body.user).to.eq(7);
       return JSON.stringify({
         type: 'post',
         id: 3,
         rev: 2,
         title: 'Updated Title',
-        user: 1
+        user: 7
       });
     });
     await promise;
 
     expect(newPost.title).to.eq('Updated Title');
+    expect(newPost.user).to.eq(user2);
     expect(parentSession.get(newPost).title).to.eq('Updated Title');
 
     //
@@ -134,7 +139,7 @@ describe('acceptance/simple hierarchy of models', function() {
   it('loads and refreshes existing hierarchy', async function() {
     let {session} = this;
 
-    fetchMock.get('/users/1', JSON.stringify({
+    fetchMock.once('/users/1', JSON.stringify({
       type: 'user',
       id: 1,
       rev: 1,
@@ -149,6 +154,67 @@ describe('acceptance/simple hierarchy of models', function() {
     await session.load(user);
     let postIds = Array.from(posts).map((p) => p.id);
     expect(postIds).to.eql(['2', '3']);
+  });
+
+  it('merges edits cleanly', async function() {
+    fetchMock.once('/posts/1', JSON.stringify({
+      type: 'post',
+      id: 1,
+      rev: 1,
+      title: 'Rough Draft',
+      content: 'This needs some improvement',
+      user: 2,
+      comments: [3, 4]
+    }));
+
+    fetchMock.once('/comments/3', JSON.stringify({
+      type: 'comment',
+      id: 3,
+      rev: 3,
+      body: 'First',
+      user: 2,
+      post: 1
+    }));
+
+    fetchMock.once('/comments/4', JSON.stringify({
+      type: 'comment',
+      id: 4,
+      rev: 3,
+      body: 'Second',
+      user: 2,
+      post: 1
+    }));
+
+    let {session} = this;
+    let parentSession = session;
+
+    let post = await session.find(Post, 1);
+    let comment1 = await post.comments.get(0).load();
+    let comment2 = await post.comments.get(1).load();
+
+    session = parentSession.child();
+    post = session.fetch(post);
+
+    post.comments.push(session.create(Comment, {body: 'Third'}));
+    post.title = 'Rough Draft 2';
+
+    fetchMock.once('/posts/1', JSON.stringify({
+      type: 'post',
+      id: 1,
+      rev: 2,
+      title: 'Rough Draft',
+      content: 'This is some different content',
+      user: 2,
+      comments: [3, 4, 5]
+    }));
+
+    await post.refresh();
+    session.merge(parentSession.get(post.comments));
+
+    expect(post.title).to.eq('Rough Draft 2');
+    expect(post.content).to.eq('This is some different content');
+    expect(post.comments.size).to.eq(4);
+    expect(post.isDirty).to.be.true;
   });
 
 });

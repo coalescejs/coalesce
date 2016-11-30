@@ -34,7 +34,7 @@ export default class IdManager {
         idMap = this.idMaps[typeKey];
 
     if(!idMap) {
-      idMap = this.idMaps[typeKey] = {};
+      idMap = this.idMaps[typeKey] = new Bimap();
     }
 
     if(id) {
@@ -42,24 +42,33 @@ export default class IdManager {
     }
 
     if(id && clientId) {
-      var existingClientId = idMap[id];
+      var existingClientId = idMap.get(id);
       console.assert(!existingClientId || existingClientId === clientId, "clientId has changed for " + model.toString());
       if(!existingClientId) {
-        idMap[id] = clientId;
+        idMap.set(id, clientId);
       }
     } else if(!clientId) {
       if(id) {
-        clientId = idMap[id];
+        clientId = idMap.get(id);
       }
       if(!clientId) {
         clientId = this._generateClientId(typeKey);
       }
       model.clientId = clientId;
       if(id) {
-        idMap[id] = clientId;
+        idMap.set(id, clientId);
       }
     } // else NO-OP, nothing to do if they already have a clientId and no id
     return clientId;
+  }
+
+  getId(type, clientId) {
+    console.assert(clientId, "Must pass a valid clientId");
+    if(type.typeKey) {
+      type = type.typeKey;
+    }
+    let idMap = this.idMaps[type];
+    return idMap && idMap.inverse(clientId);
   }
 
   getClientId(type, ...args) {
@@ -80,11 +89,40 @@ export default class IdManager {
       type = type.typeKey;
     }
     let idMap = this.idMaps[type];
-    return idMap && idMap[id + ''];
+    return idMap && idMap.get(id + '');
   }
 
   _generateClientId(typeKey) {
     return `$${typeKey}${this.uuid++}`;
+  }
+
+}
+
+
+class Bimap {
+
+  constructor() {
+    this.map = {};
+    this.inverses = {};
+  }
+
+  get(key) {
+    return this.map[key];
+  }
+
+  inverse(value) {
+    return this.inverses[value];
+  }
+
+  set(key, value) {
+    this.inverses[value] = key;
+    return this.map[key] = value;
+  }
+
+  delete(key) {
+    let value = this.get(key);
+    delete this.map[key];
+    delete this.inverses[value];
   }
 
 }

@@ -26,7 +26,6 @@ export default class Entity {
     return this._graph;
   }
 
-
   /**
    * Optional metadata returned from the server related to this entity.
    *
@@ -134,12 +133,30 @@ export default class Entity {
     return this.session.load(this, ...args);
   }
 
+  /**
+   * Load the entity. This is equivalent to calling `session.load(entity)`.
+   *
+   * @return {Promise}
+   */
+  refresh(...args) {
+    console.assert(this.session, "Must be associated with a session");
+    return this.session.refresh(this, ...args);
+  }
+
   isEqual(other) {
     if(!other) {
       return false;
     }
     console.assert(this.clientId && other.clientId, "Must have clientId's set");
     return other.clientId === this.clientId;
+  }
+
+  get isDirty() {
+    if(this.session) {
+      return this.session.isEntityDirty(this);
+    } else {
+      return;
+    }
   }
 
   get isEmbedded() {

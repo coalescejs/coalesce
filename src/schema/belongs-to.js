@@ -5,7 +5,7 @@ export default class BelongsTo extends Relationship {
   defineProperty(prototype) {
     var field = this,
         name = field.name,
-        type = field.type,
+        typeKey = field.typeKey,
         attributeName = field.attributeName;
 
     Object.defineProperty(prototype, name, {
@@ -14,8 +14,9 @@ export default class BelongsTo extends Relationship {
       get: function() {
         let clientId = this._data[attributeName];
         if(clientId) {
-          let res = this.graph.get({clientId});
-          if(res && this.embedded) {
+          let res = this.graph.fetchBy(typeKey, {clientId});
+          console.assert(res, "Entity does not exist");
+          if(this.embedded) {
             res._parent = this.clientId;
           }
           return res;
@@ -27,7 +28,7 @@ export default class BelongsTo extends Relationship {
         const clientId = value && value.clientId;
         console.assert(!value || value.clientId, "Value must have a client id");
         if(value) {
-          value = this.graph.get({clientId});
+          value = this.graph.fetchBy(typeKey, {clientId});
           if(this.embedded) {
             value._parent = this.clientId;
           }

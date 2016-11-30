@@ -388,8 +388,12 @@ describe('session', function() {
       return this.session.fetchBy(this.Post, {id: 1});
     });
 
+    lazy('opts', function() {
+      return {};
+    });
+
     subject(function() {
-      return this.session.load(this.entity);
+      return this.session.load(this.entity, this.opts);
     });
 
     it('loads data', async function() {
@@ -435,6 +439,21 @@ describe('session', function() {
           expect(res.title).to.eq('a title');
           expect(res).to.eq(this.entity);
           expect(this.adapterHit).to.not.be.true;
+        });
+
+        context('when refresh=true', function() {
+
+          lazy('opts', function() {
+            return {refresh: true};
+          });
+
+          it('uses adapter', async function() {
+            let res = await this.subject;
+            expect(res.title).to.eq('loaded title');
+            expect(res.session).to.eq(this.session);
+            expect(this.adapterHit).to.be.true;
+          });
+
         });
 
         context('when .invalidate() called', function() {

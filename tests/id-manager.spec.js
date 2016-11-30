@@ -8,7 +8,7 @@ describe('id-manager', function() {
     return new IdManager();
   });
 
-  describe('.reifyClientId', function() {
+  describe('.reifyClientId()', function() {
 
     it('sets clientId on new record', function() {
       let post = {
@@ -36,6 +36,30 @@ describe('id-manager', function() {
       this.subject.reifyClientId(post2);
       expect(post2.clientId).to.eq(post.clientId);
     });
+
+  });
+
+  describe('.getId()', function() {
+
+    context('when model has id', function() {
+
+      beforeEach(function() {
+        let post = {
+          typeKey: 'post',
+          isModel: true,
+          id: "1"
+        };
+        this.subject.reifyClientId(post);
+        this.clientId = post.clientId;
+      });
+
+      it('returns clientId', function() {
+        let id = this.subject.getId("post", this.clientId);
+        expect(id).to.eq("1");
+      });
+
+    });
+
   });
 
 });
