@@ -1,3 +1,5 @@
+import EventEmitter from 'eventemitter3';
+
 import IdManager from './id-manager';
 import EntitySet from './utils/entity-set';
 import Graph from './graph';
@@ -29,6 +31,7 @@ export default class Session extends Graph {
     this.parent = parent;
     this.shadows = container.get(Graph);
     this.newEntities = new EntitySet();
+    this.ee = new EventEmitter();
   }
 
   get isSession() {
@@ -238,7 +241,7 @@ export default class Session extends Graph {
     }
     console.assert(this.has(entity), `${entity} is not part of a session`);
     if(!entity.isNew) {
-      var shadow = this.shadows.get(entity);
+      var shadow = this.getShadow(entity);
       if(!shadow) {
         this.shadows.update(entity);
       }
@@ -307,7 +310,7 @@ export default class Session extends Graph {
    */
   destroy(entity) {
     if(entity.isNew) {
-      this.newEntities.remove(entity);
+      this.newEntities.delete(entity);
     }
     entity.isDeleted = true;
     this.touch(entity);
@@ -556,10 +559,10 @@ export default class Session extends Graph {
    */
   flush(entities=this.dirtyEntities) {
     let plan = this.plan(entities);
+    this.ee.emit('flush', plan);
     for(var entity of entities) {
       this.commit(entity);
     }
-    // TODO: need to rollback when plan fails
     return plan.execute();
   }
 
@@ -614,6 +617,14 @@ export default class Session extends Graph {
         this.invalidate(entity);
       }
     }
+  }
+
+  on(...args) {
+    return this.ee.on(...args);
+  }
+
+  removeListener(...args) {
+    return this.ee.removeListener(...args);
   }
 
 }

@@ -802,6 +802,24 @@ describe('session', function() {
 
   });
 
+  describe('.flush()', function() {
+
+    subject(function() {
+      return this.session.flush();
+    });
+
+    it('emits flush event', function() {
+      let hit = false;
+      this.session.on('flush', (plan) => {
+        expect(plan).to.be.defined;
+        hit = true;
+      });
+      this.subject;
+      expect(hit).to.be.true;
+    });
+
+  });
+
   describe('.invalidate()', function() {
 
     lazy('entity', function() {

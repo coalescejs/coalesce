@@ -60,6 +60,10 @@ describe('session/plan', function() {
       expect(this.plan.entities.size).to.eq(2);
     });
 
+    it('is iterable', function() {
+      expect(Array.from(this.plan).length).to.eq(2);
+    });
+
   });
 
 

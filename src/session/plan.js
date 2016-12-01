@@ -111,4 +111,8 @@ export default class Plan {
     return res;
   }
 
+  *[Symbol.iterator]() {
+    yield* this.operations.values();
+  }
+
 }

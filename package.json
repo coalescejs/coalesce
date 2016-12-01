@@ -18,6 +18,7 @@
       }
     },
     "dependencies": {
+      "eventemitter3": "npm:eventemitter3@^2.0.2",
       "inflection": "npm:inflection@^1.8.0",
       "lodash": "npm:lodash@^4.11.1",
       "qs": "npm:qs@^6.2.0",

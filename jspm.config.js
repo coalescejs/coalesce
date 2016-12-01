@@ -382,6 +382,7 @@ SystemJS.config({
     "github:*/*.json"
   ],
   map: {
+    "eventemitter3": "npm:eventemitter3@2.0.2",
     "assert": "npm:jspm-nodelibs-assert@0.2.0",
     "buffer": "npm:jspm-nodelibs-buffer@0.2.0",
     "child_process": "npm:jspm-nodelibs-child_process@0.2.0",
