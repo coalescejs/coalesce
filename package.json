@@ -1,7 +1,17 @@
 {
+  "scripts": {
+    "postinstall": "./node_modules/.bin/jspm install",
+    "start": "./node_modules/.bin/testem",
+    "test": "./node_modules/.bin/testem ci"
+  },
+  "devDependencies": {
+    "jspm": "^0.17.0-beta.31",
+    "phantomjs-prebuilt": "^2.1.13",
+    "testem": "^1.13.0"
+  },
   "jspm": {
-    "name": "coalescejs/coalesce2",
-    "version": "dev",
+    "name": "coalescejs/coalescejs",
+    "version": "2.0.0-alpha",
     "registry": "github",
     "format": "esm",
     "directories": {
@@ -20,11 +30,12 @@
     "dependencies": {
       "eventemitter3": "npm:eventemitter3@^2.0.2",
       "inflection": "npm:inflection@^1.8.0",
+      "isomorphic-fetch": "npm:isomorphic-fetch@^2.2.1",
       "lodash": "npm:lodash@^4.11.1",
-      "qs": "npm:qs@^6.2.0",
-      "whatwg-fetch": "npm:whatwg-fetch@^2.0.1"
+      "qs": "npm:qs@^6.2.0"
     },
     "devDependencies": {
+      "babel-polyfill": "npm:babel-polyfill@^6.16.0",
       "chai": "npm:chai@^3.5.0",
       "fetch-mock": "npm:fetch-mock@^5.0.5",
       "babel-plugin-transform-runtime": "npm:babel-plugin-transform-runtime@^6.15.0",
@@ -157,9 +168,5 @@
         "format": "cjs"
       }
     }
-  },
-  "devDependencies": {
-    "jspm": "^0.17.0-beta.31",
-    "testem": "^1.13.0"
   }
 }

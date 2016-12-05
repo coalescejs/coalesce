@@ -6,7 +6,8 @@ SystemJS.config({
       "babel-preset-stage-0": "npm:babel-preset-stage-0@6.16.0",
       "chai": "npm:chai@3.5.0",
       "fetch-mock": "npm:fetch-mock@5.5.0",
-      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.1"
+      "mocha-lazy-bdd": "npm:mocha-lazy-bdd@0.1.1",
+      "babel-polyfill": "npm:babel-polyfill@6.16.0"
     },
     "packages": {
       "npm:babel-messages@6.8.0": {
@@ -130,7 +131,7 @@ SystemJS.config({
       "npm:babel-runtime@6.18.0": {
         "map": {
           "core-js": "npm:core-js@2.4.1",
-          "regenerator-runtime": "npm:regenerator-runtime@0.9.5"
+          "regenerator-runtime": "npm:regenerator-runtime@0.9.6"
         }
       },
       "npm:babel-plugin-transform-async-to-generator@6.16.0": {
@@ -259,11 +260,6 @@ SystemJS.config({
           "type-detect": "npm:type-detect@0.1.1"
         }
       },
-      "npm:encoding@0.1.12": {
-        "map": {
-          "iconv-lite": "npm:iconv-lite@0.4.13"
-        }
-      },
       "npm:fetch-mock@5.5.0": {
         "map": {
           "node-fetch": "npm:node-fetch@1.6.3"
@@ -274,14 +270,15 @@ SystemJS.config({
           "escape-string-regexp": "npm:escape-string-regexp@1.0.5"
         }
       },
-      "npm:node-fetch@1.6.3": {
-        "map": {
-          "encoding": "npm:encoding@0.1.12",
-          "is-stream": "npm:is-stream@1.1.0"
-        }
-      },
       "npm:babel-plugin-transform-runtime@6.15.0": {
         "map": {
+          "babel-runtime": "npm:babel-runtime@6.18.0"
+        }
+      },
+      "npm:babel-polyfill@6.16.0": {
+        "map": {
+          "regenerator-runtime": "npm:regenerator-runtime@0.9.6",
+          "core-js": "npm:core-js@2.4.1",
           "babel-runtime": "npm:babel-runtime@6.18.0"
         }
       }
@@ -382,6 +379,7 @@ SystemJS.config({
     "github:*/*.json"
   ],
   map: {
+    "isomorphic-fetch": "npm:isomorphic-fetch@2.2.1",
     "eventemitter3": "npm:eventemitter3@2.0.2",
     "assert": "npm:jspm-nodelibs-assert@0.2.0",
     "buffer": "npm:jspm-nodelibs-buffer@0.2.0",
@@ -408,7 +406,6 @@ SystemJS.config({
     "url": "npm:jspm-nodelibs-url@0.2.0",
     "util": "npm:jspm-nodelibs-util@0.2.1",
     "vm": "npm:jspm-nodelibs-vm@0.2.0",
-    "whatwg-fetch": "npm:whatwg-fetch@2.0.1",
     "zlib": "npm:jspm-nodelibs-zlib@0.2.0"
   },
   packages: {
@@ -455,7 +452,7 @@ SystemJS.config({
     "npm:browserify-zlib@0.1.4": {
       "map": {
         "pako": "npm:pako@0.2.9",
-        "readable-stream": "npm:readable-stream@2.1.5"
+        "readable-stream": "npm:readable-stream@2.2.2"
       }
     },
     "npm:create-ecdh@4.0.0": {
@@ -583,7 +580,7 @@ SystemJS.config({
     },
     "npm:jspm-nodelibs-http@0.2.0": {
       "map": {
-        "http-browserify": "npm:stream-http@2.4.1"
+        "http-browserify": "npm:stream-http@2.5.0"
       }
     },
     "npm:jspm-nodelibs-url@0.2.0": {
@@ -607,26 +604,6 @@ SystemJS.config({
         "base64-js": "npm:base64-js@1.2.0",
         "isarray": "npm:isarray@1.0.0",
         "ieee754": "npm:ieee754@1.1.8"
-      }
-    },
-    "npm:stream-http@2.4.1": {
-      "map": {
-        "builtin-status-codes": "npm:builtin-status-codes@2.0.0",
-        "xtend": "npm:xtend@4.0.1",
-        "to-arraybuffer": "npm:to-arraybuffer@1.0.1",
-        "inherits": "npm:inherits@2.0.3",
-        "readable-stream": "npm:readable-stream@2.1.5"
-      }
-    },
-    "npm:readable-stream@2.1.5": {
-      "map": {
-        "isarray": "npm:isarray@1.0.0",
-        "string_decoder": "npm:string_decoder@0.10.31",
-        "inherits": "npm:inherits@2.0.3",
-        "core-util-is": "npm:core-util-is@1.0.2",
-        "process-nextick-args": "npm:process-nextick-args@1.0.7",
-        "buffer-shims": "npm:buffer-shims@1.0.0",
-        "util-deprecate": "npm:util-deprecate@1.0.2"
       }
     },
     "npm:pbkdf2@3.0.9": {
@@ -668,6 +645,32 @@ SystemJS.config({
         "process-nextick-args": "npm:process-nextick-args@1.0.7",
         "core-util-is": "npm:core-util-is@1.0.2",
         "util-deprecate": "npm:util-deprecate@1.0.2"
+      }
+    },
+    "npm:encoding@0.1.12": {
+      "map": {
+        "iconv-lite": "npm:iconv-lite@0.4.15"
+      }
+    },
+    "npm:node-fetch@1.6.3": {
+      "map": {
+        "encoding": "npm:encoding@0.1.12",
+        "is-stream": "npm:is-stream@1.1.0"
+      }
+    },
+    "npm:isomorphic-fetch@2.2.1": {
+      "map": {
+        "node-fetch": "npm:node-fetch@1.6.3",
+        "whatwg-fetch": "npm:whatwg-fetch@2.0.1"
+      }
+    },
+    "npm:stream-http@2.5.0": {
+      "map": {
+        "builtin-status-codes": "npm:builtin-status-codes@2.0.0",
+        "xtend": "npm:xtend@4.0.1",
+        "to-arraybuffer": "npm:to-arraybuffer@1.0.1",
+        "readable-stream": "npm:readable-stream@2.2.2",
+        "inherits": "npm:inherits@2.0.3"
       }
     }
   }
