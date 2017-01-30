@@ -21,10 +21,14 @@
     "meta": {
       "*.js": {
         "babelOptions": {
+          "plugins": [
+            "babel-plugin-transform-runtime"
+          ],
           "presets": [
             "babel-preset-stage-0"
           ]
-        }
+        },
+        "loader": "plugin-babel"
       }
     },
     "dependencies": {
