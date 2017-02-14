@@ -6,7 +6,7 @@ import ModelMerge from './merge/model';
 import ModelSerializer from './serializers/model';
 import CachingStrategy from './caching-strategy';
 
-import {assign} from 'lodash';
+import assign from 'lodash/assign';
 
 /**
  * A model is an Entity that has a defined schema and associated data.

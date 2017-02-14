@@ -1,4 +1,6 @@
-import {findIndex, clone, find} from 'lodash';
+import findIndex from 'lodash/findIndex';
+import clone from 'lodash/clone';
+import find from 'lodash/find';
 
 /**
  * Immutable structure reflecting a chain of middleware.

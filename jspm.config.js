@@ -367,7 +367,6 @@ SystemJS.config({
   },
   map: {
     "coalesce2": "github:coalescejs/coalesce2@dev",
-    "plugin-babel": "npm:systemjs-plugin-babel@0.0.17",
     "sinon": "npm:sinon@1.17.6"
   }
 });
@@ -379,6 +378,7 @@ SystemJS.config({
     "github:*/*.json"
   ],
   map: {
+    "plugin-babel": "npm:systemjs-plugin-babel@0.0.21",
     "isomorphic-fetch": "npm:isomorphic-fetch@2.2.1",
     "eventemitter3": "npm:eventemitter3@2.0.2",
     "assert": "npm:jspm-nodelibs-assert@0.2.0",

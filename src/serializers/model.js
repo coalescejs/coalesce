@@ -2,7 +2,8 @@ import EntitySerializer from './entity';
 import Query from '../query';
 import Graph from '../graph';
 
-import { singularize, camelize, underscore, dasherize } from 'inflection';
+import inflection from 'inflection';
+const { singularize, camelize, underscore, dasherize } = inflection;
 
 /**
  * Serializes models.

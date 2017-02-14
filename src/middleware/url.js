@@ -1,5 +1,6 @@
-import {isEmpty} from 'lodash';
-import {pluralize} from 'inflection';
+import isEmpty from 'lodash/isEmpty';
+import inflection from 'inflection';
+const {pluralize} = inflection;
 import qs from 'qs';
 
 /**

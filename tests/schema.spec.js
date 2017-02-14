@@ -2,7 +2,7 @@ import {expect} from 'chai';
 
 import Schema from 'coalesce/schema';
 
-import {some} from 'lodash';
+import some from 'lodash/some';
 
 describe('schema', function() {
 

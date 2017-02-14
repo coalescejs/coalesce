@@ -1,4 +1,4 @@
-import {defaults} from 'lodash';
+import defaults from 'lodash/defaults';
 
 /**
  * Extracts metadata from the payload and sets on the context.

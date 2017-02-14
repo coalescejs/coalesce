@@ -1,6 +1,7 @@
 import Field from './field';
 
-import {dasherize} from 'inflection';
+import inflection from 'inflection';
+const {dasherize} = inflection;
 
 export default class Relationship extends Field {
 

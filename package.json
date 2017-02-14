@@ -5,7 +5,7 @@
     "test": "./node_modules/.bin/testem ci"
   },
   "devDependencies": {
-    "jspm": "^0.17.0-beta.31",
+    "jspm": "0.17.0-beta.31",
     "phantomjs-prebuilt": "^2.1.13",
     "testem": "^1.13.0"
   },
@@ -36,6 +36,7 @@
       "inflection": "npm:inflection@^1.8.0",
       "isomorphic-fetch": "npm:isomorphic-fetch@^2.2.1",
       "lodash": "npm:lodash@^4.11.1",
+      "plugin-babel": "npm:systemjs-plugin-babel@^0.0.21",
       "qs": "npm:qs@^6.2.0"
     },
     "devDependencies": {

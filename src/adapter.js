@@ -2,7 +2,7 @@ import Container from './container';
 
 import diff from './utils/diff';
 
-import {defaults} from 'lodash';
+import defaults from 'lodash/defaults';
 
 import QueryParamsMiddleware from './middleware/query-params';
 import UrlMiddleware from './middleware/url';

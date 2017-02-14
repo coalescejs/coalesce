@@ -1,4 +1,4 @@
-import {clone} from 'lodash';
+import clone from 'lodash/clone';
 
 /**
  * An entity is always associated with a Graph.

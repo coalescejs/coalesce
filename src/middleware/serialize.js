@@ -1,7 +1,7 @@
 import Container from '../container';
 import Graph from '../graph';
 
-import {isEmpty} from 'lodash';
+import isEmpty from 'lodash/isEmpty';
 
 /**
  * Middleware to serialize/deserialize using the serialization layer.
