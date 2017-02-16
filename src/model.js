@@ -55,6 +55,10 @@ export default class Model extends Entity {
     return false;
   }
 
+  get isEmbedded() {
+    return !!this._parent;
+  }
+
   /**
    * @override
    */

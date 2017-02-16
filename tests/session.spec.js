@@ -25,6 +25,37 @@ describe('session', function() {
     return Post;
   });
 
+  lazy('PostWithEmbedded', () => {
+    class Post extends Model {
+    };
+    Post.defineSchema({
+      typeKey: 'post',
+      relationships: {
+        comments: {
+          kind: 'hasMany',
+          type: 'comment',
+          embedded: 'always'
+        }
+      }
+    });
+    return Post;
+  });
+
+  lazy('EmbeddedComment', () => {
+    class Comment extends Model {
+    };
+    Comment.defineSchema({
+      typeKey: 'comment',
+      relationships: {
+        post: {
+          kind: 'belongsTo',
+          type: 'post'
+        }
+      }
+    });
+    return Comment;
+  });
+
   lazy('graph', function() {
     return this.container.get(Graph);
   });
@@ -85,6 +116,43 @@ describe('session', function() {
       expect(this.subject).to.be.an.instanceOf(this.Post);
       expect(this.subject.session).to.eq(this.session);
       expect(this.session.get(this.subject)).to.eq(this.subject);
+    });
+
+  });
+
+  describe('.destroy()', function() {
+
+    lazy('entity', function() {
+      return this.session.build(this.Post, {id: 1});
+    });
+
+    subject(function() {
+      return this.session.destroy(this.entity);
+    });
+
+    it('marks for deletion', function() {
+      expect(this.entity.isDeleted).to.be.false;
+      this.subject;
+      expect(this.entity.isDeleted).to.be.true;
+    });
+
+    context('on entity with embedded children', function() {
+
+      lazy('entity', function() {
+        let graph = this.container.get(Graph);
+        let post = graph.build(this.PostWithEmbedded, {id: 1});
+        let comment = graph.build(this.EmbeddedComment, {post});
+        post.comments.push(comment);
+        return this.session.merge(post);
+      });
+
+      it('also marks children for deletion', function() {
+        let comment = this.entity.comments.get(0);
+        expect(comment.isDeleted).to.be.false;
+        this.subject;
+        expect(comment.isDeleted).to.be.true;
+      });
+
     });
 
   });

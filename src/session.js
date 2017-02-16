@@ -11,6 +11,7 @@ import Plan from './session/plan';
 import {EntityNotFound} from './errors';
 
 import isSuperset from './utils/is-superset';
+import {eachEmbeddedChild} from './utils/embedded';
 
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
@@ -314,6 +315,9 @@ export default class Session extends Graph {
     }
     entity.isDeleted = true;
     this.touch(entity);
+    for(let embeddedChild of eachEmbeddedChild(this, entity)) {
+      this.destroy(embeddedChild);
+    }
     return entity;
   }
 

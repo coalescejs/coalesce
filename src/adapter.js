@@ -87,7 +87,7 @@ export default class Adapter {
       plan.addDependency(entity, root);
 
       let parent = plan.session.get({clientId: entity._parent});
-      // need to make sure te embedded parent has an associated operation
+      // need to make sure the embedded parent has an associated operation
       plan.add(parent);
     }
 

@@ -1,2 +1,3 @@
 - Explore using http://inversify.io/ for dependency injection
 - Think through modifying an unloaded model
+- Embedded HasMany should not be backed by a Query entity

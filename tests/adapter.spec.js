@@ -94,7 +94,9 @@ describe('adapter', function() {
 
   describe('.persist()', function() {
 
-    lazy('session', () => new Session());
+    lazy('session', function() {
+      return this.container.get(Session);
+    });
     lazy('entity', function() {
       return this.session.create(Post, {title: 'Be Persistent'});
     });

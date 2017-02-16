@@ -116,4 +116,45 @@ describe('acceptance/groups with embedded members', function() {
     expect(group.members.size).to.eq(1);
   });
 
+  it('deleting a group with members', async function() {
+
+    let {session} = this;
+    let parentSession = session;
+
+    fetchMock.get('/groups/1', JSON.stringify({
+      type: 'group',
+      id: 1,
+      name: "brogrammers",
+      members: [{
+        id: 4,
+        type: 'member',
+        role: "servant",
+        group: 1,
+        user: 1
+      }],
+      user: 1
+    }));
+
+    let group = await session.load('group', 1);
+    expect(group.members.length).to.eq(1);
+    expect(group.members.get(0).role).to.eq("servant");
+
+    session = parentSession.child();
+
+    group = session.get(group);
+    let member = group.members.get(0);
+
+    fetchMock.delete('/groups/1', JSON.stringify({}));
+
+    session.destroy(group);
+
+    expect(group.isDeleted).to.be.true;
+    expect(member.isDeleted).to.be.true;
+
+    await session.flush();
+
+    expect(group.isDeleted).to.be.true;
+    expect(member.isDeleted).to.be.true;
+  });
+
 });

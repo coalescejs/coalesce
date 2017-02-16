@@ -4,14 +4,14 @@
 export default class EmbeddedMiddleware {
 
   async call({plan, entity}, next) {
-    if(entity._parent) {
+    if(entity.isEmbedded) {
       console.assert(plan, "Plan required for embedded operations");
       let parentEntity = plan.session.get({clientId: entity._parent}),
           parentOp = plan.get(parentEntity);
 
       let res = await parentOp._promise;
 
-      for(var child of res.relatedEntities()) {
+      for(let child of res.relatedEntities()) {
         if(entity.isEqual(child)) {
           return child;
         }
