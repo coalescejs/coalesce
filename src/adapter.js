@@ -9,7 +9,8 @@ import UrlMiddleware from './middleware/url';
 import SerializeMiddleware from './middleware/serialize';
 import JsonMiddleware from './middleware/json';
 import FetchMiddleware from './middleware/fetch';
-import PromiseCacheMiddleware from './middleware/promise-cache';
+import DebounceMiddleware from './middleware/debounce';
+import OrderMiddleware from './middleware/order';
 import EmbeddedMiddleware from './middleware/embedded';
 import ErrorTranslationMiddleware from './middleware/error-translation';
 import MetaMiddleware from './middleware/meta';
@@ -27,8 +28,9 @@ export default class Adapter {
   static dependencies = [Container];
 
   static middleware = new MiddlewareChain([
+    DebounceMiddleware,
+    OrderMiddleware,
     EmbeddedMiddleware,
-    PromiseCacheMiddleware,
     QueryParamsMiddleware,
     UrlMiddleware,
     SerializeMiddleware,

@@ -1,14 +1,14 @@
 import {expect} from 'chai';
 
 import Container, {Post} from '../support/simple-hierarchy';
-import PromiseCacheMiddleware from 'coalesce/middleware/promise-cache';
+import DebounceMiddleware from 'coalesce/middleware/debounce';
 import Session from 'coalesce/session';
 
-describe('middleware/promise-cache', function() {
+describe('middleware/debounce', function() {
 
   lazy('container', () => new Container())
   subject('middleware', function() {
-    return this.container.get(PromiseCacheMiddleware);
+    return this.container.get(DebounceMiddleware);
   });
 
   describe('.call()', function() {

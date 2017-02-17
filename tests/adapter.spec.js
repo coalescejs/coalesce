@@ -36,7 +36,7 @@ describe('adapter', function() {
 
       it('configures UrlMiddleware', function() {
         this.subject;
-        expect(this.klass.middleware.configs[3][1]).to.eq(this.value);
+        expect(this.klass.middleware.configs[4][1]).to.eq(this.value);
       });
 
     });

@@ -2,7 +2,7 @@
  * Middleware to resolve two equivalent pending load operations to the
  * same promise.
  */
-export default class PromiseCacheMiddleware {
+export default class DebounceMiddleware {
 
   promises = {};
 

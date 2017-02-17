@@ -17,7 +17,7 @@ export * from './middleware-chain.spec';
 
 export * from './middleware/error-translation.spec';
 export * from './middleware/query-params.spec';
-export * from './middleware/promise-cache.spec';
+export * from './middleware/debounce.spec';
 export * from './middleware/serialize.spec';
 export * from './middleware/url.spec';
 
@@ -48,6 +48,7 @@ export * from './schema/has-many.spec';
 export * from './utils/diff.spec';
 export * from './utils/entity-set.spec';
 
-export * from './acceptance/simple-hierarchy.spec';
-export * from './acceptance/groups-members.spec';
+export * from './acceptance/concurrency.spec';
+export * from './acceptance/embedded.spec';
 export * from './acceptance/performance.spec';
+export * from './acceptance/simple-hierarchy.spec';
