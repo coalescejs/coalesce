@@ -143,6 +143,16 @@ export default class Entity {
     return this.session.refresh(this, ...args);
   }
 
+  /**
+   * Invalidate the entity. This is equivalent to calling `session.invalidate(entity)`.
+   *
+   * @return {Promise}
+   */
+  invalidate(...args) {
+    console.assert(this.session, "Must be associated with a session");
+    return this.session.invalidate(this, ...args);
+  }
+
   isEqual(other) {
     if(!other) {
       return false;

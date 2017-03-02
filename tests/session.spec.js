@@ -904,4 +904,40 @@ describe('session', function() {
 
   });
 
+  describe('.isDirty', function() {
+
+    subject(function() {
+      return this.session.isDirty;
+    });
+
+    lazy('entity', function() {
+      return this.session.merge(new this.Post(this.graph, {id: 1}));
+    });
+
+    context('when an entity is dirty', function() {
+
+      beforeEach(function() {
+        this.session.touch(this.entity);
+      });
+
+      it('returns true', function() {
+        expect(this.subject).to.be.true;
+      });
+
+    });
+
+    context('when no entities are dirty', function() {
+
+      beforeEach(function() {
+        this.entity;
+      });
+
+      it('returns false', function() {
+        expect(this.subject).to.be.false;
+      });
+
+    });
+
+  });
+
 });

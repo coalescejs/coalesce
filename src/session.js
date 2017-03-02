@@ -299,6 +299,10 @@ export default class Session extends Graph {
     return this.dirtyEntities.has(entity);
   }
 
+  get isDirty() {
+    return this.dirtyEntities.size > 0;
+  }
+
   /**
    * Mark an entity as destroyed. This will cause the underlying adapter to
    * delete the model next time `.flush()` is called. Once that happens, the
