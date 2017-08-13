@@ -8,63 +8,58 @@ import ArrayDiff from '../utils/array-diff';
  * TODO: handle conflicts, currently theirs will always win
  */
 export default class CollectionMerge {
-
   static singleton = true;
 
   merge(ours, ancestor, theirs) {
-
     var oursDiff = Array.from(eachUncommon(new ArrayDiff(Array.from(ours), Array.from(ancestor), isEqual))),
-        theirsDiff = Array.from(eachUncommon(new ArrayDiff(Array.from(theirs), Array.from(ancestor), isEqual))),
-        indexTransform = 0,
-        oursDiffIndex = 0,
-        theirsDiffIndex = 0,
-        oursIndex = 0,
-        theirsIndex = 0;
+      theirsDiff = Array.from(eachUncommon(new ArrayDiff(Array.from(theirs), Array.from(ancestor), isEqual))),
+      indexTransform = 0,
+      oursDiffIndex = 0,
+      theirsDiffIndex = 0,
+      oursIndex = 0,
+      theirsIndex = 0;
 
     // TODO might need to sort by `newIndex`
-    while(true) {
-
+    while (true) {
       var oursChange = oursDiffIndex < oursDiff.length ? oursDiff[oursDiffIndex] : undefined,
-          theirsChange = theirsDiffIndex < theirsDiff.length ? theirsDiff[theirsDiffIndex] : undefined;
+        theirsChange = theirsDiffIndex < theirsDiff.length ? theirsDiff[theirsDiffIndex] : undefined;
 
-      if(!oursChange && !theirsChange) break;
+      if (!oursChange && !theirsChange) {break;}
 
-      if(oursChange && oursChange.added) {
+      if (oursChange && oursChange.added) {
         oursIndex = oursChange.newIndex;
       }
 
-      if(theirsChange && theirsChange.added) {
+      if (theirsChange && theirsChange.added) {
         theirsIndex = theirsChange.newIndex;
       }
 
-      if(oursChange && oursIndex >= theirsIndex) {
+      if (oursChange && oursIndex >= theirsIndex) {
         // As we walk these changes we are mutating `ours` directly.
         // Here we keep track of how much to transform their operations.
-        if(oursChange.added) {
+        if (oursChange.added) {
           indexTransform++;
         } else {
           indexTransform--;
         }
         oursDiffIndex++;
       } else {
-        if(theirsChange.added) {
+        if (theirsChange.added) {
           ours.splice(theirsIndex, 0, theirsChange.item);
         } else {
           ours.splice(theirsIndex, 1);
         }
         theirsDiffIndex++;
       }
-
     }
 
     return ours;
   }
-
 }
 
 function* eachUncommon(diff) {
-  for(var eleDiff of diff.diff) {
-    if(!eleDiff.common) {
+  for (var eleDiff of diff.diff) {
+    if (!eleDiff.common) {
       yield eleDiff;
     }
   }

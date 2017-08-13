@@ -6,7 +6,6 @@ import Container from '../container';
  * A plan represents a plan of action for persisting a collection of models.
  */
 export default class Plan {
-
   static dependencies = [Container];
 
   constructor(container, session, iterable) {
@@ -15,8 +14,8 @@ export default class Plan {
     this.operations = new Map();
     this.entities = container.get(Graph);
     this.shadows = container.get(Graph);
-    if(iterable) {
-      for(var entity of iterable) {
+    if (iterable) {
+      for (var entity of iterable) {
         this.add(entity);
       }
     }
@@ -28,34 +27,34 @@ export default class Plan {
    * @param  {Entity}    entity the entity to add
    * @return {Operation} the operation for this entity
    */
-  add(entity, opts={}) {
-    if(entity.isTransient) {
+  add(entity, opts = {}) {
+    if (entity.isTransient) {
       return;
     }
 
-    console.assert(entity.session === this.session, "Entity is not part of the same session as the plan");
-    console.assert(!entity.isTransient, "Cannot add a transient entity to a plan");
+    console.assert(entity.session === this.session, 'Entity is not part of the same session as the plan');
+    console.assert(!entity.isTransient, 'Cannot add a transient entity to a plan');
     let op = this.get(entity);
-    if(op) {
+    if (op) {
       return op;
     }
 
     let type;
-    if(entity.isCollection) {
+    if (entity.isCollection) {
       type = entity.type;
     } else {
       type = entity.constructor;
     }
 
     const adapter = this.container.adapterFor(type),
-          shadow = this.session.getShadow(entity),
-          session = this.session;
+      shadow = this.session.getShadow(entity),
+      session = this.session;
 
     // Snapshot the entity and the shadow since the execution of the operations
     // will be asynchronous and we want to persist the state of the graph when
     // the plan was created (as oppposed to including future modifications).
     let copiedEntity = this.entities.update(entity),
-        copiedShadow = shadow && this.shadows.update(shadow);
+      copiedShadow = shadow && this.shadows.update(shadow);
 
     op = new Operation(adapter, copiedEntity, copiedShadow, opts, this);
     // NOTE: important to add the operation here to break recursion
@@ -79,7 +78,7 @@ export default class Plan {
    * @param  {Entity} dependency description
    */
   addDependency(entity, dependency) {
-    if(entity.isEqual(dependency)) {
+    if (entity.isEqual(dependency)) {
       return;
     }
     this.add(entity).addDependency(this.add(dependency));
@@ -91,21 +90,26 @@ export default class Plan {
    * @return {Promise}  promise resolving to the set of all affected entities.
    */
   execute() {
-    return Promise.all(Array.from(this.operations.values()).map((op) => {
-      return op.execute().then((entity) => {
-        this.session.merge(entity);
-      }, (error) => {
-        this.session.rollback(error);
-      });
-    }));
+    return Promise.all(
+      Array.from(this.operations.values()).map(op => {
+        return op.execute().then(
+          entity => {
+            this.session.merge(entity);
+          },
+          error => {
+            this.session.rollback(error);
+          }
+        );
+      })
+    );
   }
 
   /**
    * @override
    */
   toString() {
-    let res = "Plan:";
-    for(let op of this.operations.values()) {
+    let res = 'Plan:';
+    for (let op of this.operations.values()) {
       res += `\n${op.toString()}`;
     }
     return res;
@@ -114,5 +118,4 @@ export default class Plan {
   *[Symbol.iterator]() {
     yield* this.operations.values();
   }
-
 }

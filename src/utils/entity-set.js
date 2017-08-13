@@ -8,11 +8,10 @@
   @class EntitySet
 */
 export default class EntitySet {
-
   constructor(iterable) {
     this._size = 0;
-    if(iterable) {
-      for(var o of iterable) {
+    if (iterable) {
+      for (var o of iterable) {
         this.add(o);
       }
     }
@@ -38,11 +37,13 @@ export default class EntitySet {
   */
   clear() {
     var len = this._size;
-    if (len === 0) { return this; }
+    if (len === 0) {
+      return this;
+    }
 
     var guid;
 
-    for (var i=0; i < len; i++){
+    for (var i = 0; i < len; i++) {
       guid = this._guidFor(this[i]);
       delete this[guid];
       delete this[i];
@@ -54,14 +55,13 @@ export default class EntitySet {
   }
 
   add(obj) {
-
     var guid = this._guidFor(obj),
-        idx  = this[guid],
-        len  = this._size;
+      idx = this[guid],
+      len = this._size;
 
-    if (idx>=0 && idx<len && (this[idx] && this._isEqual(this[idx], obj))) {
+    if (idx >= 0 && idx < len && (this[idx] && this._isEqual(this[idx], obj))) {
       // overwrite the existing version
-      if(this[idx] !== obj) {
+      if (this[idx] !== obj) {
         this[idx] = obj;
       }
       return this; // added
@@ -70,32 +70,30 @@ export default class EntitySet {
     len = this._size;
     this[guid] = len;
     this[len] = obj;
-    this._size = len+1;
+    this._size = len + 1;
 
     return this;
   }
 
   delete(obj) {
-
     var guid = this._guidFor(obj),
-        idx  = this[guid],
-        len = this._size,
-        isFirst = idx === 0,
-        isLast = idx === len-1,
-        last;
+      idx = this[guid],
+      len = this._size,
+      isFirst = idx === 0,
+      isLast = idx === len - 1,
+      last;
 
-
-    if (idx>=0 && idx<len && (this[idx] && this._isEqual(this[idx], obj))) {
+    if (idx >= 0 && idx < len && (this[idx] && this._isEqual(this[idx], obj))) {
       // swap items - basically move the item to the end so it can be removed
-      if (idx < len-1) {
-        last = this[len-1];
+      if (idx < len - 1) {
+        last = this[len - 1];
         this[idx] = last;
         this[this._guidFor(last)] = idx;
       }
 
       delete this[guid];
-      delete this[len-1];
-      this._size = len-1;
+      delete this[len - 1];
+      this._size = len - 1;
       return true;
     }
 
@@ -103,7 +101,7 @@ export default class EntitySet {
   }
 
   has(obj) {
-    return this[this._guidFor(obj)]>=0;
+    return this[this._guidFor(obj)] >= 0;
   }
 
   /**
@@ -113,10 +111,12 @@ export default class EntitySet {
     return this.has(...args);
   }
 
-  copy(deep=false) {
-    var C = this.constructor, ret = new C(), loc = this._size;
+  copy(deep = false) {
+    var C = this.constructor,
+      ret = new C(),
+      loc = this._size;
     ret._size = loc;
-    while(--loc>=0) {
+    while (--loc >= 0) {
       ret[loc] = deep ? this[loc].copy() : this[loc];
       ret[this._guidFor(this[loc])] = loc;
     }
@@ -124,14 +124,16 @@ export default class EntitySet {
   }
 
   forEach(callbackFn, thisArg = undefined) {
-    for (var i=0; i < this._size; i++) {
+    for (var i = 0; i < this._size; i++) {
       callbackFn.call(thisArg, this[i], this[i], this);
     }
   }
 
   toString() {
-    var len = this.size, idx, array = [];
-    for(idx = 0; idx < len; idx++) {
+    var len = this.size,
+      idx,
+      array = [];
+    for (idx = 0; idx < len; idx++) {
       array[idx] = this[idx];
     }
     return `EntitySet<${array.join(',')}>`;
@@ -139,12 +141,12 @@ export default class EntitySet {
 
   get(entity) {
     var idx = this[this._guidFor(entity)];
-    if(idx === undefined) return;
+    if (idx === undefined) {return;}
     return this[idx];
   }
 
   *values() {
-    for (var i=0; i < this._size; i++) {
+    for (var i = 0; i < this._size; i++) {
       yield this[i];
     }
   }

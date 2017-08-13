@@ -2,7 +2,6 @@
  * A "node" within a plan that can depend on other operations.
  */
 export default class Operation {
-
   constructor(adapter, entity, shadow, opts, plan) {
     this.adapter = adapter;
     this.entity = entity;
@@ -28,8 +27,8 @@ export default class Operation {
    * @return {type}  description
    */
   execute() {
-    this._depsPromise.then((res) => {
-      this._execute().then((res) => {
+    this._depsPromise.then(res => {
+      this._execute().then(res => {
         this._resolve(res);
       });
     });
@@ -40,8 +39,8 @@ export default class Operation {
    * @private
    */
   _execute() {
-    const {adapter, entity, shadow, opts, session, plan} = this;
-    return adapter.persist(entity, shadow, {plan}, session);
+    const { adapter, entity, shadow, opts, session, plan } = this;
+    return adapter.persist(entity, shadow, { plan }, session);
   }
 
   /**
@@ -50,9 +49,11 @@ export default class Operation {
    * The promise of the resolution of all dependencies.
    */
   get _depsPromise() {
-    return Promise.all(Array.from(this._deps.values()).map(function(dep) {
-      return dep._promise;
-    }));
+    return Promise.all(
+      Array.from(this._deps.values()).map(function(dep) {
+        return dep._promise;
+      })
+    );
   }
 
   /**
@@ -60,11 +61,10 @@ export default class Operation {
    */
   toString() {
     let deps = Array.from(this._deps.values()),
-        depString = "";
-    if(deps.length > 0) {
-      depString = ` depends on ${deps.map((d) => d.entity.toString()).join(', ')}`;
+      depString = '';
+    if (deps.length > 0) {
+      depString = ` depends on ${deps.map(d => d.entity.toString()).join(', ')}`;
     }
     return `${this.entity.toString()}${depString}`;
   }
-
 }

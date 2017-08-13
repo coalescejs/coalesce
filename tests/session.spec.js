@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 import sinon from 'sinon';
 
 import Model from 'coalesce/model';
@@ -9,25 +9,22 @@ import IdManager from 'coalesce/id-manager';
 import Graph from 'coalesce/graph';
 import Query from 'coalesce/query';
 
-import {EntityNotFound} from 'coalesce/errors';
+import { EntityNotFound } from 'coalesce/errors';
 
 describe('session', function() {
-
   lazy('container', () => new DefaultContainer());
   subject('session', function() {
     return this.container.get(Session);
   });
 
   lazy('Post', () => {
-    class Post extends Model {
-    };
-    Post.defineSchema({typeKey: 'post'});
+    class Post extends Model {}
+    Post.defineSchema({ typeKey: 'post' });
     return Post;
   });
 
   lazy('PostWithEmbedded', () => {
-    class Post extends Model {
-    };
+    class Post extends Model {}
     Post.defineSchema({
       typeKey: 'post',
       relationships: {
@@ -42,8 +39,7 @@ describe('session', function() {
   });
 
   lazy('EmbeddedComment', () => {
-    class Comment extends Model {
-    };
+    class Comment extends Model {}
     Comment.defineSchema({
       typeKey: 'comment',
       relationships: {
@@ -61,7 +57,6 @@ describe('session', function() {
   });
 
   describe('.child()', function() {
-
     subject(function() {
       return this.session.child();
     });
@@ -70,12 +65,12 @@ describe('session', function() {
       expect(this.subject).to.be.an.instanceOf(Session);
       expect(this.subject.parent).to.eq(this.session);
     });
-
   });
 
   describe('.build()', function() {
-
-    lazy('hash', () => {return {};});
+    lazy('hash', () => {
+      return {};
+    });
 
     subject(function() {
       return this.session.build(this.Post, this.hash);
@@ -85,12 +80,12 @@ describe('session', function() {
       expect(this.subject).to.be.an.instanceOf(this.Post);
       expect(this.session.get(this.subject)).to.eq(this.subject);
     });
-
   });
 
   describe('.push()', function() {
-
-    lazy('hash', () => {return {};});
+    lazy('hash', () => {
+      return {};
+    });
 
     subject(function() {
       return this.session.create(this.Post, this.hash);
@@ -101,12 +96,12 @@ describe('session', function() {
       expect(this.subject.session).to.eq(this.session);
       expect(this.session.get(this.subject)).to.eq(this.subject);
     });
-
   });
 
   describe('.create()', function() {
-
-    lazy('hash', () => {return {};});
+    lazy('hash', () => {
+      return {};
+    });
 
     subject(function() {
       return this.session.create(this.Post, this.hash);
@@ -117,13 +112,11 @@ describe('session', function() {
       expect(this.subject.session).to.eq(this.session);
       expect(this.session.get(this.subject)).to.eq(this.subject);
     });
-
   });
 
   describe('.destroy()', function() {
-
     lazy('entity', function() {
-      return this.session.build(this.Post, {id: 1});
+      return this.session.build(this.Post, { id: 1 });
     });
 
     subject(function() {
@@ -137,11 +130,10 @@ describe('session', function() {
     });
 
     context('on entity with embedded children', function() {
-
       lazy('entity', function() {
         let graph = this.container.get(Graph);
-        let post = graph.build(this.PostWithEmbedded, {id: 1});
-        let comment = graph.build(this.EmbeddedComment, {post});
+        let post = graph.build(this.PostWithEmbedded, { id: 1 });
+        let comment = graph.build(this.EmbeddedComment, { post });
         post.comments.push(comment);
         return this.session.merge(post);
       });
@@ -152,15 +144,12 @@ describe('session', function() {
         this.subject;
         expect(comment.isDeleted).to.be.true;
       });
-
     });
-
   });
 
   describe('.get()', function() {
-
     lazy('entity', function() {
-      return new this.Post(this.graph, {id: "1"});
+      return new this.Post(this.graph, { id: '1' });
     });
 
     subject(function() {
@@ -168,9 +157,8 @@ describe('session', function() {
     });
 
     context('when entity is part of the session', function() {
-
       lazy('entity', function() {
-        return this.session.build(this.Post, {id: "1"});
+        return this.session.build(this.Post, { id: '1' });
       });
 
       beforeEach(function() {
@@ -180,18 +168,15 @@ describe('session', function() {
       it('returns the same entity', function() {
         expect(this.subject).to.eq(this.entity);
       });
-
     });
 
     context('when entity is not part of the session', function() {
-
       it('returns an entity', function() {
         expect(this.subject).to.not.eq(this.entity);
-        expect(this.subject).to.be.undefined
+        expect(this.subject).to.be.undefined;
       });
 
       context('but is part of parent session', function() {
-
         lazy('parentSession', function() {
           return this.container.get(Session);
         });
@@ -201,7 +186,7 @@ describe('session', function() {
         });
 
         lazy('entity', function() {
-          return this.parentSession.build(this.Post, {id: "1"});
+          return this.parentSession.build(this.Post, { id: '1' });
         });
 
         beforeEach(function() {
@@ -212,17 +197,13 @@ describe('session', function() {
           expect(this.subject).to.not.eq(this.entity);
           expect(this.subject.clientId).to.eq(this.entity.clientId);
         });
-
       });
-
     });
-
   });
 
   describe('.getBy()', function() {
-
     lazy('entity', function() {
-      return new this.Post(this.graph, {id: "1"});
+      return new this.Post(this.graph, { id: '1' });
     });
 
     lazy('params', () => {});
@@ -232,9 +213,8 @@ describe('session', function() {
     });
 
     context('when entity is part of the session', function() {
-
       lazy('entity', function() {
-        return this.session.build(this.Post, {id: "1"});
+        return this.session.build(this.Post, { id: '1' });
       });
 
       beforeEach(function() {
@@ -242,40 +222,39 @@ describe('session', function() {
       });
 
       context('by clientId', function() {
-
-        lazy('params', function() { return {clientId: this.entity.clientId} });
+        lazy('params', function() {
+          return { clientId: this.entity.clientId };
+        });
 
         it('returns the same entity', function() {
           expect(this.subject).to.eq(this.entity);
         });
-
       });
 
       context('by id', function() {
-
-        lazy('params', function() { return {id: this.entity.id} });
+        lazy('params', function() {
+          return { id: this.entity.id };
+        });
 
         it('returns the same entity', function() {
           expect(this.subject).to.eq(this.entity);
         });
-
       });
-
     });
-
   });
 
   describe('.getQuery()', function() {
-
     lazy('entity', function() {
       return this.session.build(Query, this.Post, this.params);
     });
 
     beforeEach(function() {
-      this.entity
+      this.entity;
     });
 
-    lazy('params', () => { return {}; });
+    lazy('params', () => {
+      return {};
+    });
 
     subject(function() {
       return this.session.getQuery(this.Post, this.params);
@@ -284,13 +263,11 @@ describe('session', function() {
     it('returns query', function() {
       expect(this.subject).to.eq(this.entity);
     });
-
   });
 
   describe('.fetch()', function() {
-
     lazy('entity', function() {
-      return new this.Post(this.graph, {id: "1"});
+      return new this.Post(this.graph, { id: '1' });
     });
 
     subject(function() {
@@ -298,9 +275,8 @@ describe('session', function() {
     });
 
     context('when entity is part of the session', function() {
-
       lazy('entity', function() {
-        return this.session.build(this.Post, {id: "1"});
+        return this.session.build(this.Post, { id: '1' });
       });
 
       beforeEach(function() {
@@ -310,35 +286,29 @@ describe('session', function() {
       it('returns the same entity', function() {
         expect(this.subject).to.eq(this.entity);
       });
-
     });
 
     context('when entity is not part of the session', function() {
-
       it('returns an entity', function() {
         expect(this.subject).to.not.eq(this.entity);
         expect(this.subject.id).to.eq(this.entity.id);
         expect(this.subject.session).to.eq(this.session);
       });
-
     });
-
   });
 
   describe('.fetchBy()', function() {
-
     lazy('entity', function() {
-      return new this.Post(this.graph, {id: "1"});
+      return new this.Post(this.graph, { id: '1' });
     });
 
     subject(function() {
-      return this.session.fetchBy(this.Post, {id: this.entity.id});
+      return this.session.fetchBy(this.Post, { id: this.entity.id });
     });
 
     context('when entity is part of the session', function() {
-
       lazy('entity', function() {
-        return this.session.build(this.Post, {id: "1"});
+        return this.session.build(this.Post, { id: '1' });
       });
 
       beforeEach(function() {
@@ -348,22 +318,17 @@ describe('session', function() {
       it('returns the same entity', function() {
         expect(this.subject).to.eq(this.entity);
       });
-
     });
 
     context('when entity is not part of the session', function() {
-
       it('returns an entity', function() {
         expect(this.subject).to.not.eq(this.entity);
         expect(this.subject.id).to.eq(this.entity.id);
       });
-
     });
-
   });
 
   describe('.fetchQuery()', function() {
-
     lazy('entity', function() {
       return this.graph.build(Query, this.Post, this.params);
     });
@@ -377,7 +342,6 @@ describe('session', function() {
     });
 
     context('when entity type is a typeKey', function() {
-
       lazy('type', function() {
         this.container.registerType(this.Post);
         return 'post';
@@ -386,17 +350,15 @@ describe('session', function() {
       it('returns an entity', function() {
         expect(this.subject.type).to.eq(this.Post);
       });
-
     });
 
     context('when entity is part of the session', function() {
-
       lazy('entity', function() {
         return this.session.build(Query, this.Post, this.params);
       });
 
       beforeEach(function() {
-        this.entity
+        this.entity;
       });
 
       beforeEach(function() {
@@ -406,25 +368,20 @@ describe('session', function() {
       it('returns the same entity', function() {
         expect(this.subject).to.eq(this.entity);
       });
-
     });
 
     context('when entity is not part of the session', function() {
-
       it('returns an entity', function() {
         expect(this.subject).to.not.eq(this.entity);
         expect(this.subject.id).to.eq(this.entity.id);
         expect(this.subject.session).to.eq(this.session);
       });
-
     });
-
   });
 
   describe('.load()', function() {
-
     lazy('Post', function() {
-      let klass = class Post extends Model {}
+      let klass = class Post extends Model {};
       klass.adapter = this.Adapter;
       klass.defineSchema({
         typeKey: 'post',
@@ -453,7 +410,7 @@ describe('session', function() {
     });
 
     lazy('entity', function() {
-      return this.session.fetchBy(this.Post, {id: 1});
+      return this.session.fetchBy(this.Post, { id: 1 });
     });
 
     lazy('opts', function() {
@@ -472,9 +429,8 @@ describe('session', function() {
     });
 
     context('when model already loaded', function() {
-
       beforeEach(function() {
-        this.session.merge(new this.Post(this.container.get(Graph), {id: 1, title: "a title"}));
+        this.session.merge(new this.Post(this.container.get(Graph), { id: 1, title: 'a title' }));
       });
 
       lazy('cachingStrategy', function() {
@@ -482,7 +438,6 @@ describe('session', function() {
       });
 
       context('when cachingStrategy indicates to not use cache', function() {
-
         beforeEach(function() {
           this.cachingStrategy.useCache = () => false;
         });
@@ -493,11 +448,9 @@ describe('session', function() {
           expect(res.session).to.eq(this.session);
           expect(this.adapterHit).to.be.true;
         });
-
       });
 
       context('when cachingStrategy indicates to use cache', function() {
-
         beforeEach(function() {
           this.cachingStrategy.useCache = () => true;
         });
@@ -510,9 +463,8 @@ describe('session', function() {
         });
 
         context('when refresh=true', function() {
-
           lazy('opts', function() {
-            return {refresh: true};
+            return { refresh: true };
           });
 
           it('uses adapter', async function() {
@@ -521,11 +473,9 @@ describe('session', function() {
             expect(res.session).to.eq(this.session);
             expect(this.adapterHit).to.be.true;
           });
-
         });
 
         context('when .invalidate() called', function() {
-
           beforeEach(function() {
             this.session.invalidate(this.entity);
           });
@@ -536,15 +486,11 @@ describe('session', function() {
             expect(res.session).to.eq(this.session);
             expect(this.adapterHit).to.be.true;
           });
-
         });
-
       });
-
     });
 
     context('with type and id as arguments', function() {
-
       subject(function() {
         return this.session.load(this.Post, this.entity.id);
       });
@@ -554,11 +500,9 @@ describe('session', function() {
         expect(res.title).to.eq('loaded title');
         expect(res.session).to.eq(this.session);
       });
-
     });
 
     context('when adapter throws EntityNotFound', function() {
-
       lazy('Adapter', function() {
         let container = this.container;
         return class TestAdapter {
@@ -572,19 +516,16 @@ describe('session', function() {
         try {
           await this.subject;
           expect(false).to.be.true;
-        } catch(err) {
+        } catch (err) {
           expect(err.entity.isDeleted).to.be.true;
         }
       });
-
     });
-
   });
 
   describe('.refresh()', function() {
-
     lazy('Post', function() {
-      let klass = class Post extends Model {}
+      let klass = class Post extends Model {};
       klass.adapter = this.Adapter;
       klass.defineSchema({
         typeKey: 'post',
@@ -610,7 +551,7 @@ describe('session', function() {
     });
 
     lazy('entity', function() {
-      return this.session.fetchBy(this.Post, {id: 1});
+      return this.session.fetchBy(this.Post, { id: 1 });
     });
 
     subject(function() {
@@ -621,17 +562,15 @@ describe('session', function() {
       let args;
       this.session.load = (..._args) => {
         args = _args;
-      }
-      this.subject
-      expect(args).to.eql([this.entity, {refresh: true}]);
+      };
+      this.subject;
+      expect(args).to.eql([this.entity, { refresh: true }]);
     });
-
   });
 
   describe('.merge()', function() {
-
     lazy('Post', function() {
-      let klass = class Post extends Model {}
+      let klass = class Post extends Model {};
       klass.defineSchema({
         typeKey: 'post',
         attributes: {
@@ -649,7 +588,7 @@ describe('session', function() {
 
     context('with a model', function() {
       lazy('entity', function() {
-        return new this.Post(this.graph, {id: 1, rev: 2, title: 'merging 101'});
+        return new this.Post(this.graph, { id: 1, rev: 2, title: 'merging 101' });
       });
 
       context('when not in session', function() {
@@ -662,9 +601,8 @@ describe('session', function() {
         });
 
         context('with embedded relationships', function() {
-
           lazy('Post', function() {
-            let klass = class Post extends Model {}
+            let klass = class Post extends Model {};
             klass.defineSchema({
               typeKey: 'post',
               attributes: {
@@ -684,7 +622,7 @@ describe('session', function() {
           });
 
           lazy('Tag', function() {
-            let klass = class Tag extends Model {}
+            let klass = class Tag extends Model {};
             klass.defineSchema({
               typeKey: 'tag',
               attributes: {
@@ -701,38 +639,35 @@ describe('session', function() {
           });
 
           lazy('entity', function() {
-            let post = this.graph.build(this.Post, {id: 1});
-            post.tags = [this.graph.build(this.Tag, {id: 2, name: 'asd'})];
+            let post = this.graph.build(this.Post, { id: 1 });
+            post.tags = [this.graph.build(this.Tag, { id: 2, name: 'asd' })];
             return post;
           });
 
           it('traverses embedded relationships', function() {
             expect(this.subject.tags.get(0).name).to.eq('asd');
           });
-
         });
       });
 
       context('when already in session', function() {
-
         lazy('rev', () => 3);
-        lazy('existing', function() { return new this.Post(this.graph, {id: 1, rev: this.rev, title: 'merging 102'}); });
+        lazy('existing', function() {
+          return new this.Post(this.graph, { id: 1, rev: this.rev, title: 'merging 102' });
+        });
 
         beforeEach(function() {
           this.session.merge(this.existing);
         });
 
         context('with a higher rev', function() {
-
           it('ignores and keeps existing model', function() {
             expect(this.subject.title).to.eq('merging 102');
             expect(this.subject.rev).to.eq(3);
           });
-
         });
 
         context('with a lower rev', function() {
-
           lazy('rev', () => 1);
 
           it('overwrites existing model', function() {
@@ -741,7 +676,6 @@ describe('session', function() {
           });
 
           context('when modified within session', function() {
-
             beforeEach(function() {
               this.session.get(this.existing).title = 'merging 103';
             });
@@ -750,20 +684,15 @@ describe('session', function() {
               expect(this.subject.title).to.eq('merging 103');
               expect(this.subject.rev).to.eq(2);
             });
-
           });
-
         });
-
       });
-
     });
   });
 
   describe('.rollback()', function() {
-
     lazy('Post', function() {
-      let klass = class Post extends Model {}
+      let klass = class Post extends Model {};
       klass.defineSchema({
         typeKey: 'post',
         attributes: {
@@ -781,10 +710,10 @@ describe('session', function() {
 
     context('with a model', function() {
       lazy('original', function() {
-        return new this.Post(this.graph, {id: 1, rev: 2, title: 'reverting 101'});
+        return new this.Post(this.graph, { id: 1, rev: 2, title: 'reverting 101' });
       });
       lazy('shadow', function() {
-        return new this.Post(this.graph, {id: 1, rev: 2, title: 'reverting 102'});
+        return new this.Post(this.graph, { id: 1, rev: 2, title: 'reverting 102' });
       });
 
       beforeEach(function() {
@@ -793,40 +722,37 @@ describe('session', function() {
       });
 
       context('when shadow is the same version', function() {
-
         it('updates shadow based on original', function() {
           expect(this.subject.title).to.eq('reverting 101');
         });
-
       });
-
     });
-
   });
 
   describe('.touch()', function() {
-
     lazy('entity', function() {
-      return this.session.merge(new this.Post(this.graph, {id: 1}));
+      return this.session.merge(new this.Post(this.graph, { id: 1 }));
     });
 
-    subject(function() { return this.session.touch(this.entity); });
+    subject(function() {
+      return this.session.touch(this.entity);
+    });
 
     it('marks the model dirty', function() {
       expect(this.session.isEntityDirty(this.entity)).to.be.false;
       this.subject;
       expect(this.session.isEntityDirty(this.entity)).to.be.true;
     });
-
   });
 
   describe('.remoteCall()', function() {
-
     lazy('context', function() {
-      return this.session.build(this.Post, {id: 1});
+      return this.session.build(this.Post, { id: 1 });
     });
     lazy('name', () => 'approve');
-    lazy('params', () => { return {}; });
+    lazy('params', () => {
+      return {};
+    });
     lazy('opts', () => null);
     lazy('adapter', function() {
       return this.container.adapterFor(this.Post);
@@ -836,62 +762,54 @@ describe('session', function() {
       return this.session.remoteCall(this.context, this.name, this.params, this.opts);
     });
 
-    it(`invokes the adapter .remoteCall`, async function() {
+    it('invokes the adapter .remoteCall', async function() {
       sinon.stub(this.adapter, 'remoteCall');
       await this.subject;
       expect(this.adapter.remoteCall.calledOnce).to.be.true;
     });
 
     context('with string context', function() {
-
       lazy('context', () => 'post');
 
-      it(`invokes the adapter .remoteCall with an entity`, async function() {
+      it('invokes the adapter .remoteCall with an entity', async function() {
         sinon.stub(this.adapter, 'remoteCall');
         await this.subject;
         expect(this.adapter.remoteCall.getCall(0).args[0].isModel).to.be.true;
       });
 
       context('and singular: false', function() {
-
         lazy('opts', function() {
-          return {singular: false};
+          return { singular: false };
         });
 
-        it(`invokes the adapter .remoteCall with collection`, async function() {
+        it('invokes the adapter .remoteCall with collection', async function() {
           sinon.stub(this.adapter, 'remoteCall');
           await this.subject;
           expect(this.adapter.remoteCall.getCall(0).args[0].isQuery).to.be.true;
         });
-
       });
-
     });
-
   });
 
   describe('.flush()', function() {
-
     subject(function() {
       return this.session.flush();
     });
 
     it('emits flush event', function() {
       let hit = false;
-      this.session.on('flush', (plan) => {
+      this.session.on('flush', plan => {
         expect(plan).to.be.defined;
         hit = true;
       });
       this.subject;
       expect(hit).to.be.true;
     });
-
   });
 
   describe('.invalidate()', function() {
-
     lazy('entity', function() {
-      return this.session.fetch(this.Post, {id: 1});
+      return this.session.fetch(this.Post, { id: 1 });
     });
 
     subject(function() {
@@ -901,21 +819,18 @@ describe('session', function() {
     it('invalidates entity', function() {
       expect(this.subject._invalid).to.be.true;
     });
-
   });
 
   describe('.isDirty', function() {
-
     subject(function() {
       return this.session.isDirty;
     });
 
     lazy('entity', function() {
-      return this.session.merge(new this.Post(this.graph, {id: 1}));
+      return this.session.merge(new this.Post(this.graph, { id: 1 }));
     });
 
     context('when an entity is dirty', function() {
-
       beforeEach(function() {
         this.session.touch(this.entity);
       });
@@ -923,11 +838,9 @@ describe('session', function() {
       it('returns true', function() {
         expect(this.subject).to.be.true;
       });
-
     });
 
     context('when no entities are dirty', function() {
-
       beforeEach(function() {
         this.entity;
       });
@@ -935,9 +848,6 @@ describe('session', function() {
       it('returns false', function() {
         expect(this.subject).to.be.false;
       });
-
     });
-
   });
-
 });

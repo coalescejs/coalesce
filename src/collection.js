@@ -2,17 +2,16 @@ import Entity from './entity';
 import CollectionMerge from './merge/collection';
 
 export default class Collection extends Entity {
-
   static merge = CollectionMerge;
 
   _data = [];
 
   constructor(graph, iterable) {
     super(graph);
-    if(iterable) {
+    if (iterable) {
       this._loaded = true;
       function* clientIds(iterable) {
-        for(var entity of iterable) {
+        for (var entity of iterable) {
           yield entity.clientId;
         }
       }
@@ -30,14 +29,14 @@ export default class Collection extends Entity {
   }
 
   *[Symbol.iterator]() {
-    for(var clientId of this._data) {
-      yield this.graph.get({clientId});
+    for (var clientId of this._data) {
+      yield this.graph.get({ clientId });
     }
   }
 
   has(entity) {
-    for(let current of this) {
-      if(current.isEqual(entity)) {
+    for (let current of this) {
+      if (current.isEqual(entity)) {
         return true;
       }
     }
@@ -84,7 +83,7 @@ export default class Collection extends Entity {
    * @deprecated
    */
   addObject(entity) {
-    if(this.has(entity)) {
+    if (this.has(entity)) {
       return false;
     }
     this.pushObject(entity);
@@ -101,9 +100,9 @@ export default class Collection extends Entity {
    * @deprecated
    */
   removeObject(entity) {
-    for(let i = 0; i <= this._data.length; i++) {
+    for (let i = 0; i <= this._data.length; i++) {
       let clientId = this._data[i];
-      if(entity.clientId === clientId) {
+      if (entity.clientId === clientId) {
         this.splice(i, 1);
         return true;
       }
@@ -120,15 +119,15 @@ export default class Collection extends Entity {
 
   get(index) {
     let clientId = this._data[index];
-    if(!clientId) {
+    if (!clientId) {
       return;
     }
-    return this.graph.get({clientId});
+    return this.graph.get({ clientId });
   }
 
   splice(index, removeNum, ...values) {
-    values = values.map((v) => {
-      console.assert(v.clientId, "Must have clientId");
+    values = values.map(v => {
+      console.assert(v.clientId, 'Must have clientId');
       return v.clientId;
     });
     this._loaded = true;
@@ -136,7 +135,7 @@ export default class Collection extends Entity {
       this._willChange(index, removeNum, values.length);
       let clientIds = this._data.splice(index, removeNum, ...values);
       this._didChange(index, removeNum, values.length);
-      return clientIds.map((clientId) => this.graph.get({clientId}));
+      return clientIds.map(clientId => this.graph.get({ clientId }));
     });
   }
 
@@ -146,7 +145,7 @@ export default class Collection extends Entity {
   }
 
   pop() {
-    if(this._data.length === 0) {
+    if (this._data.length === 0) {
       return;
     }
     return this.splice(this._data.length - 1, 1)[0];
@@ -158,7 +157,7 @@ export default class Collection extends Entity {
   }
 
   shift() {
-    if(this._data.length === 0) {
+    if (this._data.length === 0) {
       return;
     }
     this.splice(0, 1);
@@ -166,7 +165,7 @@ export default class Collection extends Entity {
 
   slice(...args) {
     let clientIds = this._data.slice(...args);
-    return clientIds.map((clientId) => this.graph.get({clientId}));
+    return clientIds.map(clientId => this.graph.get({ clientId }));
   }
 
   get size() {
@@ -180,13 +179,12 @@ export default class Collection extends Entity {
     return this._data.length;
   }
 
-  _willChange(index, removed, added) {
-  }
+  _willChange(index, removed, added) {}
 
   _didChange(index, removed, added) {
     // This is ugly, but is necessary to bookkeep embedded entities
-    if(this._parent) {
-      for(let i = index; i < index + added; i++) {
+    if (this._parent) {
+      for (let i = index; i < index + added; i++) {
         let entity = this.get(i);
         entity._parent = this.clientId;
       }
@@ -199,5 +197,4 @@ export default class Collection extends Entity {
   *relatedEntities() {
     yield* this;
   }
-
 }

@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import Model from 'coalesce/model';
 import DefaultContainer from 'coalesce/default-container';
@@ -6,10 +6,9 @@ import Graph from 'coalesce/graph';
 import Session from 'coalesce/session';
 
 describe('schema/has-many', function() {
-
   lazy('name', () => 'comments');
   lazy('opts', () => {
-    return {kind: 'hasMany', type: 'comment'};
+    return { kind: 'hasMany', type: 'comment' };
   });
   lazy('container', () => new DefautContainer());
   lazy('graph', function() {
@@ -53,7 +52,6 @@ describe('schema/has-many', function() {
   });
 
   describe('.get()', function() {
-
     lazy('model', function() {
       return this.graph.build(this.Model, {
         id: 1,
@@ -62,7 +60,7 @@ describe('schema/has-many', function() {
     });
 
     lazy('value', function() {
-      return [this.graph.build(this.Comment, {id: 2})];
+      return [this.graph.build(this.Comment, { id: 2 })];
     });
 
     subject(function() {
@@ -74,7 +72,6 @@ describe('schema/has-many', function() {
     });
 
     context('without a value set', function() {
-
       lazy('model', function() {
         return this.graph.build(this.Model, {
           id: 1
@@ -84,9 +81,6 @@ describe('schema/has-many', function() {
       it('returns unloaded has-many collection', function() {
         expect(this.subject).to.not.be.undefined;
       });
-
     });
-
   });
-
 });

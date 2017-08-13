@@ -1,7 +1,6 @@
 import Field from './field';
 
 export default class Attribute extends Field {
-
   get kind() {
     return 'attribute';
   }
@@ -27,5 +26,4 @@ export default class Attribute extends Field {
   get owner() {
     return true;
   }
-
 }

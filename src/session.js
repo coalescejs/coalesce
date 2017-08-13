@@ -8,10 +8,10 @@ import Container from './container';
 import Query from './query';
 import Plan from './session/plan';
 
-import {EntityNotFound} from './errors';
+import { EntityNotFound } from './errors';
 
 import isSuperset from './utils/is-superset';
-import {eachEmbeddedChild} from './utils/embedded';
+import { eachEmbeddedChild } from './utils/embedded';
 
 /**
  * The main interface to Coalesce. Contains the client-side model-cache and
@@ -21,13 +21,12 @@ import {eachEmbeddedChild} from './utils/embedded';
  * and collections.
  */
 export default class Session extends Graph {
-
   /**
    * Create a session.
    *
    * @params {Container} the container
    */
-  constructor(container=new DefaultContainer(), parent) {
+  constructor(container = new DefaultContainer(), parent) {
     super(container);
     this.parent = parent;
     this.shadows = container.get(Graph);
@@ -65,7 +64,7 @@ export default class Session extends Graph {
    * @return {type}        created model
    */
   create(type, attrs) {
-    let entity = this.build(type, {isNew: true, ...attrs});
+    let entity = this.build(type, { isNew: true, ...attrs });
     this.newEntities.add(entity);
     return entity;
   }
@@ -82,9 +81,9 @@ export default class Session extends Graph {
   get(entity) {
     let res = super.get(entity);
     // if we are in a child session, we want to pull from the parent
-    if(!res && this.parent) {
+    if (!res && this.parent) {
       res = this.parent.get(entity);
-      if(res) {
+      if (res) {
         // TODO: swap revisions?
         res = res.fork(this);
         this.add(res);
@@ -124,11 +123,11 @@ export default class Session extends Graph {
    * @return {type}        the query in this session
    */
   getQuery(type, params) {
-    if(typeof type === 'string') {
+    if (typeof type === 'string') {
       type = this.container.typeFor(type);
     }
     let clientId = Query.clientId(this.idManager, type, params);
-    return this.get({clientId});
+    return this.get({ clientId });
   }
 
   /**
@@ -140,8 +139,8 @@ export default class Session extends Graph {
    * @param  {type} params the params for the query
    * @return {type}        the query in this session
    */
-  fetchQuery(type, params={}) {
-    if(typeof type === 'string') {
+  fetchQuery(type, params = {}) {
+    if (typeof type === 'string') {
       type = this.container.typeFor(type);
     }
     return this.fetchBy(Query, type, params);
@@ -154,36 +153,39 @@ export default class Session extends Graph {
    * @param  {object} [opts]  options to be passed to the adapter
    * @return {Promise}
    */
-  async load(entity, opts={}) {
-    if(typeof opts !== 'object') {
+  async load(entity, opts = {}) {
+    if (typeof opts !== 'object') {
       // @deprecated backwards compatibility with old API
       return this.find(...arguments);
     }
 
     let existing = this.get(entity);
-    if(existing && !existing._invalid && !opts.refresh) {
+    if (existing && !existing._invalid && !opts.refresh) {
       // Currently caching strategies all reference the root session.
       // TODO: add support for separate caching strategies in child sessions
       let rootSession = this;
-      while(rootSession.parent) {
+      while (rootSession.parent) {
         rootSession = rootSession.parent;
       }
       let cachingStrategy = this.container.cachingStrategyFor(entity, rootSession);
-      if(cachingStrategy.useCache(existing, opts)) {
+      if (cachingStrategy.useCache(existing, opts)) {
         return existing;
       }
     }
 
     let adapter = this.container.adapterFor(entity);
 
-    return adapter.load(entity, opts, this).then((serverEntity) => {
-      return this.merge(serverEntity);
-    }, (error) => {
-      if(error instanceof EntityNotFound) {
-        entity.isDeleted = true;
+    return adapter.load(entity, opts, this).then(
+      serverEntity => {
+        return this.merge(serverEntity);
+      },
+      error => {
+        if (error instanceof EntityNotFound) {
+          entity.isDeleted = true;
+        }
+        throw error;
       }
-      throw error;
-    });
+    );
   }
 
   /**
@@ -194,7 +196,6 @@ export default class Session extends Graph {
     return this.load(...args);
   }
 
-
   /**
    * Same as `load` with the `refresh` option set to true.
    *
@@ -202,8 +203,8 @@ export default class Session extends Graph {
    * @param  {object} [opts]  options to be passed to the adapter
    * @return {Promise}
    */
-  async refresh(entity, opts={}) {
-    return this.load(entity, {refresh: true, ...opts});
+  async refresh(entity, opts = {}) {
+    return this.load(entity, { refresh: true, ...opts });
   }
 
   /**
@@ -214,7 +215,7 @@ export default class Session extends Graph {
    * @return {Promise}
    */
   find(type, id, ...opts) {
-    let model = this.fetchBy(type, {id});
+    let model = this.fetchBy(type, { id });
     return this.load(model, ...opts);
   }
 
@@ -237,13 +238,13 @@ export default class Session extends Graph {
    * @param  {Entity} entity the entity to mark dirty
    */
   touch(entity) {
-    if(this._dirtyCheckingSuspended) {
+    if (this._dirtyCheckingSuspended) {
       return;
     }
     console.assert(this.has(entity), `${entity} is not part of a session`);
-    if(!entity.isNew) {
-      var shadow = this.getShadow(entity);
-      if(!shadow) {
+    if (!entity.isNew) {
+      let shadow = this.getShadow(entity);
+      if (!shadow) {
         this.shadows.update(entity);
       }
     }
@@ -263,11 +264,11 @@ export default class Session extends Graph {
    * @return {Promise}        the result of the aciton
    */
   async remoteCall(context, name, params, opts) {
-    if(typeof context === 'string') {
+    if (typeof context === 'string') {
       let type = this.container.typeFor(context);
       // If the context is a string we infer an entity. The "singular" option
       // can be passed as false to infer a collection.
-      if(!opts || opts.singular !== false) {
+      if (!opts || opts.singular !== false) {
         context = this.build(type, {});
       } else {
         context = this.fetchQuery(type);
@@ -275,7 +276,7 @@ export default class Session extends Graph {
     }
     let adapter = this.container.adapterFor(context);
     let entity = await adapter.remoteCall(context, name, params, opts, this);
-    if(entity && entity.isEntity) {
+    if (entity && entity.isEntity) {
       return this.merge(entity);
     }
     return entity;
@@ -285,11 +286,11 @@ export default class Session extends Graph {
    * @return {EntitySet} All entities which are dirty inside this session.
    */
   get dirtyEntities() {
-    var entities = new EntitySet();
-    for(var entity of this.shadows) {
+    let entities = new EntitySet();
+    for (let entity of this.shadows) {
       entities.add(this.get(entity));
     }
-    for(var entity of this.newEntities) {
+    for (let entity of this.newEntities) {
       entities.add(entity);
     }
     return entities;
@@ -314,12 +315,12 @@ export default class Session extends Graph {
    * @param  {type} entity the entity to delete
    */
   destroy(entity) {
-    if(entity.isNew) {
+    if (entity.isNew) {
       this.newEntities.delete(entity);
     }
     entity.isDeleted = true;
     this.touch(entity);
-    for(let embeddedChild of eachEmbeddedChild(this, entity)) {
+    for (let embeddedChild of eachEmbeddedChild(this, entity)) {
       this.destroy(embeddedChild);
     }
     return entity;
@@ -351,22 +352,22 @@ export default class Session extends Graph {
   merge(serverEntity) {
     // OPTIMIZATION: in the event of a session-cache hit, the adapter might
     // return the entity that is already in this session.
-    if(serverEntity.session === this) {
+    if (serverEntity.session === this) {
       return serverEntity;
     }
 
-    if(this.parent) {
-      if(serverEntity.session !== this.parent) {
+    if (this.parent) {
+      if (serverEntity.session !== this.parent) {
         serverEntity = this.parent.merge(serverEntity);
       }
       // TODO use clientRev as rev
     }
 
-    var entity = this.fetch(serverEntity),
-        shadow = this.getShadow(serverEntity);
+    let entity = this.fetch(serverEntity),
+      shadow = this.getShadow(serverEntity);
 
     // No need to merge any data for unloaded entities
-    if(!serverEntity.isLoaded) {
+    if (!serverEntity.isLoaded) {
       return entity;
     }
 
@@ -374,46 +375,46 @@ export default class Session extends Graph {
     // case we just fabricate our own server versioning, assuming that
     // all new entities are a newer version.
     // NOTE: rev is also used to break merge recursion
-    if(!serverEntity.rev) {
-      serverEntity.rev = (entity.rev === null || entity.rev === undefined) ? 0 : entity.rev + 1;
+    if (!serverEntity.rev) {
+      serverEntity.rev = entity.rev === null || entity.rev === undefined ? 0 : entity.rev + 1;
     }
 
     // Optimistically assume has seen client's version if no clientRev set
-    if(!serverEntity.clientRev) {
+    if (!serverEntity.clientRev) {
       serverEntity.clientRev = (shadow || entity).clientRev;
     }
 
     // Have we already seen this version?
     // NOTE: we also call `isSuperset` to ensure that the entity also has all of the fields
-    if(entity.rev && entity.rev >= serverEntity.rev && isSuperset(entity, serverEntity)) {
+    if (entity.rev && entity.rev >= serverEntity.rev && isSuperset(entity, serverEntity)) {
       return entity;
     }
 
     // If a entity comes in with a clientRev that is lower than the
     // shadow it is to be merged against, then the common ancestor is
     // no longer tracked. In this scenario we currently just toss out.
-    if(shadow && shadow.clientRev > serverEntity.clientRev) {
+    if (shadow && shadow.clientRev > serverEntity.clientRev) {
       console.warn(`Not merging stale entity ${serverEntity}`);
       return entity;
     }
 
-    var childrenToRecurse = [];
-    for(var childEntity of serverEntity.relatedEntities()) {
+    let childrenToRecurse = [];
+    for (let childEntity of serverEntity.relatedEntities()) {
       // recurse on detached/embedded children entities
       // TODO needs to be embedded only in "this" relationship
-      if(childEntity.isEmbedded || !childEntity.session) {
+      if (childEntity.isEmbedded || !childEntity.session) {
         childrenToRecurse.push(childEntity);
       }
     }
 
     // If there is no shadow, then no merging is necessary and we just
     // update the session with the new data
-    if(!shadow) {
+    if (!shadow) {
       this._withDirtyCheckingSuspended(function() {
         entity = this.update(serverEntity);
       });
       // TODO: move this check to update?
-      if(!entity.isNew) {
+      if (!entity.isNew) {
         this.newEntities.delete(entity);
       }
     } else {
@@ -421,7 +422,7 @@ export default class Session extends Graph {
         entity = this._merge(entity, shadow, serverEntity);
       }, this);
 
-      if(entity.isDeleted) {
+      if (entity.isDeleted) {
         this.delete(entity);
       } else {
         // After a successful merge we update the shadow to the
@@ -437,7 +438,7 @@ export default class Session extends Graph {
     delete entity._invalid;
 
     // recurse on detached and embedded children
-    for(var child of childrenToRecurse) {
+    for (let child of childrenToRecurse) {
       this.merge(child);
     }
 
@@ -452,7 +453,7 @@ export default class Session extends Graph {
    */
   getShadow(entity) {
     let shadow = this.shadows.get(entity);
-    if(shadow && !shadow.isLoaded) {
+    if (shadow && !shadow.isLoaded) {
       return null;
     }
     return shadow;
@@ -467,7 +468,7 @@ export default class Session extends Graph {
     console.assert(serverEntity.id || !shadow.id, `Expected ${entity} to have an id set`);
     // set id for new records
     entity.id = serverEntity.id;
-    if(!entity.clientId) {
+    if (!entity.clientId) {
       entity.clientId = serverEntity.clientId;
     } else {
       console.assert(entity.clientId === serverEntity.clientId, 'Client ids do not match');
@@ -478,16 +479,15 @@ export default class Session extends Graph {
     // TODO: think through merging deleted models
     // entity.isDeleted = serverEntity.isDeleted;
 
-    var strategy = this.container.mergeFor(serverEntity.constructor);
+    let strategy = this.container.mergeFor(serverEntity.constructor);
     strategy.merge(entity, shadow, serverEntity);
 
-    if(serverEntity.meta) {
+    if (serverEntity.meta) {
       entity._meta = serverEntity.meta;
     }
 
     return entity;
   }
-
 
   /**
    * Invoked when a server operation fails and the shadow needs to be rolled
@@ -500,18 +500,18 @@ export default class Session extends Graph {
    * @return {type}          the rolled back entity
    */
   rollback(original) {
-    if(this.parent) {
+    if (this.parent) {
       original = this.parent.rollback(original);
     }
 
     // TODO: traverse embedded relationships a la merge
 
     let entity = this.get(original);
-    console.assert(!!entity, "Cannot rollback non-existant entity");
+    console.assert(!!entity, 'Cannot rollback non-existant entity');
 
-    if(!entity.isNew) {
+    if (!entity.isNew) {
       let shadow = this.shadows.get(original);
-      if(!original.rev || shadow && shadow.rev <= original.rev) {
+      if (!original.rev || (shadow && shadow.rev <= original.rev)) {
         // "rollback" shadow to the original
         console.assert(this.has(original));
         this.shadows.update(original);
@@ -532,7 +532,7 @@ export default class Session extends Graph {
    * @return {Entity}        the entity
    */
   commit(entity) {
-    if(entity.isNew) {
+    if (entity.isNew) {
       entity.isNew = false;
       this.newEntities.delete(entity);
     } else {
@@ -555,7 +555,7 @@ export default class Session extends Graph {
    * @param  [iterable] entities the entities to persist, defaults to all dirty entities
    * @return {Plan}              the plan
    */
-  plan(entities=this.dirtyEntities) {
+  plan(entities = this.dirtyEntities) {
     return this.container.create(Plan, this, entities);
   }
 
@@ -565,10 +565,10 @@ export default class Session extends Graph {
    * @param  [iterable] entities the entities to persist, defaults to all dirty entities
    * @return {Promise}           a promise that resolves to all entities persisted
    */
-  flush(entities=this.dirtyEntities) {
+  flush(entities = this.dirtyEntities) {
     let plan = this.plan(entities);
     this.ee.emit('flush', plan);
-    for(var entity of entities) {
+    for (let entity of entities) {
       this.commit(entity);
     }
     return plan.execute();
@@ -579,7 +579,7 @@ export default class Session extends Graph {
    */
   _withDirtyCheckingSuspended(callback, binding) {
     // could be nested
-    if(this._dirtyCheckingSuspended) {
+    if (this._dirtyCheckingSuspended) {
       return callback.call(binding || this);
     }
 
@@ -620,8 +620,8 @@ export default class Session extends Graph {
   invalidateQueries(type) {
     type = this.container.typeFor(type);
     // TODO: OPTIMIZE?
-    for(let entity of this) {
-      if(entity.isQuery && entity.type === type) {
+    for (let entity of this) {
+      if (entity.isQuery && entity.type === type) {
         this.invalidate(entity);
       }
     }
@@ -634,5 +634,4 @@ export default class Session extends Graph {
   removeListener(...args) {
     return this.ee.removeListener(...args);
   }
-
 }

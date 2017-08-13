@@ -1,5 +1,3 @@
-
-
 import DefaultContainer from 'coalesce/default-container';
 import Model from 'coalesce/model';
 
@@ -43,7 +41,7 @@ Profile.defineSchema({
   }
 });
 
-export class Permission extends Model{}
+export class Permission extends Model {}
 Permission.defineSchema({
   typeKey: 'permission',
   attributes: {
@@ -115,10 +113,10 @@ Account.defineSchema({
 export class Prospect extends Model {}
 
 let prospectAttrs = {};
-for(var i = 0; i < 100; i++) {
+for (var i = 0; i < 100; i++) {
   prospectAttrs[`string${i}`] = {
     type: 'string'
-  }
+  };
 }
 
 Prospect.defineSchema({
@@ -151,7 +149,6 @@ Prospect.defineSchema({
 });
 
 export default class ProspectTags extends DefaultContainer {
-
   constructor() {
     super();
     this.registerType(User);
@@ -162,5 +159,4 @@ export default class ProspectTags extends DefaultContainer {
     this.registerType(Account);
     this.registerType(Stage);
   }
-
 }

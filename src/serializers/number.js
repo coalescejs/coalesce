@@ -4,7 +4,6 @@ import isNil from 'lodash/isNil';
  * Number serializer.
  */
 export default class NumberSerializer {
-
   static singleton = true;
 
   deserialize(serialized) {

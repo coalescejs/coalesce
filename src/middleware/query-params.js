@@ -5,9 +5,8 @@ import IdManager from '../id-manager';
  * them back to normal ids.
  */
 export default class QueryParamsMiddleware {
-
   async call(ctx, next) {
-    if(ctx.entity && ctx.entity.isQuery) {
+    if (ctx.entity && ctx.entity.isQuery) {
       ctx.query = ctx.query || {};
       Object.assign(ctx.query, this.serializeParams(ctx.entity));
     }
@@ -16,17 +15,17 @@ export default class QueryParamsMiddleware {
   }
 
   serializeParams(query) {
-    const {schema} = query.type;
-    let {type, params} = query;
-    params = {...params};
+    const { schema } = query.type;
+    let { type, params } = query;
+    params = { ...params };
 
-    for(var key in params) {
+    for (var key in params) {
       let field = schema[key];
-      if(field && field.kind === 'belongsTo') {
+      if (field && field.kind === 'belongsTo') {
         let value = params[key];
-        if(typeof value === 'string') {
-          value = query.graph.fetchBy(query.type, {clientId: value});
-          if(value && value.id) {
+        if (typeof value === 'string') {
+          value = query.graph.fetchBy(query.type, { clientId: value });
+          if (value && value.id) {
             params[key] = value.id;
           }
         }
@@ -35,5 +34,4 @@ export default class QueryParamsMiddleware {
 
     return params;
   }
-
 }

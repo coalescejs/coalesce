@@ -1,13 +1,12 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
-import Container, {Post, Comment} from './support/simple-hierarchy';
+import Container, { Post, Comment } from './support/simple-hierarchy';
 
 import Graph from 'coalesce/graph';
 import Query from 'coalesce/query';
 import IdManager from 'coalesce/id-manager';
 
 describe('query', function() {
-
   lazy('container', () => new Container());
   lazy('graph', function() {
     return this.container.get(Graph);
@@ -18,10 +17,11 @@ describe('query', function() {
   lazy('type', function() {
     return Post;
   });
-  lazy('params', () => { return {q: 'asd'};});
+  lazy('params', () => {
+    return { q: 'asd' };
+  });
 
   describe('constructor.clientId()', function() {
-
     subject(function() {
       return Query.clientId(this.idManager, this.type, this.params);
     });
@@ -29,7 +29,5 @@ describe('query', function() {
     it('returns clientId', function() {
       expect(this.subject).to.eq('$post${"q":"asd"}');
     });
-
   });
-
 });

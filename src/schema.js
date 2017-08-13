@@ -39,10 +39,9 @@ import Meta from './schema/meta';
   @param {Object} schema
 */
 export default class Schema {
-
   constructor(config) {
     this.configureDefaults();
-    if(config) {
+    if (config) {
       this.configure(config);
     }
   }
@@ -77,34 +76,38 @@ export default class Schema {
   }
 
   configure(config) {
-    if(typeof config.typeKey !== 'undefined') {
+    if (typeof config.typeKey !== 'undefined') {
       this.typeKey = config.typeKey;
     }
-    var attributes = config.attributes || {};
-    for(var name in attributes) {
-      if(!attributes.hasOwnProperty(name)) continue;
-      var field = new Attribute(this, name, attributes[name]);
+    let attributes = config.attributes || {};
+    for (let name in attributes) {
+      if (!attributes.hasOwnProperty(name)) {
+        continue;
+      }
+      let field = new Attribute(this, name, attributes[name]);
       this[name] = field;
     }
-    var relationships = config.relationships || {};
-    for(var name in relationships) {
-      if(!relationships.hasOwnProperty(name)) continue;
+    let relationships = config.relationships || {};
+    for (let name in relationships) {
+      if (!relationships.hasOwnProperty(name)) {
+        continue;
+      }
       let rel = relationships[name],
-          klass;
-      if(rel.kind === 'hasMany') {
+        klass;
+      if (rel.kind === 'hasMany') {
         klass = HasMany;
-      } else if(rel.kind === 'belongsTo') {
+      } else if (rel.kind === 'belongsTo') {
         klass = BelongsTo;
       } else {
         throw `Unknown relationship kind ${rel.kind}`;
       }
-      var field = new klass(this, name, rel);
+      let field = new klass(this, name, rel);
       this[name] = field;
     }
   }
 
   apply(prototype) {
-    for(var field of this.ownFields()) {
+    for (let field of this.ownFields()) {
       field.defineProperty(prototype);
     }
   }
@@ -114,14 +117,13 @@ export default class Schema {
   }
 
   *fields() {
-    for(var name in this) {
-      var field = this[name];
-      if(field instanceof Field) {
+    for (let name in this) {
+      let field = this[name];
+      if (field instanceof Field) {
         yield field;
       }
     }
   }
-
 
   /**
    * Fields which are part of the model's data.
@@ -129,43 +131,42 @@ export default class Schema {
    * @return {iterator}
    */
   *dataFields() {
-    for(var field of this.fields()) {
-      if(field.owner) {
+    for (let field of this.fields()) {
+      if (field.owner) {
         yield field;
       }
     }
   }
 
   *ownFields() {
-    for(var field of this.fields()) {
-      if(this.hasOwnProperty(field.name)) {
+    for (let field of this.fields()) {
+      if (this.hasOwnProperty(field.name)) {
         yield field;
       }
     }
   }
 
   *metaFields() {
-    for(var field of this.fields()) {
-      if(field instanceof Meta) {
+    for (let field of this.fields()) {
+      if (field instanceof Meta) {
         yield field;
       }
     }
   }
 
   *attributes() {
-    for(var field of this.fields()) {
-      if(field instanceof Attribute) {
+    for (let field of this.fields()) {
+      if (field instanceof Attribute) {
         yield field;
       }
     }
   }
 
   *relationships() {
-    for(var field of this.fields()) {
-      if(field instanceof Relationship) {
+    for (let field of this.fields()) {
+      if (field instanceof Relationship) {
         yield field;
       }
     }
   }
-
 }

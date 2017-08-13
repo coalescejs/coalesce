@@ -7,7 +7,6 @@ import isEmpty from 'lodash/isEmpty';
  * Middleware to serialize/deserialize using the serialization layer.
  */
 export default class SerializeMiddleware {
-
   static dependencies = [Container];
 
   constructor(container) {
@@ -15,9 +14,9 @@ export default class SerializeMiddleware {
   }
 
   async call(ctx, next) {
-    let {serialize, deserialize, entity, method} = ctx;
+    let { serialize, deserialize, entity, method } = ctx;
     const serializer = this._serializerFor(entity);
-    if(method !== 'GET' && serialize !== false && !ctx.body) {
+    if (method !== 'GET' && serialize !== false && !ctx.body) {
       ctx.body = serializer.serialize(entity);
     } else {
       ctx.serialize = false;
@@ -25,20 +24,20 @@ export default class SerializeMiddleware {
 
     let res = await next();
 
-    if(deserialize === false) {
+    if (deserialize === false) {
       return res;
     }
 
     let graph = this.container.get(Graph);
 
-    if(!isEmpty(res)) {
+    if (!isEmpty(res)) {
       let args;
-      if(entity.isQuery) {
+      if (entity.isQuery) {
         args = [entity.type, entity.params];
       } else {
         // Some backends might not pass-through the client-id. In which case,
         // it is important to ensure it gets set during create operations.
-        args = [{clientId: entity.clientId, type: entity.typeKey}];
+        args = [{ clientId: entity.clientId, type: entity.typeKey }];
       }
       res = serializer.deserialize(res, graph, ...args);
     } else {
@@ -48,7 +47,7 @@ export default class SerializeMiddleware {
     }
 
     // Metadata will be set via MetaMiddleware
-    if(ctx.meta) {
+    if (ctx.meta) {
       res._meta = ctx.meta;
     }
 
@@ -59,5 +58,4 @@ export default class SerializeMiddleware {
     let type = entity.constructor;
     return this.container.serializerFor(type);
   }
-
 }

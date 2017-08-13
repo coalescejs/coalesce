@@ -6,15 +6,14 @@ import parseDate from '../utils/parse-date';
  * TODO: use `toISOString()`?
  */
 export default class DateSerializer {
-
   static singleton = true;
 
   deserialize(serialized) {
     var type = typeof serialized;
 
-    if (type === "string") {
+    if (type === 'string') {
       return new Date(parseDate(serialized));
-    } else if (type === "number") {
+    } else if (type === 'number') {
       return new Date(serialized);
     } else if (serialized === null || serialized === undefined) {
       // if the value is not present in the data,
@@ -27,31 +26,43 @@ export default class DateSerializer {
 
   serialize(date) {
     if (date instanceof Date) {
-      var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
       var pad = function(num) {
-        return num < 10 ? "0"+num : ""+num;
+        return num < 10 ? '0' + num : '' + num;
       };
 
       var utcYear = date.getUTCFullYear(),
-          utcMonth = date.getUTCMonth(),
-          utcDayOfMonth = date.getUTCDate(),
-          utcDay = date.getUTCDay(),
-          utcHours = date.getUTCHours(),
-          utcMinutes = date.getUTCMinutes(),
-          utcSeconds = date.getUTCSeconds();
-
+        utcMonth = date.getUTCMonth(),
+        utcDayOfMonth = date.getUTCDate(),
+        utcDay = date.getUTCDay(),
+        utcHours = date.getUTCHours(),
+        utcMinutes = date.getUTCMinutes(),
+        utcSeconds = date.getUTCSeconds();
 
       var dayOfWeek = days[utcDay];
       var dayOfMonth = pad(utcDayOfMonth);
       var month = months[utcMonth];
 
-      return dayOfWeek + ", " + dayOfMonth + " " + month + " " + utcYear + " " +
-             pad(utcHours) + ":" + pad(utcMinutes) + ":" + pad(utcSeconds) + " GMT";
+      return (
+        dayOfWeek +
+        ', ' +
+        dayOfMonth +
+        ' ' +
+        month +
+        ' ' +
+        utcYear +
+        ' ' +
+        pad(utcHours) +
+        ':' +
+        pad(utcMinutes) +
+        ':' +
+        pad(utcSeconds) +
+        ' GMT'
+      );
     } else {
       return null;
     }
   }
-
 }

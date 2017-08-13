@@ -7,7 +7,6 @@ import Container from './container';
  * entities and is responsible for "reifying" entities with a proper clientId.
  */
 export default class Graph extends EntitySet {
-
   static dependencies = [Container];
 
   constructor(container) {
@@ -51,7 +50,7 @@ export default class Graph extends EntitySet {
   getBy(type, ...args) {
     type = this.container.typeFor(type);
     let clientId = this.idManager.getClientId(type, ...args);
-    return this.get({clientId});
+    return this.get({ clientId });
   }
 
   /**
@@ -63,12 +62,12 @@ export default class Graph extends EntitySet {
    * @return {Entity}        the equivalent entity within the graph
    */
   fetch(entity) {
-    if(arguments.length > 1) {
+    if (arguments.length > 1) {
       // backwards compatibility with old API
-      return this.fetchBy(arguments[0], {id: arguments[1]});
+      return this.fetchBy(arguments[0], { id: arguments[1] });
     }
     let res = this.get(entity);
-    if(!res) {
+    if (!res) {
       res = entity.ref(this);
       this.add(res);
     }
@@ -86,7 +85,7 @@ export default class Graph extends EntitySet {
   fetchBy(type, ...args) {
     type = this.container.typeFor(type);
     let entity = this.getBy(type, ...args);
-    if(!entity) {
+    if (!entity) {
       entity = this.build(type, ...args);
     }
     return entity;
@@ -102,5 +101,4 @@ export default class Graph extends EntitySet {
     let target = this.fetch(entity);
     return target.assign(entity);
   }
-
 }

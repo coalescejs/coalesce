@@ -3,10 +3,9 @@ import { expect } from 'chai';
 import diff from 'coalesce/utils/diff';
 import Graph from 'coalesce/graph';
 
-import Container, {Post} from '../support/simple-hierarchy';
+import Container, { Post } from '../support/simple-hierarchy';
 
 describe('diff', function() {
-
   lazy('container', () => new Container());
   lazy('lhsGraph', function() {
     return this.container.get(Graph);
@@ -32,15 +31,12 @@ describe('diff', function() {
   });
 
   context('when no differences', function() {
-
     it('returns empty iterator', function() {
       expect(Array.from(this.subject)).to.eql([]);
     });
-
   });
 
   context('with difference', function() {
-
     lazy('lhs', function() {
       return this.lhsGraph.build(Post, {
         title: 'A'
@@ -56,11 +52,9 @@ describe('diff', function() {
         rhs: 'test'
       });
     });
-
   });
 
   context('with empty rhs', function() {
-
     lazy('rhs', function() {
       return undefined;
     });
@@ -69,8 +63,5 @@ describe('diff', function() {
       let arr = Array.from(this.subject);
       expect(arr.length).to.eq(1);
     });
-
-
   });
-
 });

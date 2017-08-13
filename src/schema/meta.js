@@ -1,7 +1,6 @@
 import Attribute from './attribute';
 
 export default class Meta extends Attribute {
-
   get kind() {
     return 'meta';
   }
@@ -15,7 +14,7 @@ export default class Meta extends Attribute {
         return this._data[name];
       },
       set: function(value) {
-        return this._data[name] = value;
+        return (this._data[name] = value);
       }
     });
   }
@@ -23,5 +22,4 @@ export default class Meta extends Attribute {
   get owner() {
     return true;
   }
-
 }

@@ -6,7 +6,6 @@ import find from 'lodash/find';
  * Immutable structure reflecting a chain of middleware.
  */
 export default class MiddlewareChain {
-
   constructor(configs) {
     this.configs = configs.map(this.normalizeConfig);
   }
@@ -14,7 +13,7 @@ export default class MiddlewareChain {
   use(middleware, ...args) {
     let newConfigs = clone(this.configs);
     let existingIndex = findIndex(newConfigs, ([klass, ...args]) => klass === middleware);
-    if(existingIndex !== -1) {
+    if (existingIndex !== -1) {
       newConfigs.splice(existingIndex, 1, [middleware, ...args]);
     } else {
       newConfigs.push([middleware, ...args]);
@@ -39,7 +38,7 @@ export default class MiddlewareChain {
   insertAfter(existingMiddleware, middleware, ...args) {
     let newConfigs = clone(this.configs);
     let existingIndex = findIndex(newConfigs, ([klass, ...args]) => klass === existingMiddleware);
-    newConfigs.splice(existingIndex+1, 0, [middleware, ...args]);
+    newConfigs.splice(existingIndex + 1, 0, [middleware, ...args]);
     return new this.constructor(newConfigs);
   }
 
@@ -48,7 +47,7 @@ export default class MiddlewareChain {
   }
 
   normalizeConfig(config) {
-    if(Array.isArray(config)) {
+    if (Array.isArray(config)) {
       return config;
     } else {
       return [config];
@@ -60,5 +59,4 @@ export default class MiddlewareChain {
       return container.get(klass, ...args);
     });
   }
-
 }

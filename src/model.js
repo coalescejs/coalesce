@@ -12,7 +12,6 @@ import assign from 'lodash/assign';
  * A model is an Entity that has a defined schema and associated data.
  */
 export default class Model extends Entity {
-
   static adapter = Adapter;
   static merge = ModelMerge;
   static serializer = ModelSerializer;
@@ -26,13 +25,13 @@ export default class Model extends Entity {
   };
   clientRev = 1;
 
-  constructor(graph, {id, clientId, ...rest}) {
+  constructor(graph, { id, clientId, ...rest }) {
     super(graph);
     this.id = id && id + ''; // TODO: move to setter
     this.clientId = clientId;
     // TODO think through the location of this
     graph.idManager.reifyClientId(this);
-    for(var key in rest) {
+    for (var key in rest) {
       this[key] = rest[key];
     }
   }
@@ -42,13 +41,13 @@ export default class Model extends Entity {
   }
 
   get isLoaded() {
-    if(this._loaded) {
+    if (this._loaded) {
       return this._loaded;
     }
 
-    for(var field of this.schema.relationships()) {
-      if(field.embedded && this[field.name] && this[field.name].isLoaded) {
-        return this._loaded = true;
+    for (var field of this.schema.relationships()) {
+      if (field.embedded && this[field.name] && this[field.name].isLoaded) {
+        return (this._loaded = true);
       }
     }
 
@@ -63,7 +62,7 @@ export default class Model extends Entity {
    * @override
    */
   ref(graph) {
-    return new this.constructor(graph, {id: this.id, clientId: this.clientId});
+    return new this.constructor(graph, { id: this.id, clientId: this.clientId });
   }
 
   get schema() {
@@ -79,7 +78,7 @@ export default class Model extends Entity {
   assign(source) {
     Object.assign(this._data, source._data);
     this._parent = source._parent;
-    if(!this._loaded) {
+    if (!this._loaded) {
       this._loaded = source._loaded;
     }
     this._meta = source._meta;
@@ -90,9 +89,9 @@ export default class Model extends Entity {
    * @override
    */
   *relatedEntities() {
-    for(let relationship of this.schema.relationships()) {
+    for (let relationship of this.schema.relationships()) {
       let rel = this[relationship.name];
-      if(rel) {
+      if (rel) {
         yield rel;
       }
     }
@@ -113,13 +112,13 @@ export default class Model extends Entity {
 
   static get schema() {
     // TODO use symbol?
-    if(this.hasOwnProperty('_schema')) {
+    if (this.hasOwnProperty('_schema')) {
       return this._schema;
     }
     let parent = Object.getPrototypeOf(this),
-        parentSchema = parent.schema;
+      parentSchema = parent.schema;
 
-    if(parentSchema) {
+    if (parentSchema) {
       this._schema = Object.create(parentSchema);
     } else {
       this._schema = new Schema();
@@ -130,7 +129,6 @@ export default class Model extends Entity {
   toString() {
     return `${this.constructor.name}<${this.clientId}, id: ${this.id}>`;
   }
-
 }
 
 // apply the default fields

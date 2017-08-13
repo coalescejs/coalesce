@@ -1,17 +1,18 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import DefaultContainer from 'coalesce/default-container';
 import Graph from 'coalesce/graph';
 import Model from 'coalesce/model';
 
 describe('schema/attribute', function() {
-
   lazy('name', () => 'title');
   lazy('opts', () => {
     return {};
   });
   lazy('container', () => new DefaultContainer());
-  lazy('graph', function() { return this.container.get(Graph); });
+  lazy('graph', function() {
+    return this.container.get(Graph);
+  });
 
   lazy('Model', function() {
     class TestModel extends Model {}
@@ -29,14 +30,15 @@ describe('schema/attribute', function() {
   });
 
   describe('.get()', function() {
-
     lazy('model', function() {
       return new this.Model(this.graph, {
         [this.name]: this.value
       });
     });
 
-    lazy('value', () => { return {test: true}; });
+    lazy('value', () => {
+      return { test: true };
+    });
 
     subject(function() {
       return this.model[this.name];
@@ -45,7 +47,5 @@ describe('schema/attribute', function() {
     it('returns value', function() {
       expect(this.subject).to.eq(this.value);
     });
-
   });
-
 });

@@ -1,5 +1,2 @@
-jspm_packages/
 node_modules/
-
-# This file added via `jspm link`
-src/package.json
+dist/

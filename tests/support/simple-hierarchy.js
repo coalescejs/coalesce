@@ -65,12 +65,10 @@ Comment.defineSchema({
 });
 
 export default class SimpleHierarchy extends DefaultContainer {
-
   constructor() {
     super();
     this.registerType(User);
     this.registerType(Post);
     this.registerType(Comment);
   }
-
 }

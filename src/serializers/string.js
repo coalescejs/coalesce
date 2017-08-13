@@ -4,7 +4,6 @@ import isNil from 'lodash/isNil';
  * String serializer.
  */
 export default class StringSerializer {
-
   static singleton = true;
 
   deserialize(serialized) {
@@ -14,5 +13,4 @@ export default class StringSerializer {
   serialize(deserialized) {
     return isNil(deserialized) ? null : String(deserialized);
   }
-
 }

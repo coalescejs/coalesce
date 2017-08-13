@@ -1,25 +1,24 @@
 import Field from './field';
 
 import inflection from 'inflection';
-const {dasherize} = inflection;
+const { dasherize } = inflection;
 
 export default class Relationship extends Field {
-
   static isRelationship = true;
 
   constructor(schema, name, options) {
     // make sure typeKey is set
     console.assert(options.kind, "Relationships must have a 'kind' property specified");
-    console.assert(options.type || options.typeKey, "Must specify a `type` or `typeKey` option");
-    if(options.type) {
+    console.assert(options.type || options.typeKey, 'Must specify a `type` or `typeKey` option');
+    if (options.type) {
       var typeKey;
-      if(typeof options.type === "string") {
+      if (typeof options.type === 'string') {
         typeKey = options.type;
       } else {
         typeKey = options.type.typeKey;
       }
 
-      console.assert(!options.typeKey || options.typeKey == typeKey, "type and typekey must match");
+      console.assert(!options.typeKey || options.typeKey == typeKey, 'type and typekey must match');
 
       options.typeKey = typeKey;
       delete options.type;
@@ -33,16 +32,15 @@ export default class Relationship extends Field {
   }
 
   get owner() {
-    if(this._owner !== undefined) {
+    if (this._owner !== undefined) {
       return this._owner;
     }
 
     // by default, belongsTo own the relationship
-    return this._owner = !!this.embedded || this.kind === 'belongsTo';
+    return (this._owner = !!this.embedded || this.kind === 'belongsTo');
   }
 
   set owner(value) {
-    return this._owner = value;
+    return (this._owner = value);
   }
-
 }

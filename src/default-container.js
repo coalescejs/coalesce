@@ -20,14 +20,12 @@ const DEFAULT_SERIALIZERS = {
  * Default resolver which has some sensible implementations for some primitives.
  */
 export default class DefaultContainer extends Container {
-
   constructor(...args) {
     super(...args);
-    for(var key in DEFAULT_SERIALIZERS) {
+    for (var key in DEFAULT_SERIALIZERS) {
       let provider = DEFAULT_SERIALIZERS[key];
       this.registerType(key);
-      this.registerProvider(key, 'serializer', provider)
+      this.registerProvider(key, 'serializer', provider);
     }
   }
-
 }

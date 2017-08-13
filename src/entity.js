@@ -4,15 +4,14 @@ import clone from 'lodash/clone';
  * An entity is always associated with a Graph.
  */
 export default class Entity {
-
   _tracking = 0;
   _meta = undefined;
 
   constructor(graph) {
-    console.assert(graph, `Entity must be associated with a graph`);
+    console.assert(graph, 'Entity must be associated with a graph');
     this._graph = graph;
     this._loaded = false;
-    if(graph.isSession) {
+    if (graph.isSession) {
       this._session = graph;
     }
   }
@@ -59,8 +58,7 @@ export default class Entity {
    *
    * @return {Iterator} the entities
    */
-  *relatedEntities() {
-  }
+  *relatedEntities() {}
 
   /**
    * Copy all data from the source entity into this entity.
@@ -105,10 +103,10 @@ export default class Entity {
    */
   withChangeTracking(fn) {
     try {
-      if(this._tracking++ === 0) {
+      if (this._tracking++ === 0) {
         // TODO: think through the .has check here. The reason for it is to deal
         // with initializing attributes inside the model's constructor
-        if(this.session && this.session.has(this)) {
+        if (this.session && this.session.has(this)) {
           this.session.touch(this);
         }
       }
@@ -122,14 +120,13 @@ export default class Entity {
     return `${this.constructor.name}<${this.clientId}>`;
   }
 
-
   /**
    * Load the entity. This is equivalent to calling `session.load(entity)`.
    *
    * @return {Promise}
    */
   load(...args) {
-    console.assert(this.session, "Must be associated with a session");
+    console.assert(this.session, 'Must be associated with a session');
     return this.session.load(this, ...args);
   }
 
@@ -139,7 +136,7 @@ export default class Entity {
    * @return {Promise}
    */
   refresh(...args) {
-    console.assert(this.session, "Must be associated with a session");
+    console.assert(this.session, 'Must be associated with a session');
     return this.session.refresh(this, ...args);
   }
 
@@ -149,12 +146,12 @@ export default class Entity {
    * @return {Promise}
    */
   invalidate(...args) {
-    console.assert(this.session, "Must be associated with a session");
+    console.assert(this.session, 'Must be associated with a session');
     return this.session.invalidate(this, ...args);
   }
 
   isEqual(other) {
-    if(!other) {
+    if (!other) {
       return false;
     }
     console.assert(this.clientId && other.clientId, "Must have clientId's set");
@@ -162,7 +159,7 @@ export default class Entity {
   }
 
   get isDirty() {
-    if(this.session) {
+    if (this.session) {
       return this.session.isEntityDirty(this);
     } else {
       return;
@@ -172,5 +169,4 @@ export default class Entity {
   get isEmbedded() {
     return !!this._parent;
   }
-
 }

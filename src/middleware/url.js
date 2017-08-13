@@ -1,23 +1,22 @@
 import isEmpty from 'lodash/isEmpty';
 import inflection from 'inflection';
-const {pluralize} = inflection;
+const { pluralize } = inflection;
 import qs from 'qs';
 
 /**
  * Builds the url for the request.
  */
 export default class UrlMiddleware {
-
-  constructor(baseUrl='/') {
+  constructor(baseUrl = '/') {
     this.baseUrl = baseUrl;
   }
 
   async call(ctx, next) {
-    if(!ctx.url) {
+    if (!ctx.url) {
       ctx.url = this.resolveUrl(ctx);
     }
 
-    if(ctx.query && !isEmpty(ctx.query)) {
+    if (ctx.query && !isEmpty(ctx.query)) {
       ctx.url = this.appendQuery(ctx.url, ctx.query);
     }
 
@@ -30,20 +29,19 @@ export default class UrlMiddleware {
    * @param  {object} options
    * @return {String}         the url
    */
-  resolveUrl({entity, action}) {
-    console.assert(entity.isEntity, "Entity is required");
-    let typeKey,
-        id;
-        url = [];
+  resolveUrl({ entity, action }) {
+    console.assert(entity.isEntity, 'Entity is required');
+    let typeKey, id;
+    url = [];
 
-    if(entity.isCollection) {
+    if (entity.isCollection) {
       typeKey = entity.type.typeKey;
     } else {
       typeKey = entity.typeKey;
       id = entity.id;
     }
     var url = this._buildUrl(typeKey, id);
-    if(action) {
+    if (action) {
       url = `${url}/${action}`;
     }
 
@@ -55,17 +53,23 @@ export default class UrlMiddleware {
    */
   _buildUrl(typeKey, id) {
     var url = [],
-        host = this.host,
-        prefix = this.baseUrl;
+      host = this.host,
+      prefix = this.baseUrl;
 
-    if (typeKey) { url.push(this._pathForType(typeKey)); }
-    if (id) { url.push(encodeURIComponent(id)); }
+    if (typeKey) {
+      url.push(this._pathForType(typeKey));
+    }
+    if (id) {
+      url.push(encodeURIComponent(id));
+    }
 
-    if (prefix && prefix !== '/') { url.unshift(prefix); }
+    if (prefix && prefix !== '/') {
+      url.unshift(prefix);
+    }
 
     url = url.join('/');
 
-    if(prefix === '/') {
+    if (prefix === '/') {
       url = prefix + url;
     }
 
@@ -81,7 +85,7 @@ export default class UrlMiddleware {
 
   appendQuery(url, query) {
     let joinChar;
-    if(url.indexOf('?') === -1) {
+    if (url.indexOf('?') === -1) {
       joinChar = '?';
     } else {
       joinChar = '&';
@@ -92,5 +96,4 @@ export default class UrlMiddleware {
   stringify(query) {
     return qs.stringify(query, { arrayFormat: 'brackets' });
   }
-
 }

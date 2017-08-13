@@ -17,13 +17,12 @@ import MetaMiddleware from './middleware/meta';
 
 import MiddlewareChain from './middleware-chain';
 
-import {findEmbeddedRoot, eachEmbeddedChild} from './utils/embedded';
+import { findEmbeddedRoot, eachEmbeddedChild } from './utils/embedded';
 
 /**
  * The Adapter is the main object responsible for interfacing with a remote server.
  */
 export default class Adapter {
-
   static singleton = true;
   static dependencies = [Container];
 
@@ -63,8 +62,8 @@ export default class Adapter {
    * @param  {Session} session the session
    * @return {Promise}
    */
-  load(entity, opts={}, session) {
-    console.assert(!entity.isModel || entity.id, "Cannot load a model without an id");
+  load(entity, opts = {}, session) {
+    console.assert(!entity.isModel || entity.id, 'Cannot load a model without an id');
     return this._invoke({
       entity,
       session,
@@ -85,26 +84,26 @@ export default class Adapter {
   plan(entity, shadow, plan) {
     let root = findEmbeddedRoot(plan.session, entity);
 
-    if(root && root !== entity) {
+    if (root && root !== entity) {
       plan.addDependency(entity, root);
 
-      let parent = plan.session.get({clientId: entity._parent});
+      let parent = plan.session.get({ clientId: entity._parent });
       // need to make sure the embedded parent has an associated operation
       plan.add(parent);
     }
 
-    for(let child of eachEmbeddedChild(plan.session, entity)) {
+    for (let child of eachEmbeddedChild(plan.session, entity)) {
       plan.add(child);
     }
 
-    if(entity.isCollection) {
+    if (entity.isCollection) {
       return;
     }
 
-    for(let d of diff(entity, shadow)) {
+    for (let d of diff(entity, shadow)) {
       // for a belongsTo, we depend on the relationship being persisted
       // before we can save this entity
-      if(d.field.kind === 'belongsTo' && d.lhs && d.lhs.isNew) {
+      if (d.field.kind === 'belongsTo' && d.lhs && d.lhs.isNew) {
         plan.addDependency(root, d.lhs);
       }
     }
@@ -120,10 +119,10 @@ export default class Adapter {
    * @return {Promise}
    */
   persist(entity, shadow, opts, session) {
-    console.assert(!entity.isNew || !entity.isDeleted, "Cannot persist a new and deleted entity.");
-    if(entity.isNew) {
+    console.assert(!entity.isNew || !entity.isDeleted, 'Cannot persist a new and deleted entity.');
+    if (entity.isNew) {
       return this.create(entity, opts, session);
-    } else if(entity.isDeleted) {
+    } else if (entity.isDeleted) {
       return this.delete(entity, shadow, opts, session);
     } else {
       return this.update(entity, shadow, opts, session);
@@ -161,7 +160,6 @@ export default class Adapter {
     return created;
   }
 
-
   /**
    * @private
    *
@@ -177,7 +175,7 @@ export default class Adapter {
     });
     deleted.isDeleted = true;
     // make sure to bump the rev if we need to
-    if(deleted.rev === entity.rev) {
+    if (deleted.rev === entity.rev) {
       deleted.rev = entity.rev + 1;
     }
     return deleted;
@@ -194,12 +192,12 @@ export default class Adapter {
    * @return {Promise}
    */
   remoteCall(entity, action, body, opts, session) {
-    if(opts && opts.type) {
-      console.warn(`'type:' has been deprecated, please use 'method:' instead`);
+    if (opts && opts.type) {
+      console.warn("'type:' has been deprecated, please use 'method:' instead");
       opts.method = opts.type;
     }
 
-    if(opts && opts.method === 'GET' && body !== undefined) {
+    if (opts && opts.method === 'GET' && body !== undefined) {
       opts.query = {
         ...opts.query,
         ...body
@@ -213,8 +211,7 @@ export default class Adapter {
       body,
       method: 'POST',
       ...opts,
-      session,
-      action
+      session
     };
     return this._invoke(ctx);
   }
@@ -225,18 +222,17 @@ export default class Adapter {
    * Invokes the middleware chain.
    */
   _invoke(ctx) {
-    console.assert(ctx.entity.isEntity, "Entity is required");
+    console.assert(ctx.entity.isEntity, 'Entity is required');
     let middleware = this.middleware,
-        middlewareIndex = 0,
-        next;
+      middlewareIndex = 0,
+      next;
 
     next = function() {
-      console.assert(middlewareIndex < middleware.length, "End of middleware chain reached");
+      console.assert(middlewareIndex < middleware.length, 'End of middleware chain reached');
       let nextMiddleware = middleware[middlewareIndex++];
       return nextMiddleware.call(ctx, next);
-    }
+    };
 
     return next();
   }
-
 }

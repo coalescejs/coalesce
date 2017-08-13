@@ -6,7 +6,6 @@
   @class IdManager
 */
 export default class IdManager {
-
   static singleton = true;
 
   constructor() {
@@ -27,35 +26,38 @@ export default class IdManager {
        update the mapping, and assign it to the model.
   */
   reifyClientId(model) {
-    console.assert(model.isModel || model.isEntity && model.clientId, `${model} needs to have a clientId`);
+    console.assert(model.isModel || (model.isEntity && model.clientId), `${model} needs to have a clientId`);
     var id = model.id,
-        clientId = model.clientId,
-        typeKey = model.typeKey,
-        idMap = this.idMaps[typeKey];
+      clientId = model.clientId,
+      typeKey = model.typeKey,
+      idMap = this.idMaps[typeKey];
 
-    if(!idMap) {
+    if (!idMap) {
       idMap = this.idMaps[typeKey] = new Bimap();
     }
 
-    if(id) {
+    if (id) {
       id = id + '';
     }
 
-    if(id && clientId) {
+    if (id && clientId) {
       var existingClientId = idMap.get(id);
-      console.assert(!existingClientId || existingClientId === clientId, "clientId has changed for " + model.toString());
-      if(!existingClientId) {
+      console.assert(
+        !existingClientId || existingClientId === clientId,
+        'clientId has changed for ' + model.toString()
+      );
+      if (!existingClientId) {
         idMap.set(id, clientId);
       }
-    } else if(!clientId) {
-      if(id) {
+    } else if (!clientId) {
+      if (id) {
         clientId = idMap.get(id);
       }
-      if(!clientId) {
+      if (!clientId) {
         clientId = this._generateClientId(typeKey);
       }
       model.clientId = clientId;
-      if(id) {
+      if (id) {
         idMap.set(id, clientId);
       }
     } // else NO-OP, nothing to do if they already have a clientId and no id
@@ -63,8 +65,8 @@ export default class IdManager {
   }
 
   getId(type, clientId) {
-    console.assert(clientId, "Must pass a valid clientId");
-    if(type.typeKey) {
+    console.assert(clientId, 'Must pass a valid clientId');
+    if (type.typeKey) {
       type = type.typeKey;
     }
     let idMap = this.idMaps[type];
@@ -73,19 +75,19 @@ export default class IdManager {
 
   getClientId(type, ...args) {
     // check for string (e.g. raw typeKey)
-    if(typeof type === 'string' || type.isModel) {
+    if (typeof type === 'string' || type.isModel) {
       return this.getModelClientId(type, ...args);
     }
     // other types have deterministic ids that can be generated
     return type.clientId(this, ...args);
   }
 
-  getModelClientId(type, {id, clientId}) {
-    if(clientId) {
+  getModelClientId(type, { id, clientId }) {
+    if (clientId) {
       return clientId;
     }
     id = id + '';
-    if(type.typeKey) {
+    if (type.typeKey) {
       type = type.typeKey;
     }
     let idMap = this.idMaps[type];
@@ -95,12 +97,9 @@ export default class IdManager {
   _generateClientId(typeKey) {
     return `$${typeKey}${this.uuid++}`;
   }
-
 }
 
-
 class Bimap {
-
   constructor() {
     this.map = {};
     this.inverses = {};
@@ -116,7 +115,7 @@ class Bimap {
 
   set(key, value) {
     this.inverses[value] = key;
-    return this.map[key] = value;
+    return (this.map[key] = value);
   }
 
   delete(key) {
@@ -124,5 +123,4 @@ class Bimap {
     delete this.map[key];
     delete this.inverses[value];
   }
-
 }

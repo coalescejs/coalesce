@@ -6,12 +6,11 @@ import isEqual from '../utils/is-equal';
  * TODO: OPTIMIZE: take advantage of immutable attributes
  */
 export default class ModelMerge {
-
   static singleton = true;
 
   merge(ours, ancestor, theirs) {
-    for(var field of ours.schema.fields()) {
-      if(field.kind === 'attribute' || field.kind === 'belongsTo' && field.owner) {
+    for (var field of ours.schema.fields()) {
+      if (field.kind === 'attribute' || (field.kind === 'belongsTo' && field.owner)) {
         this.mergeField(ours, ancestor, theirs, field);
       }
     }
@@ -20,24 +19,24 @@ export default class ModelMerge {
 
   mergeField(ours, ancestor, theirs, field) {
     var name = field.name,
-        oursValue = ours[name],
-        ancestorValue = ancestor[name],
-        theirsValue = theirs[name];
+      oursValue = ours[name],
+      ancestorValue = ancestor[name],
+      theirsValue = theirs[name];
 
     // ours is unloaded, use theirs
-    if(oursValue === undefined) {
-      if(theirsValue !== undefined) {
+    if (oursValue === undefined) {
+      if (theirsValue !== undefined) {
         ours[name] = theirsValue;
       }
       return;
     }
 
     // theirs is unloaded, keep ours
-    if(theirsValue === undefined || isEqual(oursValue, theirsValue)) {
+    if (theirsValue === undefined || isEqual(oursValue, theirsValue)) {
       return;
     }
 
-    if(ancestorValue === undefined || isEqual(oursValue, ancestorValue)) {
+    if (ancestorValue === undefined || isEqual(oursValue, ancestorValue)) {
       // ours is unchanged, use theirs
       ours[name] = theirsValue;
     } else {
@@ -45,5 +44,4 @@ export default class ModelMerge {
       // NO-OP
     }
   }
-
 }

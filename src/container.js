@@ -4,14 +4,13 @@ import Resolver from './resolver';
  * Lighweight injection context and singleton registry.
  */
 export default class Container {
-
   static singleton = true;
 
   _instances = new Map();
   _types = {};
   _providers = new Registry();
 
-  constructor(resolver=new Resolver()) {
+  constructor(resolver = new Resolver()) {
     this.resolver = resolver;
     this._instances.set(Container, this);
   }
@@ -25,18 +24,17 @@ export default class Container {
    * @return {*}      the instance
    */
   get(type, ...args) {
-    if(!type.singleton) {
+    if (!type.singleton) {
       return this.create(type, ...args);
     }
     let instance = this._instances.get(type);
-    if(!instance) {
+    if (!instance) {
       // TODO dependency injection?
       instance = this.create(type, ...args);
       this._instances.set(type, instance);
     }
     return instance;
   }
-
 
   /**
    * Instantiate the passed in type and resolve any dependencies.
@@ -56,9 +54,9 @@ export default class Container {
    * @return {class}
    */
   typeFor(type) {
-    if(typeof type === 'string') {
+    if (typeof type === 'string') {
       let cached = this._types[type];
-      if(!cached) {
+      if (!cached) {
         cached = this._types[type] = this.resolver.resolveType(type);
       }
       return cached;
@@ -66,7 +64,7 @@ export default class Container {
 
     // OPTIMIZATION: if we see an implemented type, lets cache so that we can
     // later access via typeKey
-    if(!this._types[type.typeKey]) {
+    if (!this._types[type.typeKey]) {
       this._types[type.typeKey] = type;
     }
     return type;
@@ -82,7 +80,7 @@ export default class Container {
   providerFor(type, name, ...args) {
     type = this.typeFor(type);
     let provider = this._providers.get(type, name);
-    if(!provider) {
+    if (!provider) {
       provider = this.resolver.resolveProvider(type, name);
     }
     return this.get(provider, ...args);
@@ -95,8 +93,8 @@ export default class Container {
    * @return {Merge}     adapter
    */
   adapterFor(typeOrEntity) {
-    if(typeOrEntity.isEntity) {
-      if(typeOrEntity.isQuery) {
+    if (typeOrEntity.isEntity) {
+      if (typeOrEntity.isQuery) {
         typeOrEntity = typeOrEntity.type;
       } else {
         typeOrEntity = typeOrEntity.constructor;
@@ -112,8 +110,8 @@ export default class Container {
    * @return {Merge}     adapter
    */
   cachingStrategyFor(typeOrEntity, ...args) {
-    if(typeOrEntity.isEntity) {
-      if(typeOrEntity.isQuery) {
+    if (typeOrEntity.isEntity) {
+      if (typeOrEntity.isQuery) {
         typeOrEntity = typeOrEntity.type;
       } else {
         typeOrEntity = typeOrEntity.constructor;
@@ -142,19 +140,17 @@ export default class Container {
     return this.providerFor(type, 'serializer');
   }
 
-
   /**
    * Explicitly register a type.
    *
    * @param  {type} type description
    */
   registerType(type) {
-    if(typeof type === 'string') {
-      type = {typeKey: type, primitive: true};
+    if (typeof type === 'string') {
+      type = { typeKey: type, primitive: true };
     }
     this._types[type.typeKey] = type;
   }
-
 
   /**
    * Explicitly register a provider.
@@ -168,7 +164,6 @@ export default class Container {
     this._providers.set(type, name, provider);
   }
 
-
   /**
    * @private
    *
@@ -176,16 +171,13 @@ export default class Container {
    */
   resolveDependencies(type) {
     let dependencies = type.dependencies || [];
-    return dependencies.map((injectionType) => {
+    return dependencies.map(injectionType => {
       return this.get(injectionType);
     });
   }
-
 }
 
-
 class Registry {
-
   _types = {};
 
   get(type, name) {
@@ -195,10 +187,9 @@ class Registry {
 
   set(type, name, provider) {
     let registry = this._types[type.typeKey];
-    if(!registry) {
+    if (!registry) {
       registry = this._types[type.typeKey] = {};
     }
     registry[name] = provider;
   }
-
 }

@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import Model from 'coalesce/model';
 import ModelSerializer from 'coalesce/serializers/model';
@@ -7,7 +7,6 @@ import Graph from 'coalesce/graph';
 import IdManager from 'coalesce/id-manager';
 
 describe('serializers/model', function() {
-
   lazy('container', () => new DefaultContainer());
   lazy('graph', function() {
     return this.container.get(Graph);
@@ -18,7 +17,7 @@ describe('serializers/model', function() {
   });
 
   lazy('Tag', function() {
-    let klass = class Tag extends Model {}
+    let klass = class Tag extends Model {};
     klass.defineSchema({
       typeKey: 'tag',
       attributes: {
@@ -41,7 +40,7 @@ describe('serializers/model', function() {
   });
 
   lazy('Post', function() {
-    let klass = class Post extends Model {}
+    let klass = class Post extends Model {};
     klass.defineSchema({
       typeKey: 'post',
       attributes: {
@@ -66,17 +65,16 @@ describe('serializers/model', function() {
   });
 
   describe('.serialize()', function() {
-
     lazy('value', function() {
       return this.graph.build(this.Post, {
-        id: "1",
-        clientId: "$post1",
+        id: '1',
+        clientId: '$post1',
         rev: 1,
         clientRev: 2,
         title: 'Serializing',
         longTitle: 'Serializing in Seattle',
         custom: 3,
-        raw: {test: true}
+        raw: { test: true }
       });
     });
 
@@ -87,21 +85,20 @@ describe('serializers/model', function() {
     it('serializes all fields', function() {
       expect(this.subject).to.eql({
         id: 1,
-        client_id: "$post1",
+        client_id: '$post1',
         rev: 1,
         client_rev: 2,
         title: 'Serializing',
         long_title: 'Serializing in Seattle',
         CUSTOM: 3,
-        raw: {test: true}
+        raw: { test: true }
       });
     });
 
     context('with belongsTo', function() {
-
       context('when not embedded', function() {
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -121,13 +118,13 @@ describe('serializers/model', function() {
 
         lazy('value', function() {
           let post = this.graph.build(this.Post, {
-            id: "1",
-            clientId: "$post1",
+            id: '1',
+            clientId: '$post1',
             rev: 1,
             clientRev: 2,
-            title: 'Serializing',
+            title: 'Serializing'
           });
-          post.tag = this.graph.build(this.Tag, {id: "2", post, name: 'asd'});
+          post.tag = this.graph.build(this.Tag, { id: '2', post, name: 'asd' });
           return post;
         });
 
@@ -138,7 +135,7 @@ describe('serializers/model', function() {
 
       context('when embedded', function() {
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -159,19 +156,19 @@ describe('serializers/model', function() {
 
         lazy('value', function() {
           let post = this.graph.build(this.Post, {
-            id: "1",
-            clientId: "$post1",
+            id: '1',
+            clientId: '$post1',
             rev: 1,
             clientRev: 2,
-            title: 'Serializing',
+            title: 'Serializing'
           });
-          post.tag = this.graph.build(this.Tag, {id: "2", post, name: 'asd'});
+          post.tag = this.graph.build(this.Tag, { id: '2', post, name: 'asd' });
           return post;
         });
 
         it('serializes nested model', function() {
           expect(this.subject.tag).to.eql({
-            client_id: "$tag1",
+            client_id: '$tag1',
             client_rev: 1,
             id: 2,
             name: 'asd',
@@ -179,16 +176,12 @@ describe('serializers/model', function() {
           });
         });
       });
-
-
     });
 
     context('with hasMany', function() {
-
       context('when not embedded', function() {
-
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -208,26 +201,24 @@ describe('serializers/model', function() {
 
         lazy('value', function() {
           let post = this.graph.build(this.Post, {
-            id: "1",
-            clientId: "$post1",
+            id: '1',
+            clientId: '$post1',
             rev: 1,
             clientRev: 2,
-            title: 'Serializing',
+            title: 'Serializing'
           });
-          post.tags = [this.graph.build(this.Tag, {id: "2", post, name: 'asd'})];
+          post.tags = [this.graph.build(this.Tag, { id: '2', post, name: 'asd' })];
           return post;
         });
 
         it('does not include field', function() {
           expect(this.subject.tags).to.be.undefined;
         });
-
       });
 
       context('when embedded', function() {
-
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -248,45 +239,43 @@ describe('serializers/model', function() {
 
         lazy('value', function() {
           let post = this.graph.build(this.Post, {
-            id: "1",
-            clientId: "$post1",
+            id: '1',
+            clientId: '$post1',
             rev: 1,
             clientRev: 2,
-            title: 'Serializing',
+            title: 'Serializing'
           });
-          post.tags = [this.graph.build(this.Tag, {id: "2", post, name: 'asd'})];
+          post.tags = [this.graph.build(this.Tag, { id: '2', post, name: 'asd' })];
           return post;
         });
 
         it('includes nested models', function() {
-          expect(this.subject.tags).to.eql([{
-            client_id: "$tag1",
-            client_rev: 1,
-            id: 2,
-            name: 'asd',
-            post: 1
-          }]);
+          expect(this.subject.tags).to.eql([
+            {
+              client_id: '$tag1',
+              client_rev: 1,
+              id: 2,
+              name: 'asd',
+              post: 1
+            }
+          ]);
         });
-
       });
-
     });
-
   });
 
   describe('.deserialize()', function() {
-
     lazy('value', () => {
       return {
         type: 'post',
         id: 1,
-        client_id: "$post1",
+        client_id: '$post1',
         rev: 1,
         client_rev: 2,
         title: 'Serializing',
         long_title: 'Serializing in Seattle',
         CUSTOM: 3,
-        raw: {test: true}
+        raw: { test: true }
       };
     });
 
@@ -296,60 +285,57 @@ describe('serializers/model', function() {
 
     it('deserializes all fields', function() {
       expect(this.subject._data).to.eql({
-        id: "1",
-        clientId: "$post1",
+        id: '1',
+        clientId: '$post1',
         rev: 1,
         clientRev: 2,
         title: 'Serializing',
         longTitle: 'Serializing in Seattle',
         custom: 3,
-        raw: {test: true},
+        raw: { test: true },
         isDeleted: false,
         isNew: false
       });
     });
 
     context('with default type', function() {
-
       lazy('value', () => {
         return {
           id: 1,
-          client_id: "$post1",
+          client_id: '$post1',
           rev: 1,
           client_rev: 2,
           title: 'Serializing',
           long_title: 'Serializing in Seattle',
           CUSTOM: 3,
-          raw: {test: true}
+          raw: { test: true }
         };
       });
 
       subject(function() {
-        return this.serializer.deserialize(this.value, this.graph, {type: 'post'});
+        return this.serializer.deserialize(this.value, this.graph, { type: 'post' });
       });
 
       it('deserializes all fields', function() {
         expect(this.subject._data).to.eql({
-          id: "1",
-          clientId: "$post1",
+          id: '1',
+          clientId: '$post1',
           rev: 1,
           clientRev: 2,
           title: 'Serializing',
           longTitle: 'Serializing in Seattle',
           custom: 3,
-          raw: {test: true},
+          raw: { test: true },
           isDeleted: false,
           isNew: false
         });
       });
-
     });
 
     context('with belongsTo', function() {
-
       context('when not embedded', function() {
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -371,7 +357,7 @@ describe('serializers/model', function() {
           return {
             type: 'post',
             id: 1,
-            client_id: "$post1",
+            client_id: '$post1',
             rev: 1,
             client_rev: 2,
             tag: 2
@@ -385,7 +371,7 @@ describe('serializers/model', function() {
 
       context('when embedded', function() {
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -408,31 +394,27 @@ describe('serializers/model', function() {
           return {
             type: 'post',
             id: 1,
-            client_id: "$post1",
+            client_id: '$post1',
             rev: 1,
             client_rev: 2,
             tag: {
               id: 2,
-              name: "asd"
+              name: 'asd'
             }
           };
         });
 
         it('deserializes nested model', function() {
-          expect(this.subject.tag.id).to.eq('2')
-          expect(this.subject.tag.name).to.eq('asd')
+          expect(this.subject.tag.id).to.eq('2');
+          expect(this.subject.tag.name).to.eq('asd');
         });
       });
-
-
     });
 
     context('with hasMany', function() {
-
       context('when not embedded', function() {
-
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -454,7 +436,7 @@ describe('serializers/model', function() {
           return {
             type: 'post',
             id: 1,
-            client_id: "$post1",
+            client_id: '$post1',
             rev: 1,
             client_rev: 2,
             tags: [2, 3]
@@ -462,15 +444,13 @@ describe('serializers/model', function() {
         });
 
         it('deserializes collection', function() {
-          expect(Array.from(this.subject.tags).map((t) => t.id)).to.eql(['2', '3']);
+          expect(Array.from(this.subject.tags).map(t => t.id)).to.eql(['2', '3']);
         });
-
       });
 
       context('when embedded', function() {
-
         lazy('Post', function() {
-          let klass = class Post extends Model {}
+          let klass = class Post extends Model {};
           klass.defineSchema({
             typeKey: 'post',
             attributes: {
@@ -493,25 +473,18 @@ describe('serializers/model', function() {
           return {
             type: 'post',
             id: 1,
-            client_id: "$post1",
+            client_id: '$post1',
             rev: 1,
             client_rev: 2,
-            tags: [
-              {id: 2, name: 'asd'},
-              {id: 3, name: 'xyz'}
-            ]
+            tags: [{ id: 2, name: 'asd' }, { id: 3, name: 'xyz' }]
           };
         });
 
         it('deserializes collection', function() {
-          expect(Array.from(this.subject.tags).map((t) => t.id)).to.eql(['2', '3']);
-          expect(Array.from(this.subject.tags).map((t) => t.name)).to.eql(['asd', 'xyz']);
+          expect(Array.from(this.subject.tags).map(t => t.id)).to.eql(['2', '3']);
+          expect(Array.from(this.subject.tags).map(t => t.name)).to.eql(['asd', 'xyz']);
         });
-
       });
-
     });
-
   });
-
 });

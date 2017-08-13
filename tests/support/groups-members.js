@@ -1,8 +1,7 @@
 import DefaultContainer from 'coalesce/default-container';
 import Model from 'coalesce/model';
 
-export class Group extends Model {
-}
+export class Group extends Model {}
 Group.defineSchema({
   typeKey: 'group',
   attributes: {
@@ -23,8 +22,7 @@ Group.defineSchema({
   }
 });
 
-export class Member extends Model {
-}
+export class Member extends Model {}
 Member.defineSchema({
   typeKey: 'member',
   attributes: {
@@ -44,8 +42,7 @@ Member.defineSchema({
   }
 });
 
-export class User extends Model {
-}
+export class User extends Model {}
 User.defineSchema({
   typeKey: 'user',
   attributes: {
@@ -66,12 +63,10 @@ User.defineSchema({
 });
 
 export default class GroupsMembers extends DefaultContainer {
-
   constructor() {
     super();
     this.registerType(Group);
     this.registerType(Member);
     this.registerType(User);
   }
-
 }

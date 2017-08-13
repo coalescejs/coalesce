@@ -2,15 +2,14 @@
  * Used by the container to resolve factories.
  */
 export default class Resolver {
-
   resolveType(typeKey) {
     // TODO: integrate with loader
-    throw `No type resolved for ${typeKey}`
+    throw `No type resolved for ${typeKey}`;
   }
 
   resolveProvider(type, name) {
     // 1. Check type for decorator/static property
-    if(type[name]) {
+    if (type[name]) {
       return type[name];
     }
 
@@ -18,5 +17,4 @@ export default class Resolver {
 
     throw `Nothing resolved for provider '${name}' for type '${type}'`;
   }
-
 }

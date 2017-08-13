@@ -4,7 +4,6 @@ import QuerySerializer from './serializers/query';
 import CachingStrategy from './caching-strategy';
 
 export default class Query extends Collection {
-
   static serializer = QuerySerializer;
   static cachingStrategy = CachingStrategy;
 
@@ -36,18 +35,17 @@ export default class Query extends Collection {
   }
 
   static normalizeParams(params) {
-    params = {...params};
-    for(var key in params) {
-      if(!params.hasOwnProperty(key)) {
+    params = { ...params };
+    for (var key in params) {
+      if (!params.hasOwnProperty(key)) {
         continue;
       }
       let value = params[key];
       // TODO: handle enumerables
-      if(value.isModel) {
+      if (value.isModel) {
         params[key] = value.clientId;
       }
     }
     return params;
   }
-
 }

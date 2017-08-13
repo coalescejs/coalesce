@@ -1,17 +1,12 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import MiddlewareChain from 'coalesce/middleware-chain';
 
-class TestMiddleware {
+class TestMiddleware {}
 
-}
-
-class TestMiddleware2 {
-
-}
+class TestMiddleware2 {}
 
 describe('middleware-chain', function() {
-
   lazy('configs', function() {
     return [];
   });
@@ -21,7 +16,6 @@ describe('middleware-chain', function() {
   });
 
   describe('.use', function() {
-
     subject(function() {
       return this.chain.use(TestMiddleware, {});
     });
@@ -31,8 +25,7 @@ describe('middleware-chain', function() {
       expect(this.subject.configs).to.eql([[TestMiddleware, {}]]);
     });
 
-    context('when middleware already exists', function () {
-
+    context('when middleware already exists', function() {
       lazy('configs', function() {
         return [TestMiddleware];
       });
@@ -40,11 +33,9 @@ describe('middleware-chain', function() {
       it('reconfigures existing middleware', function() {
         expect(this.subject.configs).to.eql([[TestMiddleware, {}]]);
       });
-
     });
 
     context('when different middleware already exists', function() {
-
       lazy('configs', function() {
         return [TestMiddleware2];
       });
@@ -53,13 +44,10 @@ describe('middleware-chain', function() {
         expect(this.chain).to.not.eq(this.subject);
         expect(this.subject.configs).to.eql([[TestMiddleware2], [TestMiddleware, {}]]);
       });
-
-    })
-
+    });
   });
 
   describe('.replace', function() {
-
     lazy('configs', function() {
       return [TestMiddleware];
     });
@@ -71,7 +59,5 @@ describe('middleware-chain', function() {
     it('replaces middleware', function() {
       expect(this.subject.configs).to.eql([[TestMiddleware2, {}]]);
     });
-
   });
-
 });

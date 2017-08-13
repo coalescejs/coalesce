@@ -3,12 +3,11 @@
   @class Field
 */
 export default class Field {
-
   constructor(schema, name, options) {
     this.schema = schema;
     this.name = name;
-    for(var key in options) {
-      if(!options.hasOwnProperty(key)) continue;
+    for (var key in options) {
+      if (!options.hasOwnProperty(key)) {continue;}
       this[key] = options[key];
     }
   }
@@ -16,7 +15,6 @@ export default class Field {
   get serializerKey() {
     return this.type;
   }
-
 }
 
 Field.prototype.writable = true;

@@ -6,7 +6,6 @@ import Container from '../container';
  * Abstract base class for entity serializers.
  */
 export default class EntitySerializer {
-
   static singleton = true;
   static dependencies = [Container, IdManager];
 
@@ -30,5 +29,4 @@ export default class EntitySerializer {
   typeFor(type) {
     return this.container.typeFor(type);
   }
-
 }

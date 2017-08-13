@@ -1,15 +1,13 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import Model from 'coalesce/model';
 
 import Container from 'coalesce/container';
 
 describe('container', function() {
-
   subject('container', () => new Container());
 
   describe('.get()', function() {
-
     lazy('Type', function() {
       return class TestClass {};
     });
@@ -21,7 +19,6 @@ describe('container', function() {
     });
 
     context('on a singleton type', function() {
-
       lazy('Type', function() {
         return class TestClass {
           static singleton = true;
@@ -33,11 +30,9 @@ describe('container', function() {
         expect(res).to.be.an.instanceOf(this.Type);
         expect(this.container.get(this.Type)).to.eq(res);
       });
-
     });
 
     context('on a type with dependencies declared', function() {
-
       lazy('Dep', function() {
         return class Dep {
           static singleton = true;
@@ -58,15 +53,12 @@ describe('container', function() {
         let res = this.container.get(this.Type);
         expect(res.dep).to.be.an.instanceOf(this.Dep);
       });
-
     });
-
   });
 
   describe('.typeFor', function() {
-
     lazy('Model', () => {
-      return class TestModel extends Model {}
+      return class TestModel extends Model {};
     });
 
     subject(function() {
@@ -74,9 +66,7 @@ describe('container', function() {
     });
 
     it('returns class', function() {
-      expect(this.subject).to.eq(this.Model)
+      expect(this.subject).to.eq(this.Model);
     });
-
   });
-
 });

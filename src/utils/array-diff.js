@@ -13,11 +13,11 @@ class ArrayDiffElement {
 
   get removed() {
     return this.newIndex === undefined;
-  };
+  }
 
   get common() {
     return this.oldIndex !== undefined && this.newIndex !== undefined;
-  };
+  }
 }
 
 /**
@@ -32,7 +32,6 @@ function added(diff, item, newIndex) {
   diff.diff.push(element);
 }
 
-
 /**
   Appends an array item to the subsequence of items that were removed from the old array.
 
@@ -45,7 +44,6 @@ function removed(diff, item, oldIndex) {
   diff.diff.push(element);
 }
 
-
 /**
   Appends an array item to the longest common subsequence between the new and old arrays.
 
@@ -57,7 +55,6 @@ function common(diff, item, newIndex, oldIndex) {
   diff.common.push(element);
   diff.diff.push(element);
 }
-
 
 /**
   Computes the longest common subsequence between two arrays.
@@ -75,22 +72,21 @@ function ArrayDiff(newArray, oldArray, equalityFunction) {
   var newLength = newArray.length,
     oldLength = oldArray.length,
     o,
-    n = o = 0,
+    n = (o = 0),
     table = [],
-    equal = typeof equalityFunction === 'function' ?
-            equalityFunction : this.defaultEqualityFunction;
+    equal = typeof equalityFunction === 'function' ? equalityFunction : this.defaultEqualityFunction;
 
   // Build out the table
   table[newLength] = [];
-  for (o = oldLength; o >= 0; table[newLength][o--] = 0);
+  for (o = oldLength; o >= 0; table[newLength][o--] = 0){;}
   for (n = newLength - 1; n >= 0; n--) {
     table[n] = [];
     table[n][oldLength] = 0;
     for (o = oldLength - 1; o >= 0; o--) {
       if (equal(newArray[n], oldArray[o])) {
-        table[n][o] = table[n+1][o+1] + 1;
+        table[n][o] = table[n + 1][o + 1] + 1;
       } else {
-        table[n][o] = Math.max(table[n+1][o], table[n][o+1]);
+        table[n][o] = Math.max(table[n + 1][o], table[n][o + 1]);
       }
     }
   }
@@ -107,7 +103,7 @@ function ArrayDiff(newArray, oldArray, equalityFunction) {
       common(this, newArray[n], n, o);
       n++;
       o++;
-    } else if (table[n+1][o] >= table[n][o+1]) {
+    } else if (table[n + 1][o] >= table[n][o + 1]) {
       added(this, newArray[n], n);
       n++;
     } else {
@@ -116,15 +112,14 @@ function ArrayDiff(newArray, oldArray, equalityFunction) {
     }
   }
 
-  for (;n < newLength; n++) {
+  for (; n < newLength; n++) {
     added(this, newArray[n], n);
   }
 
-  for (;o < oldLength; o++) {
+  for (; o < oldLength; o++) {
     removed(this, oldArray[o], o);
   }
 }
-
 
 /**
   Checks whether or not two items are equal.
@@ -138,5 +133,5 @@ ArrayDiff.prototype.defaultEqualityFunction = function(a, b) {
   return a === b;
 };
 
-export {ArrayDiffElement};
+export { ArrayDiffElement };
 export default ArrayDiff;

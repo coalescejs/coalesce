@@ -1,4 +1,4 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
 import Model from 'coalesce/model';
 import DefaultContainer from 'coalesce/default-container';
@@ -6,10 +6,9 @@ import Graph from 'coalesce/graph';
 import Session from 'coalesce/session';
 
 describe('schema/belongs-to', function() {
-
   lazy('name', () => 'user');
   lazy('opts', () => {
-    return {kind: 'belongsTo', type: 'user'};
+    return { kind: 'belongsTo', type: 'user' };
   });
   lazy('container', () => new DefautContainer());
   lazy('graph', function() {
@@ -53,7 +52,6 @@ describe('schema/belongs-to', function() {
   });
 
   describe('.get()', function() {
-
     lazy('model', function() {
       return this.graph.build(this.Model, {
         id: 1,
@@ -62,7 +60,7 @@ describe('schema/belongs-to', function() {
     });
 
     lazy('value', function() {
-      return this.graph.build(this.User, {id: 2});
+      return this.graph.build(this.User, { id: 2 });
     });
 
     subject(function() {
@@ -74,7 +72,6 @@ describe('schema/belongs-to', function() {
     });
 
     context('without a value set', function() {
-
       lazy('model', function() {
         return new this.Model(this.graph, {
           id: 1
@@ -84,11 +81,9 @@ describe('schema/belongs-to', function() {
       it('returns undefined', function() {
         expect(this.subject).to.be.undefined;
       });
-
     });
 
     context('with null value set', function() {
-
       lazy('model', function() {
         return new this.Model(this.graph, {
           id: 1,
@@ -99,9 +94,6 @@ describe('schema/belongs-to', function() {
       it('returns null', function() {
         expect(this.subject).to.be.null;
       });
-
     });
-
   });
-
 });

@@ -10,13 +10,13 @@
  */
 export default function isSuperset(lhs, rhs) {
   // there is currently no notion of a partially loaded collection
-  if(lhs.isCollection) {
+  if (lhs.isCollection) {
     return true;
   }
-  console.assert(lhs.schema === rhs.schema, "Schemas must be the same.");
+  console.assert(lhs.schema === rhs.schema, 'Schemas must be the same.');
   let schema = lhs.schema;
-  for(let field of schema) {
-    if(typeof lhs[field] !== 'undefined' && typeof rhs[field] === 'undefined') {
+  for (let field of schema) {
+    if (typeof lhs[field] !== 'undefined' && typeof rhs[field] === 'undefined') {
       return false;
     }
   }
