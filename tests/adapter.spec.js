@@ -42,10 +42,7 @@ describe('adapter', function() {
     lazy('entity', function() {
       return this.session.build(Post, { id: 1 });
     });
-    lazy('opts', () => {
-      {
-      }
-    });
+    lazy('opts', () => ({}));
     lazy('session', () => new Session());
 
     subject(function() {

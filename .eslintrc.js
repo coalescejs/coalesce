@@ -113,6 +113,5 @@ module.exports = {
     'no-new-symbol': 'off',
     'no-this-before-super': 'off',
     'require-yield': 'off'
-  },
-  fix: true
+  }
 };

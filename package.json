@@ -4,8 +4,7 @@
   "license": "MIT",
   "scripts": {
     "bin": "$@",
-    "start":
-      "webpack-dashboard -t 'Outreach Calendar' --port 9840 -- webpack-dev-server --colors",
+    "start": "webpack-dashboard -t 'Coalesce' --port 9840 -- webpack-dev-server --colors",
     "build": "rm -rf ./dist && SKIP_DASHBOARD=1 webpack",
     "test": "testem ci"
   },
