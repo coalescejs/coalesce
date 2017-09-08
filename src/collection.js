@@ -6,6 +6,8 @@ export default class Collection extends Entity {
 
   _data = [];
 
+  [Symbol.isConcatSpreadable] = true;
+
   constructor(graph, iterable) {
     super(graph);
     if (iterable) {
@@ -17,6 +19,16 @@ export default class Collection extends Entity {
       }
       this._data = Array.from(clientIds(iterable));
     }
+
+    return new Proxy(this, {
+      get(target, name) {
+        let index = parseInt(name);
+        if (!Number.isNaN(index)) {
+          return target.get(index);
+        }
+        return target[name];
+      }
+    });
   }
 
   // currently all collections are transient
@@ -29,7 +41,7 @@ export default class Collection extends Entity {
   }
 
   *[Symbol.iterator]() {
-    for (var clientId of this._data) {
+    for (let clientId of this._data) {
       yield this.graph.get({ clientId });
     }
   }

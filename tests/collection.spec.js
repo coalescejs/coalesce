@@ -5,6 +5,8 @@ import Graph from 'coalesce/graph';
 import Model from 'coalesce/model';
 import Collection from 'coalesce/collection';
 
+import { map } from 'lodash';
+
 describe('collection', function() {
   lazy('container', () => new DefaultContainer());
   lazy('graph', function() {
@@ -66,6 +68,23 @@ describe('collection', function() {
       it('returns true', function() {
         expect(this.subject).to.be.true;
       });
+    });
+  });
+
+  context('when in proxy mode', function() {
+    subject(function() {
+      return new Collection(this.graph, [
+        this.graph.build(this.Post, { id: '1', title: 'a' }),
+        this.graph.build(this.Post, { id: '2', title: 'b' })
+      ]);
+    });
+
+    it('is accessible like a normal array', function() {
+      expect(this.subject[1]).to.be.an.instanceOf(this.Post);
+    });
+
+    it('is compatible with lodash', function() {
+      expect(map(this.subject, 'title')).to.eql(['a', 'b']);
     });
   });
 });
