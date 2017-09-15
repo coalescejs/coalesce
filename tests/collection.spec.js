@@ -71,7 +71,23 @@ describe('collection', function() {
     });
   });
 
-  context('when in proxy mode', function() {
+  describe('.build', function() {
+    lazy('entity', function() {
+      return new Collection(this.graph, this.arg);
+    });
+    subject(function() {
+      return this.entity.build(this.Post, {
+        id: '1',
+        title: 'a'
+      });
+    });
+    it('builds and adds to the same graph', function() {
+      expect(this.subject.graph).to.eq(this.graph);
+      expect(this.entity.length).to.eq(1);
+    });
+  });
+
+  context('as a proxy', function() {
     subject(function() {
       return new Collection(this.graph, [
         this.graph.build(this.Post, { id: '1', title: 'a' }),

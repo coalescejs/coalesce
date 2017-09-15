@@ -30,4 +30,16 @@ describe('query', function() {
       expect(this.subject).to.eq('$post${"q":"asd"}');
     });
   });
+
+  describe('.build', function() {
+    lazy('query', function() {
+      return this.graph.build(Query, this.type, {});
+    });
+    subject(function() {
+      return this.query.build({ id: 1, title: 'a' });
+    });
+    it('uses query type', function() {
+      expect(this.subject).to.be.an.instanceOf(Post);
+    });
+  });
 });

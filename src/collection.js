@@ -55,6 +55,19 @@ export default class Collection extends Entity {
     return false;
   }
 
+  build(...args) {
+    let entity = this.graph.build(...args);
+    this.push(entity);
+    return entity;
+  }
+
+  create(...args) {
+    console.assert(this.session, 'Must be associated with a session');
+    let entity = this.session.create(...args);
+    this.push(entity);
+    return entity;
+  }
+
   /**
    * @deprecated
    */

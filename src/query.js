@@ -22,6 +22,16 @@ export default class Query extends Collection {
     return !this._parent;
   }
 
+  build(...args) {
+    let entity = super.build(this.type, ...args);
+    return entity;
+  }
+
+  create(...args) {
+    let entity = super.create(this.type, ...args);
+    return entity;
+  }
+
   /**
    * @override
    */
